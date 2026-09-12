@@ -2697,7 +2697,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-const APP_VERSION='v1.8.4';
+const APP_VERSION='v1.8.5';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "1 سبتمبر 2026 — تحسين نظام التحديث الذكي";
 
@@ -3758,7 +3758,7 @@ function renderDashboardPage(container){
     </div>
     <div class="dash-grid-2">
       <div class="card dash-card"><div class="dash-card-head"><div><h3><i class="fas fa-chart-column"></i> أداء المبيعات والأرباح</h3><small>آخر 7 أيام</small></div><button onclick="navigateTo('summary')">التفاصيل</button></div><div class="dashboard-chart-wrap"><canvas id="weekChart"></canvas></div></div>
-      <div class="card dash-card"><div class="dash-card-head"><div><h3><i class="fas fa-star"></i> الأكثر مبيعًا اليوم</h3><small>حسب الكمية</small></div></div><div class="dash-best-list">${best.length?best.map((x,i)=>`<div><span>${i+1}</span><div class="dash-best-img">${x.p?.image?`<img src="${x.p.image}" alt="">`:(x.p?.type==='cheese'?'🧀':'❄️')}</div><b>${x.name}</b><strong>${formatProductQty(x.p,x.qty)} ${x.p?.unit||'كجم'}</strong></div>`).join(''):'<div class="empty-state"><i class="fas fa-box-open"></i><p>لا توجد مبيعات أصناف اليوم</p></div>'}</div></div>
+      <div class="card dash-card"><div class="dash-card-head"><div><h3><i class="fas fa-star"></i> الأكثر مبيعًا اليوم</h3><small>حسب الكمية</small></div></div><div class="dash-best-list">${best.length?best.map((x,i)=>`<div><span>${i+1}</span><div class="dash-best-img">${x.p?.image?`<img src="${x.p.image}" alt="">`:getProductTypeIcon(x.p?.type)}</div><b>${x.name}</b><strong>${formatProductQty(x.p,x.qty)} ${x.p?.unit||'كجم'}</strong></div>`).join(''):'<div class="empty-state"><i class="fas fa-box-open"></i><p>لا توجد مبيعات أصناف اليوم</p></div>'}</div></div>
     </div>
     <div class="card dash-card"><div class="dash-card-head"><div><h3><i class="fas fa-clock-rotate-left"></i> آخر العمليات</h3><small>أحدث 4 عمليات</small></div><span class="dash-count">${customers.length} عميل</span></div><div class="dash-recent-list"><div class="dash-recent">${recent.length?recent.map(a=>`<div><span class="dash-recent-icon">${a.icon}</span><div><b>${a.kind}</b><small>${a.productName||a.person||a.customerName||'عملية'}</small></div><strong>${fmt(a.total||0)}</strong></div>`).join(''):'<div class="empty-state"><i class="fas fa-inbox"></i><p>لا توجد عمليات بعد</p></div>'}</div>${recent.length?'<button class="dash-recent-more" onclick="navigateTo(&quot;sales&quot;)">عرض كل العمليات <i class="fas fa-arrow-left" style="margin-right:6px"></i></button>':''}</div></div>
   </div>`;
@@ -3775,6 +3775,18 @@ function renderWeekChart(sales){
 }
 
 // ==================== الأصناف ====================
+
+function getProductTypeMeta(type){
+  const map={
+    cheese:{label:'جبن',icon:'🧀',className:'cheese'},
+    frozen:{label:'مجمدات',icon:'❄️',className:'frozen'},
+    pickles:{label:'مخللات',icon:'🥒',className:'pickles'},
+    other:{label:'أخرى',icon:'📦',className:'other'}
+  };
+  return map[type]||map.other;
+}
+function getProductTypeLabel(type){return getProductTypeMeta(type).label;}
+function getProductTypeIcon(type){return getProductTypeMeta(type).icon;}
 function renderProductsPage(container){
   window.pendingProductImage='';
   const products=Store.get('products')||[];
@@ -3789,7 +3801,7 @@ function renderProductsPage(container){
       <div class="form-grid">
         <div class="form-group"><label>اسم الصنف</label><input type="text" id="pName" placeholder="مثال: موتزاريلا بلدي"></div>
         <div class="form-group"><label>الباركود</label><div style="display:flex;gap:6px"><input type="text" id="pBarcode" inputmode="numeric" placeholder="اختياري"><button type="button" class="btn btn-outline" onclick="generateProductBarcode('pBarcode')" title="توليد باركود">توليد</button></div></div>
-        <div class="form-group"><label>النوع</label><select id="pType"><option value="cheese">🧀 جبن</option><option value="frozen">❄️ مجمدات</option></select></div>
+        <div class="form-group"><label>النوع</label><select id="pType"><option value="cheese">🧀 جبن</option><option value="frozen">❄️ مجمدات</option><option value="pickles">🥒 مخللات</option><option value="other">📦 أخرى</option></select></div>
         <div class="form-group" style="grid-column:1/-1"><label>صورة المنتج</label><label class="product-image-upload" for="pImage"><div class="product-image-preview" id="pImagePreview">🧀</div><div class="product-image-upload-text">اضغط لاختيار صورة المنتج<small>JPG / PNG — يتم ضغط الصورة تلقائيًا</small></div><input type="file" id="pImage" accept="image/*" style="display:none" onchange="previewProductImage(this)"></label></div>
         <div class="form-group"><label>سعر الشراء</label><input type="number" id="pPurchase" placeholder="0.00" step="0.01" inputmode="decimal" oninput="calcProductProfit()"></div>
         <div class="form-group"><label>سعر الجملة</label><input type="number" id="pWholesale" placeholder="0.00" step="0.01" inputmode="decimal"></div>
@@ -3801,7 +3813,7 @@ function renderProductsPage(container){
       </div><button class="btn btn-primary btn-block" onclick="addProduct()"><i class="fas fa-save"></i> حفظ الصنف</button>
     </div>
     <div class="card products-list-card"><div class="products-list-head"><div><h3><i class="fas fa-layer-group"></i> قائمة الأصناف</h3><small id="productsResultCount">${products.length} صنف</small></div><div class="products-view-tools"><button class="active" type="button" onclick="setProductsView('grid',this)"><i class="fas fa-grid-2"></i></button><button type="button" onclick="setProductsView('list',this)"><i class="fas fa-list"></i></button></div></div>
-      <div class="products-filters"><div class="products-search"><i class="fas fa-search"></i><input type="text" id="productSearch" placeholder="ابحث باسم الصنف..." oninput="filterProducts()"></div><div class="products-filter-buttons"><button class="active" data-filter="all" onclick="setProductFilter('all',this)">الكل</button><button data-filter="cheese" onclick="setProductFilter('cheese',this)">🧀 جبن</button><button data-filter="frozen" onclick="setProductFilter('frozen',this)">❄️ مجمدات</button><button data-filter="low" onclick="setProductFilter('low',this)">⚠️ منخفض</button></div><select id="productSort" onchange="filterProducts()"><option value="default">الترتيب الافتراضي</option><option value="name">الاسم</option><option value="stockLow">الأقل مخزونًا</option><option value="priceHigh">الأعلى سعرًا</option><option value="profitHigh">الأعلى ربحًا</option></select></div>
+      <div class="products-filters"><div class="products-search"><i class="fas fa-search"></i><input type="text" id="productSearch" placeholder="ابحث باسم الصنف..." oninput="filterProducts()"></div><div class="products-filter-buttons"><button class="active" data-filter="all" onclick="setProductFilter('all',this)">الكل</button><button data-filter="cheese" onclick="setProductFilter('cheese',this)">🧀 جبن</button><button data-filter="frozen" onclick="setProductFilter('frozen',this)">❄️ مجمدات</button><button data-filter="pickles" onclick="setProductFilter('pickles',this)">🥒 مخللات</button><button data-filter="other" onclick="setProductFilter('other',this)">📦 أخرى</button><button data-filter="low" onclick="setProductFilter('low',this)">⚠️ منخفض</button></div><select id="productSort" onchange="filterProducts()"><option value="default">الترتيب الافتراضي</option><option value="name">الاسم</option><option value="stockLow">الأقل مخزونًا</option><option value="priceHigh">الأعلى سعرًا</option><option value="profitHigh">الأعلى ربحًا</option></select></div>
       <div id="productsGrid" class="product-grid products-grid-v2"></div>
     </div>
   </div>`;
@@ -3810,12 +3822,26 @@ function renderProductsPage(container){
 function setProductFilter(filter,btn){window.productsFilter=filter;document.querySelectorAll('.products-filter-buttons button').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');filterProducts();}
 function setProductsView(view,btn){window.productsView=view;document.querySelectorAll('.products-view-tools button').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');const grid=document.getElementById('productsGrid');if(grid)grid.classList.toggle('products-list-view',view==='list');filterProducts();}
 function filterProducts(){
-  const search=(document.getElementById('productSearch')?.value||'').trim().toLowerCase(); const sort=document.getElementById('productSort')?.value||'default';
-  let products=(window.allProducts||[]).filter(p=>String(p.name||'').toLowerCase().includes(search)); const f=window.productsFilter||'all';
-  if(f==='cheese'||f==='frozen') products=products.filter(p=>p.type===f); else if(f==='low') products=products.filter(p=>Number(p.qty||0)<=Number(p.minStock||5));
-  const profit=p=>Number(p.retail||0)-Number(p.purchase||0); if(sort==='name')products.sort((a,b)=>String(a.name).localeCompare(String(b.name),'ar')); if(sort==='stockLow')products.sort((a,b)=>Number(a.qty||0)-Number(b.qty||0)); if(sort==='priceHigh')products.sort((a,b)=>Number(b.retail||0)-Number(a.retail||0)); if(sort==='profitHigh')products.sort((a,b)=>profit(b)-profit(a));
-  const grid=document.getElementById('productsGrid'); if(!grid)return; const count=document.getElementById('productsResultCount'); if(count)count.textContent=`${products.length} صنف`;
-  grid.innerHTML=products.map(p=>{const pr=profit(p),pct=Number(p.purchase)>0?(pr/Number(p.purchase)*100).toFixed(0):0,qty=Number(p.qty||0),min=Number(p.minStock||5),low=qty<=min,out=qty<=0,icon=p.type==='cheese'?'🧀':'❄️',image=p.image?`<img src="${p.image}" alt="${p.name}">`:icon;const status=out?'<span class="product-status out">نافد</span>':low?'<span class="product-status low">مخزون منخفض</span>':'<span class="product-status ok">متوفر</span>';return `<div class="product-item product-item-v2 ${out?'is-out':''}" onclick="editProduct('${p.id}')"><div class="p-image">${image}${status}</div><div class="p-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div><div class="p-type"><span class="badge badge-${p.type}">${p.type==='cheese'?'جبن':'مجمدات'}</span></div><div class="product-price-row"><b>${fmt(p.retail||0)}</b><small>قطاعي</small></div><div class="product-price-mini"><span>جملة <b>${fmt(p.wholesale||0)}</b></span><span>شراء <b>${fmt(p.purchase||0)}</b></span></div><div class="p-qty">المخزون: <b>${formatProductQty(p,qty)} ${p.unit||'كجم'}</b></div><div class="product-stock-bar"><i style="width:${Math.min(100,Math.max(3,min>0?qty/min*100:100))}%"></i></div><div class="p-profit"><i class="fas fa-arrow-trend-${pr>=0?'up':'down'}"></i> ربح ${fmt(pr)} <small>(${pct}%)</small></div><div class="p-actions"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editProduct('${p.id}')"><i class="fas fa-pen"></i> تعديل</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button></div></div>`}).join('')||'<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-box-open"></i><p>لا توجد أصناف مطابقة للبحث</p></div>';
+  const search=(document.getElementById('productSearch')?.value||'').trim().toLowerCase();
+  const sort=document.getElementById('productSort')?.value||'default';
+  let products=(window.allProducts||[]).filter(p=>String(p.name||'').toLowerCase().includes(search));
+  const f=window.productsFilter||'all';
+  if(['cheese','frozen','pickles','other'].includes(f)) products=products.filter(p=>String(p.type||'other')===f);
+  else if(f==='low') products=products.filter(p=>Number(p.qty||0)<=Number(p.minStock||5));
+  const profit=p=>Number(p.retail||0)-Number(p.purchase||0);
+  if(sort==='name')products.sort((a,b)=>String(a.name).localeCompare(String(b.name),'ar'));
+  else if(sort==='stockLow')products.sort((a,b)=>Number(a.qty||0)-Number(b.qty||0));
+  else if(sort==='priceHigh')products.sort((a,b)=>Number(b.retail||0)-Number(a.retail||0));
+  else if(sort==='profitHigh')products.sort((a,b)=>profit(b)-profit(a));
+  const grid=document.getElementById('productsGrid'); if(!grid)return;
+  const count=document.getElementById('productsResultCount'); if(count)count.textContent=`${products.length} صنف`;
+  grid.innerHTML=products.map(p=>{
+    const meta=getProductTypeMeta(p.type), pr=profit(p), pct=Number(p.purchase)>0?(pr/Number(p.purchase)*100).toFixed(0):0;
+    const qty=Number(p.qty||0),min=Number(p.minStock||5),low=qty<=min,out=qty<=0;
+    const image=p.image?`<img src="${p.image}" alt="${escapeHtml(p.name)}">`:meta.icon;
+    const status=out?'<span class="product-status out">نافد</span>':low?'<span class="product-status low">مخزون منخفض</span>':'<span class="product-status ok">متوفر</span>';
+    return `<div class="product-item product-item-v2 ${out?'is-out':''}" onclick="editProduct('${p.id}')"><div class="p-image">${image}${status}</div><div class="p-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div><div class="p-type"><span class="badge badge-${meta.className}">${meta.icon} ${meta.label}</span></div><div class="product-price-row"><b>${fmt(p.retail||0)}</b><small>قطاعي</small></div><div class="product-price-mini"><span>جملة <b>${fmt(p.wholesale||0)}</b></span><span>شراء <b>${fmt(p.purchase||0)}</b></span></div><div class="p-qty">المخزون: <b>${formatProductQty(p,qty)} ${p.unit||'كجم'}</b></div><div class="product-stock-bar"><i style="width:${Math.min(100,Math.max(3,min>0?qty/min*100:100))}%"></i></div><div class="p-profit"><i class="fas fa-arrow-trend-${pr>=0?'up':'down'}"></i> ربح ${fmt(pr)} <small>(${pct}%)</small></div><div class="p-actions"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editProduct('${p.id}')"><i class="fas fa-pen"></i> تعديل</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button></div></div>`;
+  }).join('')||'<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-box-open"></i><p>لا توجد أصناف مطابقة للبحث</p></div>';
 }
 
 function calcProductProfit(){
@@ -3863,33 +3889,27 @@ function formatProductQty(p, qty){
   return value.toFixed(decimals);
 }
 
-// الدالة النهائية لتصفية وعرض المنتجات بثلاثة أرقام عشرية
-function filterProducts() {
-  const search = document.getElementById('productSearch')?.value.toLowerCase() || '';
-  const products = (window.allProducts || []).filter(p => (p.name || '').toLowerCase().includes(search));
-  
-  const grid = document.getElementById('productsGrid');
-  if (!grid) return;
-
-  grid.innerHTML = products.map(p => {
-    const profit = (p.retail || 0) - (p.purchase || 0);
-    const pct = p.purchase > 0 ? ((profit / p.purchase) * 100).toFixed(0) : 0;
-    const icon = p.type === 'cheese' ? '🧀' : '❄️';
-    const isLow = (p.qty || 0) <= (p.minStock || 5);
-    const lowStock = isLow ? `<div style="color:var(--danger);font-size:.7rem;font-weight:800;margin-top:5px"><i class="fas fa-exclamation-triangle"></i> مخزون منخفض (${formatProductQty(p, p.qty || 0)})</div>` : '';
-    const image = p.image ? `<img src="${p.image}" alt="${p.name}">` : icon;
-
-    return `<div class="product-item" onclick="editProduct('${p.id}')">
-      <div class="p-image">${image}</div>
-      <div class="p-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
-      <div class="p-type"><span class="badge badge-${p.type}">${p.type === 'cheese' ? 'جبن' : 'مجمدات'}</span></div>
-      <div class="p-price">${fmt(p.retail || 0)}</div>
-      <div class="p-qty">المخزون: ${formatProductQty(p, p.qty || 0)} ${p.unit || 'كجم'}</div>
-      <div class="p-profit"><i class="fas fa-arrow-trend-${profit >= 0 ? 'up' : 'down'}"></i> مكسب: ${fmt(profit)} (${pct}%)</div>
-      ${lowStock}
-      <div class="p-actions"><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button></div>
-    </div>`;
-  }).join('') || '<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-box-open"></i><p>لا يوجد أصناف. أضف صنف جديد!</p></div>';
+function filterProducts(){
+  const search=(document.getElementById('productSearch')?.value||'').trim().toLowerCase();
+  const sort=document.getElementById('productSort')?.value||'default';
+  let products=(window.allProducts||[]).filter(p=>String(p.name||'').toLowerCase().includes(search));
+  const f=window.productsFilter||'all';
+  if(['cheese','frozen','pickles','other'].includes(f)) products=products.filter(p=>String(p.type||'other')===f);
+  else if(f==='low') products=products.filter(p=>Number(p.qty||0)<=Number(p.minStock||5));
+  const profit=p=>Number(p.retail||0)-Number(p.purchase||0);
+  if(sort==='name')products.sort((a,b)=>String(a.name).localeCompare(String(b.name),'ar'));
+  else if(sort==='stockLow')products.sort((a,b)=>Number(a.qty||0)-Number(b.qty||0));
+  else if(sort==='priceHigh')products.sort((a,b)=>Number(b.retail||0)-Number(a.retail||0));
+  else if(sort==='profitHigh')products.sort((a,b)=>profit(b)-profit(a));
+  const grid=document.getElementById('productsGrid'); if(!grid)return;
+  const count=document.getElementById('productsResultCount'); if(count)count.textContent=`${products.length} صنف`;
+  grid.innerHTML=products.map(p=>{
+    const meta=getProductTypeMeta(p.type), pr=profit(p), pct=Number(p.purchase)>0?(pr/Number(p.purchase)*100).toFixed(0):0;
+    const qty=Number(p.qty||0),min=Number(p.minStock||5),low=qty<=min,out=qty<=0;
+    const image=p.image?`<img src="${p.image}" alt="${escapeHtml(p.name)}">`:meta.icon;
+    const status=out?'<span class="product-status out">نافد</span>':low?'<span class="product-status low">مخزون منخفض</span>':'<span class="product-status ok">متوفر</span>';
+    return `<div class="product-item product-item-v2 ${out?'is-out':''}" onclick="editProduct('${p.id}')"><div class="p-image">${image}${status}</div><div class="p-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div><div class="p-type"><span class="badge badge-${meta.className}">${meta.icon} ${meta.label}</span></div><div class="product-price-row"><b>${fmt(p.retail||0)}</b><small>قطاعي</small></div><div class="product-price-mini"><span>جملة <b>${fmt(p.wholesale||0)}</b></span><span>شراء <b>${fmt(p.purchase||0)}</b></span></div><div class="p-qty">المخزون: <b>${formatProductQty(p,qty)} ${p.unit||'كجم'}</b></div><div class="product-stock-bar"><i style="width:${Math.min(100,Math.max(3,min>0?qty/min*100:100))}%"></i></div><div class="p-profit"><i class="fas fa-arrow-trend-${pr>=0?'up':'down'}"></i> ربح ${fmt(pr)} <small>(${pct}%)</small></div><div class="p-actions"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editProduct('${p.id}')"><i class="fas fa-pen"></i> تعديل</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button></div></div>`;
+  }).join('')||'<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-box-open"></i><p>لا توجد أصناف مطابقة للبحث</p></div>';
 }
 
 function readProductImage(file, callback){
@@ -3966,8 +3986,8 @@ function editProduct(id){
     <div class="form-grid">
       <div class="form-group"><label>الاسم</label><input id="epName" value="${p.name}"></div>
       <div class="form-group"><label>الباركود</label><div style="display:flex;gap:6px"><input id="epBarcode" inputmode="numeric" value="${p.barcode||''}" placeholder="اختياري"><button type="button" class="btn btn-outline" onclick="generateProductBarcode('epBarcode')">توليد</button></div></div>
-      <div class="form-group"><label>النوع</label><select id="epType"><option value="cheese" ${p.type==='cheese'?'selected':''}>جبن</option><option value="frozen" ${p.type==='frozen'?'selected':''}>مجمدات</option></select></div>
-      <div class="form-group" style="grid-column:1/-1"><label>صورة المنتج</label><label class="product-image-upload" for="epImage"><div class="product-image-preview" id="epImagePreview">${p.image?`<img src="${p.image}" class="ep-image-preview" alt="${p.name}">`:(p.type==='cheese'?'🧀':'❄️')}</div><div class="product-image-upload-text">تغيير صورة المنتج<small>الصورة الحالية تظهر هنا</small></div><input type="file" id="epImage" accept="image/*" style="display:none" onchange="previewEditProductImage(this)"></label></div>
+      <div class="form-group"><label>النوع</label><select id="epType"><option value="cheese" ${p.type==='cheese'?'selected':''}>🧀 جبن</option><option value="frozen" ${p.type==='frozen'?'selected':''}>❄️ مجمدات</option><option value="pickles" ${p.type==='pickles'?'selected':''}>🥒 مخللات</option><option value="other" ${p.type==='other'?'selected':''}>📦 أخرى</option></select></div>
+      <div class="form-group" style="grid-column:1/-1"><label>صورة المنتج</label><label class="product-image-upload" for="epImage"><div class="product-image-preview" id="epImagePreview">${p.image?`<img src="${p.image}" class="ep-image-preview" alt="${p.name}">`:getProductTypeIcon(p.type)}</div><div class="product-image-upload-text">تغيير صورة المنتج<small>الصورة الحالية تظهر هنا</small></div><input type="file" id="epImage" accept="image/*" style="display:none" onchange="previewEditProductImage(this)"></label></div>
       <div class="form-group"><label>سعر الشراء (التكلفة)</label><input type="number" id="epPurchase" value="${p.purchase||0}" step="0.01"></div>
       <div class="form-group"><label>الجملة</label><input type="number" id="epWholesale" value="${p.wholesale||0}" step="0.01"></div>
       <div class="form-group"><label>القطاعي</label><input type="number" id="epRetail" value="${p.retail||0}" step="0.01"></div>
@@ -4107,7 +4127,7 @@ function renderSalesPage(container){
       <div class="pos-panel-head pos-products-head"><div><h3><i class="fas fa-boxes-stacked" style="color:var(--primary);margin-left:7px"></i> إضافة أصناف للسلة</h3><small>اضغط على المنتج لإضافته، أو اختر الوزن للمنتجات التي تباع بالكيلو</small></div><div class="pos-live-dot"><span></span> جاهز للبيع</div></div>
       <div class="pos-products-body">
         <div class="pos-search-row"><div class="pos-search-main"><i class="fas fa-search"></i><input type="text" id="saleProductSearch" placeholder="ابحث باسم المنتج أو الباركود..." oninput="renderSaleProductGrid()"></div><button class="pos-scan-btn" type="button" onclick="openPOSBarcodeScanner()"><i class="fas fa-barcode"></i><span>باركود</span></button></div>
-        <div class="pos-category-row pos-category-modern"><button class="active" data-cat="all" onclick="setPOSCategory('all',this)"><i class="fas fa-border-all"></i> الكل</button><button data-cat="cheese" onclick="setPOSCategory('cheese',this)"><i class="fas fa-cheese"></i> الجبن</button><button data-cat="frozen" onclick="setPOSCategory('frozen',this)"><i class="fas fa-snowflake"></i> المجمدات</button><button data-cat="best" onclick="setPOSCategory('best',this)"><i class="fas fa-star"></i> الأكثر مبيعًا</button></div>
+        <div class="pos-category-row pos-category-modern"><button class="active" data-cat="all" onclick="setPOSCategory('all',this)"><i class="fas fa-border-all"></i> الكل</button><button data-cat="cheese" onclick="setPOSCategory('cheese',this)"><i class="fas fa-cheese"></i> الجبن</button><button data-cat="frozen" onclick="setPOSCategory('frozen',this)"><i class="fas fa-snowflake"></i> المجمدات</button><button data-cat="pickles" onclick="setPOSCategory('pickles',this)"><i class="fas fa-lemon"></i> المخللات</button><button data-cat="other" onclick="setPOSCategory('other',this)"><i class="fas fa-box"></i> أخرى</button><button data-cat="best" onclick="setPOSCategory('best',this)"><i class="fas fa-star"></i> الأكثر مبيعًا</button></div>
         <div class="pos-products-tools"><span id="posProductsResult">0 منتج</span><select id="saleProductSort" onchange="setPOSSort(this.value)"><option value="default">الترتيب: الافتراضي</option><option value="best">الأكثر مبيعًا</option><option value="priceLow">السعر: الأقل</option><option value="priceHigh">السعر: الأعلى</option><option value="stockLow">الأقل مخزونًا</option></select></div>
         <div id="saleProductGrid" class="sale-product-grid pos-product-grid-modern"></div>
       </div>
@@ -5048,7 +5068,7 @@ function renderSaleProductGrid(){
   else if(sort==='stockLow')products.sort((a,b)=>(Number(a.qty)||0)-(Number(b.qty)||0));
   const result=document.getElementById('posProductsResult');if(result)result.textContent=`${products.length} منتج`;
   grid.innerHTML=products.map(p=>{
-    const icon=p.type==='cheese'?'🧀':'❄️';
+    const icon=getProductTypeIcon(p.type);
     const img=p.image?`<img src="${p.image}" alt="${p.name}">`:icon;
     const out=(p.qty||0)<=0;
     const sold=soldMap[p.id]||0;
@@ -5084,7 +5104,7 @@ function updateSaleSelectedPreview(){
   const id=document.getElementById('sProduct')?.value;
   const p=(window.saleProducts||[]).find(x=>x.id===id);
   if(!box||!p){if(box)box.style.display='none';return;}
-  const icon=p.type==='cheese'?'🧀':'❄️';
+  const icon=getProductTypeIcon(p.type);
   const visual=p.image?`<img src="${p.image}" alt="${p.name}">`:`<div class="ssp-icon">${icon}</div>`;
   box.innerHTML=`${visual}<div class="ssp-info"><strong>${escapeHtml(p.name)}</strong><span>قطاعي: ${fmt(p.retail||0)} | جملة: ${fmt(p.wholesale||0)} | المتاح: ${formatProductQty(p, p.qty||0)} ${p.unit||'كجم'}</span></div><i class="fas fa-check-circle" style="color:var(--success);font-size:1.2rem"></i>`;
   box.style.display='flex';
@@ -5840,48 +5860,117 @@ function clearPurchaseFilters(){
   ['purchaseSearch','purchaseFrom','purchaseTo','purchaseSupplierFilter'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   renderPurchasesTable();
 }
+function purchaseProductOptions(selected=''){
+  return (Store.get('products')||[]).map(p=>`<option value="${escapeHtml(String(p.id))}" ${String(p.id)===String(selected)?'selected':''}>${escapeHtml(p.name)}</option>`).join('');
+}
+function purchaseSupplierOptions(selected=''){
+  return (Store.get('suppliers')||[]).map(s=>`<option value="${escapeHtml(String(s.id))}" ${String(s.id)===String(selected)?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
+}
+function purchaseLineHtml(index,row={}){
+  const pid=row.productId||'';
+  return `<div class="purchase-line-v185" data-purchase-line="${index}">
+    <label>الصنف<select id="purProduct_${index}" onchange="updatePurchaseInvoicePreview()">${purchaseProductOptions(pid)}</select></label>
+    <label>الكمية<input type="number" id="purQty_${index}" value="${row.qty??''}" placeholder="0" step="0.001" min="0" inputmode="decimal" oninput="updatePurchaseInvoicePreview()"></label>
+    <label>سعر الوحدة<input type="number" id="purPrice_${index}" value="${row.price??''}" placeholder="0.00" step="0.01" min="0" inputmode="decimal" oninput="updatePurchaseInvoicePreview()"></label>
+    <button type="button" class="remove-line" onclick="removePurchaseLine(${index})" title="حذف الصنف">×</button>
+  </div>`;
+}
+function initPurchaseInvoiceRows(rows=[{}]){
+  window.purchaseInvoiceRows=Math.max(1,rows.length);
+  const box=document.getElementById('purchaseInvoiceLines');
+  if(box)box.innerHTML=rows.map((r,i)=>purchaseLineHtml(i,r)).join('');
+  updatePurchaseInvoicePreview();
+}
+function readPurchaseInvoiceLines(){
+  const box=document.getElementById('purchaseInvoiceLines');
+  if(!box)return [];
+  return [...box.querySelectorAll('[data-purchase-line]')].map((el)=>{
+    const i=Number(el.getAttribute('data-purchase-line'));
+    const productId=document.getElementById(`purProduct_${i}`)?.value||'';
+    const qty=Number(document.getElementById(`purQty_${i}`)?.value||0);
+    const price=Number(document.getElementById(`purPrice_${i}`)?.value||0);
+    const product=(Store.get('products')||[]).find(p=>String(p.id)===String(productId));
+    return {productId,qty,price,product};
+  });
+}
+function addPurchaseLine(){
+  const rows=readPurchaseInvoiceLines().map(r=>({productId:r.productId,qty:r.qty||'',price:r.price||''}));
+  rows.push({});
+  initPurchaseInvoiceRows(rows);
+  setTimeout(()=>document.getElementById(`purProduct_${rows.length-1}`)?.focus(),40);
+}
+function removePurchaseLine(index){
+  const rows=readPurchaseInvoiceLines().map(r=>({productId:r.productId,qty:r.qty||'',price:r.price||''}));
+  if(rows.length<=1)return showToast('يجب أن تحتوي الفاتورة على صنف واحد على الأقل','info');
+  rows.splice(index,1);
+  initPurchaseInvoiceRows(rows);
+}
+function updatePurchaseInvoicePreview(){
+  const rows=readPurchaseInvoiceLines();
+  const total=rows.reduce((n,r)=>n+(r.qty>0&&r.price>0?r.qty*r.price:0),0);
+  const fullBtn=document.getElementById('purFullPaidBtn');
+  const paidInput=document.getElementById('purPaid');
+  let paid=Number(paidInput?.value||0);
+  if(fullBtn?.classList.contains('active')){paid=total;if(paidInput)paidInput.value=total>0?String(total):'';}
+  paid=Math.max(0,Math.min(total,paid));
+  const remaining=Math.max(0,total-paid);
+  const set=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=fmt(val);};
+  set('purTotalPreview',total);set('purPaidPreview',paid);set('purRemainingPreview',remaining);
+  const st=document.getElementById('purPaymentStatus');if(st)st.textContent=fullBtn?.classList.contains('active')?'مدفوع بالكامل':(remaining>0?'آجل / جزئي':'مدفوع بالكامل');
+  const count=document.getElementById('purInvoiceLineCount');if(count)count.textContent=`${rows.filter(r=>r.productId).length} أصناف`;
+}
+function updatePurchasePreview(){updatePurchaseInvoicePreview();}
+function clearPurchaseFilters(){
+  ['purchaseSearch','purchaseFrom','purchaseTo','purchaseSupplierFilter'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  renderPurchasesTable();
+}
 function renderPurchasesPage(container){
   const products=Store.get('products')||[];
   const suppliers=Store.get('suppliers')||[];
-  const opts=products.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-  const supplierOpts=suppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   const purchases=Store.get('purchases')||[];
+  const batchCount=new Set(purchases.map(p=>p.purchaseBatchId||p.id)).size;
   const total=purchases.reduce((n,x)=>n+Number(x.total??(Number(x.qty||0)*Number(x.price||0))),0);
   const qty=purchases.reduce((n,x)=>n+Number(x.qty||0),0);
+  const supplierOpts=suppliers.map(s=>`<option value="${escapeHtml(String(s.id))}">${escapeHtml(s.name)}</option>`).join('');
   container.innerHTML=`<div class="fade-in purchases-v6">
-    <div class="purchases-hero-v6"><div><span>إدارة المشتريات</span><h2><i class="fas fa-cart-flatbed"></i> المشتريات</h2><small>تسجيل ومتابعة المشتريات والموردين والمخزون</small></div><div class="purchases-hero-icon-v6"><i class="fas fa-boxes-stacked"></i></div></div>
+    <div class="purchases-hero-v6"><div><span>إدارة المشتريات</span><h2><i class="fas fa-cart-flatbed"></i> المشتريات</h2><small>تسجيل فاتورة واحدة تحتوي على صنف أو عدة أصناف مع المورد والسداد والمخزون</small></div><div class="purchases-hero-icon-v6"><i class="fas fa-boxes-stacked"></i></div></div>
     <div class="purchases-stats-v6">
-      <div><i class="fas fa-file-invoice"></i><span>العمليات</span><strong>${purchases.length}</strong></div>
+      <div><i class="fas fa-file-invoice"></i><span>الفواتير</span><strong>${batchCount}</strong></div>
       <div><i class="fas fa-weight-hanging"></i><span>الكميات</span><strong>${qty.toLocaleString('ar-EG',{maximumFractionDigits:3})}</strong></div>
       <div><i class="fas fa-coins"></i><span>الإجمالي</span><strong>${fmt(total)}</strong></div>
     </div>
     <section class="purchase-box-v6">
-      <div class="purchase-box-title-v6"><span><i class="fas fa-plus-circle"></i> تسجيل عملية شراء</span><small>أدخل البيانات وسيتم حساب الإجمالي تلقائيًا</small></div>
+      <div class="purchase-box-title-v6"><span><i class="fas fa-file-invoice"></i> فاتورة شراء جديدة</span><small id="purInvoiceLineCount">1 أصناف</small></div>
+      <div class="purchase-invoice-tools">
+        <div class="purchase-invoice-no">🧾 فاتورة متعددة الأصناف</div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="addPurchaseLine()"><i class="fas fa-plus"></i> إضافة صنف للفاتورة</button>
+      </div>
       <div class="purchase-form-v6">
         <label>التاريخ<input type="date" id="purDate" value="${today()}" class="sales-date-filter"></label>
-        <label>الصنف<select id="purProduct">${opts}</select></label>
-        <label>الكمية<input type="number" id="purQty" placeholder="0" step="0.001" min="0" oninput="updatePurchasePreview()"></label>
-        <label>سعر الشراء للوحدة<input type="number" id="purPrice" placeholder="0.00" step="0.01" min="0" oninput="updatePurchasePreview()"></label>
         <label>المورد<select id="purSupplier"><option value="">بدون مورد</option>${supplierOpts}</select></label>
-        <label>المبلغ المدفوع<input type="number" id="purPaid" placeholder="0.00" step="0.01" min="0" oninput="updatePurchasePreview()"></label>
         <label class="purchase-note-v6">ملاحظات<input type="text" id="purNote" placeholder="اختياري"></label>
       </div>
-      <div class="purchase-total-v6"><span>إجمالي العملية</span><strong id="purTotalPreview">0 ج.م</strong></div>
-      <div class="purchase-payment-v9">
-        <div class="pay-box"><small>المدفوع</small><strong id="purPaidPreview">0 ج.م</strong></div>
-        <div class="pay-box remaining"><small>آجل / متبقي</small><strong id="purRemainingPreview">0 ج.م</strong></div>
-        <div class="pay-box"><small>حالة السداد</small><strong id="purPaymentStatus">آجل / جزئي</strong></div>
+      <div id="purchaseInvoiceLines"></div>
+      <div class="purchase-invoice-summary-v185">
+        <div><small>إجمالي الفاتورة</small><strong id="purTotalPreview">0 ج.م</strong></div>
+        <div><small>المدفوع</small><strong id="purPaidPreview">0 ج.م</strong></div>
+        <div><small>المتبقي</small><strong id="purRemainingPreview">0 ج.م</strong></div>
+      </div>
+      <div style="text-align:center;font-size:.7rem;color:var(--text-muted);margin:6px 0">حالة السداد: <strong id="purPaymentStatus">آجل / جزئي</strong></div>
+
+      <div class="purchase-form-v6" style="margin-top:8px">
+        <label>المبلغ المدفوع<input type="number" id="purPaid" placeholder="0.00" step="0.01" min="0" oninput="updatePurchaseInvoicePreview()"></label>
       </div>
       <div class="purchase-credit-row">
         <button type="button" id="purFullPaidBtn" onclick="setPurchasePayment('full')">مدفوع بالكامل</button>
-        <button type="button" id="purCreditBtn" onclick="setPurchasePayment('credit')">آجل</button>
+        <button type="button" id="purCreditBtn" onclick="setPurchasePayment('credit')">آجل / جزئي</button>
       </div>
-      <button type="button" class="purchase-save-v6" onclick="addPurchase()"><i class="fas fa-check-circle"></i> حفظ عملية الشراء</button>
+      <button type="button" class="purchase-save-v6" onclick="addPurchase()"><i class="fas fa-check-circle"></i> حفظ فاتورة الشراء</button>
     </section>
     <section class="purchase-box-v6">
-      <div class="purchase-box-title-v6"><span><i class="fas fa-clock-rotate-left"></i> سجل المشتريات</span><small>بحث وفلترة وتعديل وحذف العمليات</small></div>
+      <div class="purchase-box-title-v6"><span><i class="fas fa-clock-rotate-left"></i> سجل المشتريات</span><small>الفواتير مجمعة حسب رقم الفاتورة</small></div>
       <div class="purchase-filters-v6">
-        <div class="purchase-search-v6"><i class="fas fa-search"></i><input id="purchaseSearch" placeholder="ابحث بالصنف أو المورد أو الملاحظات" oninput="renderPurchasesTable()"></div>
+        <div class="purchase-search-v6"><i class="fas fa-search"></i><input id="purchaseSearch" placeholder="ابحث بالصنف أو المورد أو الملاحظات أو رقم الفاتورة" oninput="renderPurchasesTable()"></div>
         <input type="date" id="purchaseFrom" onchange="renderPurchasesTable()" aria-label="من تاريخ" class="sales-date-filter">
         <input type="date" id="purchaseTo" onchange="renderPurchasesTable()" aria-label="إلى تاريخ" class="sales-date-filter">
         <select id="purchaseSupplierFilter" onchange="renderPurchasesTable()"><option value="">كل الموردين</option>${supplierOpts}</select>
@@ -5890,18 +5979,15 @@ function renderPurchasesPage(container){
       <div id="purchasesCards" class="purchases-cards-v6"></div>
     </section>
   </div>`;
+  initPurchaseInvoiceRows([{}]);
   setPurchasePayment('credit');
   renderPurchasesTable();
 }
-
 function setPurchasePayment(mode){
-  const qty=Number(document.getElementById('purQty')?.value||0);
-  const price=Number(document.getElementById('purPrice')?.value||0);
-  const total=Math.max(0,qty*price);
+  const total=readPurchaseInvoiceLines().reduce((n,r)=>n+(r.qty>0&&r.price>0?r.qty*r.price:0),0);
   const paid=document.getElementById('purPaid');
   const fullBtn=document.getElementById('purFullPaidBtn');
   const creditBtn=document.getElementById('purCreditBtn');
-
   if(mode==='full'){
     if(fullBtn)fullBtn.classList.add('active');
     if(creditBtn)creditBtn.classList.remove('active');
@@ -5911,38 +5997,63 @@ function setPurchasePayment(mode){
     if(creditBtn)creditBtn.classList.add('active');
     if(fullBtn)fullBtn.classList.remove('active');
   }
-  updatePurchasePreview();
+  updatePurchaseInvoicePreview();
 }
-
 function addPurchase(){
-  const pid=document.getElementById('purProduct').value;
-  const qty=parseFloat(document.getElementById('purQty').value)||0;
-  const price=parseFloat(document.getElementById('purPrice').value)||0;
-  const total=qty*price;
-  let paid=parseFloat(document.getElementById('purPaid')?.value)||0;
-  if(!pid||qty<=0||price<=0)return showToast('أكمل البيانات','warning');
+  const rows=readPurchaseInvoiceLines();
+  const valid=rows.filter(r=>r.productId||r.qty||r.price);
+  if(!valid.length)return showToast('أضف صنفًا واحدًا على الأقل','warning');
+  if(valid.some(r=>!r.productId||r.qty<=0||r.price<=0))return showToast('أكمل الصنف والكمية وسعر الشراء لكل سطر','warning');
+  const total=valid.reduce((n,r)=>n+r.qty*r.price,0);
+  let paid=Number(document.getElementById('purPaid')?.value||0);
   if(paid<0)paid=0;
-  if(paid>total)return showToast('المبلغ المدفوع أكبر من إجمالي الشراء','warning');
+  if(paid>total+0.0001)return showToast('المبلغ المدفوع أكبر من إجمالي الفاتورة','warning');
   const remaining=Math.max(0,total-paid);
-  const products=Store.get('products');
-  const product=products.find(p=>p.id===pid);if(!product)return;
-  const netUnitPrice=qty>0?total/qty:price;
-  const oldQty=Number(product.qty||0);
-  const oldPurchasePrice=Number(product.purchase||0);
-  const totalNewQty=oldQty+qty;
-  const avgPurchasePrice=totalNewQty>0?((oldQty*oldPurchasePrice)+(qty*netUnitPrice))/totalNewQty:netUnitPrice;
-  Store.update('products',pid,{qty:totalNewQty,purchase:avgPurchasePrice});
-  const supplierId=document.getElementById('purSupplier').value;
-  const supplierName=supplierId?(Store.get('suppliers').find(s=>s.id===supplierId)?.name||''):'بائع/مورد';
+  const date=document.getElementById('purDate')?.value||today();
+  const supplierId=document.getElementById('purSupplier')?.value||'';
+  const suppliers=Store.get('suppliers')||[];
+  const supplierName=supplierId?(suppliers.find(s=>String(s.id)===String(supplierId))?.name||''):'بائع/مورد';
+  const note=(document.getElementById('purNote')?.value||'').trim();
   const purchaseBatchId='PUR-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
-  Store.add('purchases',{purchaseBatchId,date:document.getElementById('purDate').value||today(),productId:pid,productName:product.name,qty,price,total,paid,remaining,supplierId:supplierId||null,supplierName,note:document.getElementById('purNote').value,paymentMethod:remaining>0?'credit':'cash'});
-  if(remaining>0){
-    Store.add('debts',{purchaseBatchId,sourcePurchaseId:null,supplierId:supplierId||null,date:document.getElementById('purDate').value||today(),person:supplierName,type:'علينا',amount:remaining,paidAmount:0,paymentHistory:[],debtVersion:2,due:'',note:`آجل من شراء ${product.name}`,paid:false,source:'purchase',purchaseTotal:total});
+  const invoiceNo='PUR-'+date.replace(/-/g,'')+'-'+String(Date.now()).slice(-6);
+  const snapshot={};
+  ['products','purchases','debts','auditLog'].forEach(k=>{try{snapshot[k]=JSON.parse(JSON.stringify(Store.get(k)||[]));}catch(e){snapshot[k]=[];}});
+  try{
+    valid.forEach((r)=>{
+      const product=(Store.get('products')||[]).find(p=>String(p.id)===String(r.productId));
+      if(!product)throw new Error('PRODUCT_NOT_FOUND');
+      const lineTotal=r.qty*r.price;
+      const linePaid=total>0?paid*(lineTotal/total):0;
+      const lineRemaining=Math.max(0,lineTotal-linePaid);
+      const oldQty=Number(product.qty||0);
+      const oldPurchasePrice=Number(product.purchase||0);
+      const newQty=oldQty+r.qty;
+      const avgPurchasePrice=newQty>0?((oldQty*oldPurchasePrice)+(r.qty*r.price))/newQty:r.price;
+      Store.update('products',product.id,{qty:newQty,purchase:avgPurchasePrice});
+      Store.add('purchases',{
+        purchaseBatchId,invoiceNo,date,productId:product.id,productName:product.name,qty:r.qty,price:r.price,total:lineTotal,
+        invoiceTotal:total,paid:linePaid,remaining:lineRemaining,invoicePaid:paid,invoiceRemaining:remaining,
+        supplierId:supplierId||null,supplierName,note,paymentMethod:remaining>0?'credit':'cash'
+      });
+    });
+    if(remaining>0){
+      Store.add('debts',{
+        purchaseBatchId,invoiceNo,sourcePurchaseId:null,supplierId:supplierId||null,date,
+        person:supplierName,type:'علينا',amount:remaining,paidAmount:0,paymentHistory:[],debtVersion:2,due:'',
+        note:`آجل من فاتورة الشراء ${invoiceNo}${valid.length>1?' — متعددة الأصناف':''}`,
+        paid:false,source:'purchase',purchaseTotal:total
+      });
+    }
+    closeModal?.();
+    showToast(remaining>0?`✅ تم حفظ الفاتورة ${invoiceNo} — المتبقي ${fmt(remaining)}`:`✅ تم حفظ الفاتورة ${invoiceNo} — ${valid.length} أصناف بإجمالي ${fmt(total)}`,'success');
+    renderPurchasesPage(document.getElementById('contentArea'));
+    if(typeof renderCashboxData==='function')renderCashboxData();
+  }catch(error){
+    ['products','purchases','debts','auditLog'].forEach(k=>{try{Store.set(k,snapshot[k]||[]);}catch(e){}});
+    console.error('فشل حفظ فاتورة الشراء المتعددة وتم التراجع:',error);
+    showToast('❌ تعذر حفظ فاتورة الشراء — تم التراجع عن العملية بالكامل','error');
   }
-  showToast(remaining>0?'✅ تم الشراء وتسجيل المتبقي آجل: '+fmt(remaining):'✅ تم الشراء: '+fmt(total));
-  renderPurchasesPage(document.getElementById('contentArea'));
 }
-
 function renderPurchasesTable(){
   const target=document.getElementById('purchasesCards'); if(!target)return;
   const purchases=Store.get('purchases')||[];
@@ -5950,80 +6061,52 @@ function renderPurchasesTable(){
   const from=document.getElementById('purchaseFrom')?.value||'';
   const to=document.getElementById('purchaseTo')?.value||'';
   const supplier=(document.getElementById('purchaseSupplierFilter')?.value||'');
-  const products=Store.get('products')||[];
-
-  const filtered=purchases.filter(p=>{
-    const text=`${p.productName||''} ${p.supplierName||''} ${p.note||''}`.toLowerCase();
-    return (!q||text.includes(q))
-      &&(!from||(p.date||'')>=from)
-      &&(!to||(p.date||'')<=to)
-      &&(!supplier||String(p.supplierId||'')===String(supplier));
-  }).sort((a,b)=>{
-    const da=String(a.date||''), db=String(b.date||'');
-    return db.localeCompare(da);
+  const groups=new Map();
+  purchases.forEach(p=>{
+    const key=String(p.purchaseBatchId||p.invoiceNo||p.id);
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(p);
   });
-
-  target.innerHTML=filtered.map(p=>{
-    const total=Number(p.total ?? (Number(p.qty||0)*Number(p.price||0)));
-    const linkedDebt=(Store.get('debts')||[]).find(d=>
-      d.source==='purchase' &&
-      d.type==='علينا' &&
-      String(d.purchaseBatchId||'')===String(p.purchaseBatchId||'')
-    );
-    const debtRemaining=linkedDebt
-      ? Math.max(0,Number(linkedDebt.amount||0)-Number(linkedDebt.paidAmount||0))
-      : Math.max(0,Number(p.remaining||0));
-
+  const filtered=[...groups.values()].filter(lines=>{
+    const text=lines.map(p=>`${p.productName||''} ${p.supplierName||''} ${p.note||''} ${p.invoiceNo||''}`).join(' ').toLowerCase();
+    const date=lines[0]?.date||'';
+    const sup=lines[0]?.supplierId||'';
+    return (!q||text.includes(q))&&(!from||date>=from)&&(!to||date<=to)&&(!supplier||String(sup)===String(supplier));
+  }).sort((a,b)=>String(b[0]?.date||'').localeCompare(String(a[0]?.date||'')));
+  target.innerHTML=filtered.map(lines=>{
+    const first=lines[0]||{};
+    const total=lines.reduce((n,p)=>n+Number(p.total??(Number(p.qty||0)*Number(p.price||0))),0);
+    const initialPaid=lines.reduce((n,p)=>n+Math.max(0,Number(p.paid||0)),0);
+    const linkedDebt=(Store.get('debts')||[]).find(d=>d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===String(first.purchaseBatchId||''));
+    const debtRemaining=linkedDebt?getDebtRemaining(linkedDebt):Math.max(0,total-initialPaid);
     const totalPaid=Math.max(0,total-debtRemaining);
-    const initialPaid=Math.max(0,Number(p.paid||0));
-    const statusClass=debtRemaining<=0.005?'paid':(initialPaid>0?'partial':'due');
-    const statusText=debtRemaining<=0.005?'مدفوع بالكامل':(initialPaid>0?'مدفوع جزئي':'آجل');
-    const statusIcon=debtRemaining<=0.005?'fa-circle-check':(initialPaid>0?'fa-hourglass-half':'fa-clock');
-
-    const product=products.find(x=>String(x.id)===String(p.productId));
-    const qty=Number(p.qty||0);
-    const qtyText=formatProductQty(product||{name:p.productName},qty);
-    const unit=product?.unit||'كجم';
-    const pid=String(p.id||'').replace(/'/g,"\\'");
-
-    return `<article class="purchase-compact-card">
-      <div class="pc-head">
-        <div class="pc-title">
-          <span class="pc-icon"><i class="fas fa-cart-flatbed"></i></span>
-          <div>
-            <b>فاتورة شراء</b>
-            <small><i class="fas fa-calendar-day"></i> ${escapeHtml(p.date||'-')}</small>
-          </div>
-        </div>
-        <span class="pc-status ${statusClass}">
-          <i class="fas ${statusIcon}"></i>${statusText}
-        </span>
+    const statusClass=debtRemaining<=0.005?'paid':(totalPaid>0?'partial':'due');
+    const statusText=debtRemaining<=0.005?'مدفوع بالكامل':(totalPaid>0?'مدفوع جزئي':'آجل');
+    const pid=String(first.id||'').replace(/'/g,"\\'");
+    const batch=String(first.purchaseBatchId||first.id);
+    const items=lines.map(p=>{
+      const product=(Store.get('products')||[]).find(x=>String(x.id)===String(p.productId));
+      const qtyText=formatProductQty(product||{name:p.productName},Number(p.qty||0));
+      return `<div class="purchase-invoice-item-v185"><div><strong>${escapeHtml(p.productName||'صنف')}</strong><div class="item-meta">${qtyText} ${escapeHtml(product?.unit||'كجم')} × ${fmt(p.price||0)}</div></div><b>${fmt(p.total||0)}</b></div>`;
+    }).join('');
+    const editBtn=lines.length===1
+      ?`<button type="button" class="edit" onclick="editPurchase('${pid}')"><i class="fas fa-pen"></i> تعديل</button>`
+      :`<button type="button" class="edit" onclick="showToast('ℹ️ الفاتورة متعددة الأصناف — عدّل الأصناف من خلال فاتورة جديدة بدلًا من تعديل سطر منفرد','info')"><i class="fas fa-layer-group"></i> ${lines.length} أصناف</button>`;
+    return `<article class="purchase-invoice-card-v185">
+      <div class="purchase-invoice-head-v185">
+        <div><strong>🧾 ${escapeHtml(first.invoiceNo||('فاتورة '+batch.slice(-6)))}</strong><small>${escapeHtml(first.date||'-')} • ${escapeHtml(first.supplierName||'بدون مورد')} • ${lines.length} أصناف</small></div>
+        <span class="pc-status ${statusClass}">${statusText}</span>
       </div>
-
-      <div class="pc-main">
-        <div class="pc-product">
-          <strong>${escapeHtml(p.productName||'شراء')}</strong>
-          <span><i class="fas fa-truck-field"></i> ${escapeHtml(p.supplierName||'بدون مورد')}</span>
-          <small><i class="fas fa-box"></i> ${escapeHtml(qtyText)} ${escapeHtml(unit)}</small>
-        </div>
-        <div class="pc-total"><small>الإجمالي</small><b>${fmt(total)}</b></div>
+      <div class="purchase-invoice-items-v185">${items}</div>
+      <div class="purchase-invoice-totals-v185">
+        <div><small>الإجمالي</small><b>${fmt(total)}</b></div>
+        <div><small>المدفوع</small><b>${fmt(totalPaid)}</b></div>
+        <div><small>المتبقي</small><b>${debtRemaining>0?fmt(debtRemaining):'مكتمل'}</b></div>
       </div>
-
-      <div class="pc-grid">
-        <div><span>الكمية</span><b>${escapeHtml(qtyText)} ${escapeHtml(unit)}</b></div>
-        <div><span>سعر الوحدة</span><b>${fmt(p.price||0)}</b></div>
-        <div><span>المدفوع</span><b class="paid">${fmt(totalPaid)}</b></div>
-        <div><span>${debtRemaining>0?'المتبقي':'الحالة'}</span><b class="${debtRemaining>0?'due':'paid'}">${debtRemaining>0?fmt(debtRemaining):'مكتمل'}</b></div>
-      </div>
-
-      ${p.note?`<div class="pc-note"><i class="fas fa-note-sticky"></i>${escapeHtml(p.note)}</div>`:''}
-
       <div class="pc-actions">
-        ${debtRemaining>0
-          ?`<button type="button" class="pay" onclick="openPurchaseInvoicePayment('${pid}')"><i class="fas fa-money-bill-wave"></i> سداد</button>`
-          :`<button type="button" class="pay" disabled><i class="fas fa-check"></i> مسدد</button>`}
-        <button type="button" class="edit" onclick="editPurchase('${pid}')"><i class="fas fa-pen"></i> تعديل</button>
-        <button type="button" class="delete" onclick="deletePurchase('${pid}')"><i class="fas fa-trash"></i></button>
+        ${debtRemaining>0?`<button type="button" class="pay" onclick="openPurchaseInvoicePayment('${pid}')"><i class="fas fa-money-bill-wave"></i> سداد الفاتورة</button>`:`<button type="button" class="pay" disabled><i class="fas fa-check"></i> مسدد</button>`}
+        ${editBtn}
+        <button type="button" class="delete" onclick="deletePurchase('${pid}')"><i class="fas fa-trash"></i> حذف الفاتورة</button>
       </div>
     </article>`;
   }).join('')||`<div class="purchase-empty-v6"><i class="fas fa-box-open"></i><strong>لا توجد مشتريات</strong><span>غيّر البحث أو الفلاتر لعرض العمليات</span></div>`;
@@ -6162,82 +6245,37 @@ function deletePurchase(id){
   const purchases=Store.get('purchases')||[];
   const purchase=purchases.find(p=>String(p.id)===String(id));
   if(!purchase)return showToast('❌ عملية الشراء غير موجودة','error');
-
-  const debts=Store.get('debts')||[];
-  const linkedDebts=debts.filter(d=>
-    d.source==='purchase' &&
-    d.type==='علينا' &&
-    String(d.purchaseBatchId||'')===String(purchase.purchaseBatchId||'')
-  );
-
-  const historyTotal=linkedDebts.reduce((sum,d)=>{
-    const hist=Array.isArray(d.paymentHistory)?d.paymentHistory:[];
-    return sum+hist.reduce((n,h)=>n+Math.max(0,Number(h?.amount)||0),0);
-  },0);
-  const paidNow=Math.max(0,Number(purchase.paid||0));
-  const debtPaid=linkedDebts.reduce((sum,d)=>sum+Math.max(0,Number(d.paidAmount)||0),0);
-  const totalPaid=Math.max(paidNow,debtPaid,historyTotal);
-  const total=Number(purchase.total||purchase.qty*purchase.price||0);
-  const remaining=Math.max(0,total-totalPaid);
-
-  const supplierName=purchase.supplierName||linkedDebts[0]?.person||'المورد';
-  const msg=`⚠️ حذف عملية الشراء
-
-الصنف: ${purchase.productName||'شراء'}
-الإجمالي: ${fmt(total)}
-المدفوع/المسدّد: ${fmt(totalPaid)}
-المتبقي: ${fmt(remaining)}
-
-سيتم:
-• عكس كمية الشراء من المخزون.
-• حذف حساب المديونية المرتبط بالعملية.
-• عكس أي مبلغ مدفوع أو سداد سابق من الخزنة.
-• حذف العملية من سجل المشتريات.
-
-المورد: ${supplierName}
-
-هل أنت متأكد من حذف عملية الشراء بالكامل؟`;
-
-  if(!confirm(msg))return;
-
+  const batchId=String(purchase.purchaseBatchId||purchase.id);
+  const batch=purchases.filter(p=>String(p.purchaseBatchId||p.id)===batchId);
+  const debts=(Store.get('debts')||[]).filter(d=>d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===batchId);
+  const total=batch.reduce((n,p)=>n+Number(p.total||0),0);
+  const paid=batch.reduce((n,p)=>n+Math.max(0,Number(p.paid||0)),0);
+  const supplierName=purchase.supplierName||debts[0]?.person||'المورد';
+  const items=batch.map(p=>`• ${p.productName||'صنف'} — ${formatProductQty((Store.get('products')||[]).find(x=>String(x.id)===String(p.productId))||{},Number(p.qty||0))}`).join('\\n');
+  if(!confirm(`⚠️ حذف فاتورة الشراء بالكامل\\n\\n${purchase.invoiceNo||'فاتورة شراء'}\\nالمورد: ${supplierName}\\n${items}\\n\\nالإجمالي: ${fmt(total)}\\nالمدفوع: ${fmt(paid)}\\n\\nسيتم عكس كل الأصناف من المخزون وحذف الدين المرتبط بالفاتورة.\\nهل أنت متأكد؟`))return;
   const keys=['products','purchases','debts','auditLog'];
-  const snapshot={};
-  keys.forEach(k=>{
-    try{snapshot[k]=JSON.parse(JSON.stringify(Store.get(k)||[]));}
-    catch(e){snapshot[k]=[];}
-  });
-
+  const snapshot={};keys.forEach(k=>{try{snapshot[k]=JSON.parse(JSON.stringify(Store.get(k)||[]));}catch(e){snapshot[k]=[];}});
   try{
-    const productId=purchase.productId;
-    const products=Store.get('products')||[];
-    const product=products.find(p=>String(p.id)===String(productId));
-
-    if(product){
-      const newQty=(Number(product.qty)||0)-(Number(purchase.qty)||0);
-      if(newQty<0){
-        if(!confirm(`⚠️ الكمية الحالية في المخزون (${formatProductQty(product,Number(product.qty)||0)}) أقل من كمية هذه العملية (${formatProductQty(product,Number(purchase.qty)||0)}).
-سيتم جعل الكمية صفر بعد الحذف.
-هل تريد المتابعة؟`))return;
+    batch.forEach(line=>{
+      if(!line.productId)return;
+      const product=(Store.get('products')||[]).find(p=>String(p.id)===String(line.productId));
+      if(product){
+        const newQty=Number(product.qty||0)-Number(line.qty||0);
+        if(newQty<0&&!confirm(`⚠️ رصيد ${product.name} أقل من كمية الشراء المراد عكسها.\\nسيصبح الرصيد صفرًا. هل تريد المتابعة؟`))throw new Error('DELETE_CANCELLED');
+        Store.update('products',product.id,{qty:Math.max(0,newQty)});
       }
-      Store.update('products',product.id,{qty:Math.max(0,newQty)});
-    }
-
-    // حذف العملية وكل الدين المرتبط بها؛ الخزنة تُعاد حسابها تلقائياً من السجلات الحالية.
-    linkedDebts.forEach(d=>Store.delete('debts',d.id));
-    Store.delete('purchases',purchase.id);
-
+    });
+    debts.forEach(d=>Store.delete('debts',d.id));
+    batch.forEach(line=>Store.delete('purchases',line.id));
     if(typeof renderCashboxData==='function')renderCashboxData();
     if(typeof renderDebtsList==='function')renderDebtsList();
-    renderPurchasesTable();
-
-    showToast(`🗑️ تم حذف عملية الشراء وعكس أثرها من المخزون والحسابات والخزنة`,'success');
+    renderPurchasesPage(document.getElementById('contentArea'));
+    showToast(`🗑️ تم حذف فاتورة ${purchase.invoiceNo||''} بالكامل وعكس ${batch.length} أصناف من المخزون`,'success');
   }catch(error){
-    keys.forEach(k=>{
-      try{Store.set(k,snapshot[k]||[]);}
-      catch(e){}
-    });
-    console.error('فشل حذف الشراء وتم التراجع:',error);
-    showToast('❌ تعذر حذف عملية الشراء — تم التراجع عن العملية بالكامل','error');
+    keys.forEach(k=>{try{Store.set(k,snapshot[k]||[]);}catch(e){}});
+    if(error?.message==='DELETE_CANCELLED')return;
+    console.error('فشل حذف فاتورة الشراء وتم التراجع:',error);
+    showToast('❌ تعذر حذف فاتورة الشراء — تم التراجع عن العملية بالكامل','error');
   }
 }
 
@@ -7113,9 +7151,9 @@ function getSupplierFinancials(supplier){
   rows.forEach(p=>{
     const key=p.purchaseBatchId||p.invoiceNo||p.id;
     if(!batches[key])batches[key]={total:0,paid:0,remaining:0,date:p.date,invoiceNo:p.invoiceNo||key,purchaseBatchId:p.purchaseBatchId};
-    batches[key].total=Math.max(batches[key].total,Number(p.total||p.cost||p.amount||0));
-    batches[key].paid=Math.max(batches[key].paid,Number(p.paid||0));
-    batches[key].remaining=Math.max(batches[key].remaining,Number(p.remaining||0));
+    batches[key].total+=Number(p.total||p.cost||p.amount||0);
+    batches[key].paid+=Number(p.paid||0);
+    batches[key].remaining+=Number(p.remaining||0);
     batches[key].date=p.date||batches[key].date;
     batches[key].invoiceNo=p.invoiceNo||batches[key].invoiceNo;
     batches[key].purchaseBatchId=p.purchaseBatchId||batches[key].purchaseBatchId;
@@ -7368,14 +7406,21 @@ function applySupplierPayment(supplierId,amount){
       lastPaymentAt:now
     });
 
-    // مزامنة الفاتورة نفسها: السداد العام يجب أن يظهر أيضًا في سجل المشتريات.
+    // مزامنة جميع بنود الفاتورة متعددة الأصناف مع السداد.
     const purchases=Store.get('purchases')||[];
-    const purchase=purchases.find(p=>String(p.purchaseBatchId||'')===String(d.purchaseBatchId||''));
-    if(purchase){
-      const initialPaid=Math.max(0,Number(purchase.paid||0));
-      const newPaid=Math.min(Number(purchase.total||0),initialPaid+pay);
-      Store.update('purchases',purchase.id,{paid:newPaid,remaining:Math.max(0,Number(purchase.total||0)-newPaid),paymentMethod:newPaid>=Number(purchase.total||0)-0.0001?'cash':'credit'});
-    }
+    const batchPurchases=purchases.filter(p=>String(p.purchaseBatchId||'')===String(d.purchaseBatchId||''));
+    const batchTotal=batchPurchases.reduce((n,p)=>n+Number(p.total||0),0);
+    const oldBatchPaid=batchPurchases.reduce((n,p)=>n+Math.max(0,Number(p.paid||0)),0);
+    const targetBatchPaid=Math.min(batchTotal,oldBatchPaid+pay);
+    let distributed=0;
+    batchPurchases.forEach((p,idx)=>{
+      const lineTotal=Number(p.total||0);
+      const share=idx===batchPurchases.length-1
+        ?Math.max(0,targetBatchPaid-distributed)
+        :(batchTotal>0?targetBatchPaid*(lineTotal/batchTotal):0);
+      distributed+=share;
+      Store.update('purchases',p.id,{paid:share,remaining:Math.max(0,lineTotal-share),invoicePaid:targetBatchPaid,invoiceRemaining:Math.max(0,batchTotal-targetBatchPaid),paymentMethod:targetBatchPaid>=batchTotal-0.0001?'cash':'credit'});
+    }) ;
     left-=pay;
   }
 
@@ -7394,7 +7439,9 @@ function openPurchaseInvoicePayment(purchaseId){
   const remaining=Math.max(0,Number(debt.amount||0)-Number(debt.paidAmount||0));
   if(remaining<=0)return showToast('الفاتورة مسددة بالكامل','info');
   const supplierName=purchase.supplierName||debt.person||'المورد';
-  openModal(`<div class="modal-header"><h2>💳 سداد هذه الفاتورة</h2><button class="modal-close" onclick="closeModal()">&times;</button></div>
+  const batchLines=(Store.get('purchases')||[]).filter(p=>String(p.purchaseBatchId||'')===String(purchase.purchaseBatchId||''));
+  const invoiceTotal=batchLines.reduce((n,p)=>n+Number(p.total||0),0);
+  openModal(`<div class="modal-header"><h2>💳 سداد فاتورة الشراء</h2><button class="modal-close" onclick="closeModal()">&times;</button></div>
     <div class="group-payment-summary">
       <div style="font-weight:950;font-size:1rem">${purchase.productName||'فاتورة شراء'}</div>
       <div style="color:var(--text-muted);font-size:.68rem;margin-top:4px">المورد: ${supplierName}</div>
@@ -7423,9 +7470,18 @@ function confirmPurchaseInvoicePayment(purchaseId){
   history.push({amount,date:now,type:paidAfter>=Number(debt.amount||0)-0.0001?'full':'partial',groupId,source:'purchase_invoice'});
 
   Store.update('debts',debt.id,{paidAmount:paidAfter,paid:paidAfter>=Number(debt.amount||0)-0.0001,paymentHistory:history,debtVersion:2,lastPaymentAt:now});
-  const initialPaid=Math.max(0,Number(purchase.paid||0));
-  const newPaid=Math.min(Number(purchase.total||0),initialPaid+amount);
-  Store.update('purchases',purchase.id,{paid:newPaid,remaining:Math.max(0,Number(purchase.total||0)-newPaid),paymentMethod:newPaid>=Number(purchase.total||0)-0.0001?'cash':'credit'});
+  const batchPurchases=(Store.get('purchases')||[]).filter(p=>String(p.purchaseBatchId||'')===String(purchase.purchaseBatchId||''));
+  const batchTotal=batchPurchases.reduce((n,p)=>n+Number(p.total||0),0);
+  const batchPaidBefore=batchPurchases.reduce((n,p)=>n+Math.max(0,Number(p.paid||0)),0);
+  const targetBatchPaid=Math.min(batchTotal,batchPaidBefore+amount);
+  let distributed=0;
+  batchPurchases.forEach((p,idx)=>{
+    const lineTotal=Number(p.total||0);
+    const share=idx===batchPurchases.length-1?Math.max(0,targetBatchPaid-distributed):(batchTotal>0?targetBatchPaid*(lineTotal/batchTotal):0);
+    distributed+=share;
+    Store.update('purchases',p.id,{paid:share,remaining:Math.max(0,lineTotal-share),invoicePaid:targetBatchPaid,invoiceRemaining:Math.max(0,batchTotal-targetBatchPaid),paymentMethod:targetBatchPaid>=batchTotal-0.0001?'cash':'credit'});
+  });
+  const newPaid=targetBatchPaid;
 
   closeModal();
   showToast(paidAfter>=Number(debt.amount||0)-0.0001?`🎉 تم سداد الفاتورة بالكامل — ${fmt(newPaid)}`:`✅ تم سداد ${fmt(amount)} من هذه الفاتورة — المتبقي ${fmt(Math.max(0,Number(debt.amount||0)-paidAfter))}`,'success');
@@ -9197,6 +9253,38 @@ window.addEventListener('online',()=>{try{if(typeof markCloudSyncPending==='func
   .matgary-update-actions button:disabled{opacity:.6;cursor:wait}
   .matgary-update-status{margin-top:12px;color:#64748b;font-size:.82rem;line-height:1.6;min-height:20px}
   @media(max-width:430px){.matgary-update-card{padding:25px 16px 18px}.matgary-update-actions{gap:8px}.matgary-update-actions button{min-height:52px}}
+
+/* v1.8.5 — تصنيفات المنتجات وفاتورة شراء متعددة الأصناف */
+.badge-pickles{background:rgba(34,197,94,.12);color:#16834d;border:1px solid rgba(34,197,94,.20)}
+.badge-other{background:rgba(139,92,246,.12);color:#7040bd;border:1px solid rgba(139,92,246,.20)}
+.purchase-invoice-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0}
+.purchase-invoice-no{background:#f4f8f6;border:1px solid var(--border);border-radius:10px;padding:7px 10px;font-size:.72rem;font-weight:900;color:var(--primary)}
+.purchase-line-v185{display:grid;grid-template-columns:minmax(0,1.5fr) .7fr .8fr auto;gap:7px;align-items:end;padding:10px;background:#fbfdfc;border:1px solid var(--border);border-radius:13px;margin-bottom:8px}
+.purchase-line-v185 label{display:block;font-size:.67rem;font-weight:800;color:var(--text-muted)}
+.purchase-line-v185 select,.purchase-line-v185 input{width:100%;margin-top:4px;padding:9px;border:1px solid var(--border);border-radius:9px;background:#fff;font-family:inherit;font-weight:800}
+.purchase-line-v185 .remove-line{width:38px;height:38px;border:0;border-radius:9px;background:rgba(239,68,68,.10);color:var(--danger);cursor:pointer;font-weight:900}
+.purchase-invoice-summary-v185{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}
+.purchase-invoice-summary-v185>div{background:#f7faf9;border:1px solid var(--border);border-radius:11px;padding:8px;text-align:center}
+.purchase-invoice-summary-v185 small{display:block;color:var(--text-muted);font-size:.62rem}
+.purchase-invoice-summary-v185 strong{display:block;color:var(--primary);font-size:.85rem;margin-top:3px}
+.purchase-invoice-card-v185{border:1px solid var(--border);border-radius:16px;background:#fff;padding:12px;margin-bottom:10px;box-shadow:var(--shadow)}
+.purchase-invoice-head-v185{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px}
+.purchase-invoice-head-v185 strong{font-size:.85rem}
+.purchase-invoice-head-v185 small{display:block;color:var(--text-muted);font-size:.64rem;margin-top:2px}
+.purchase-invoice-items-v185{background:#f8fbfa;border-radius:11px;padding:7px}
+.purchase-invoice-item-v185{display:flex;justify-content:space-between;gap:8px;padding:7px 4px;border-bottom:1px dashed #dfe8e4;font-size:.72rem}
+.purchase-invoice-item-v185:last-child{border-bottom:0}
+.purchase-invoice-item-v185 .item-meta{color:var(--text-muted);font-size:.62rem;margin-top:2px}
+.purchase-invoice-totals-v185{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
+.purchase-invoice-totals-v185 div{background:#f7faf9;border-radius:9px;padding:7px;text-align:center}
+.purchase-invoice-totals-v185 small{display:block;color:var(--text-muted);font-size:.6rem}
+.purchase-invoice-totals-v185 b{font-size:.72rem}
+@media(max-width:600px){
+  .purchase-line-v185{grid-template-columns:1fr 1fr;align-items:end}
+  .purchase-line-v185 label:first-child{grid-column:1/-1}
+  .purchase-line-v185 .remove-line{width:100%;grid-column:1/-1}
+  .purchase-invoice-summary-v185,.purchase-invoice-totals-v185{grid-template-columns:1fr 1fr}
+}
 </style>
 <script>
 (function(){
