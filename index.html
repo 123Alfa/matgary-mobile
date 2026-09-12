@@ -2712,9 +2712,9 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-const APP_VERSION='v1.8.5';
+const APP_VERSION='v1.8.12';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "1 سبتمبر 2026 — تحسين نظام التحديث الذكي";
+const APP_BUILD_DATE = "13 سبتمبر 2026 — تدقيق مالي ومخزني نهائي قبل الرفع";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -2915,24 +2915,18 @@ async function findUsableGoogleBackupFile(){
 }
 
 function buildBackupPayload(){
-  return {
+  const payload={
     backupType:'matgary-data',
-    backupVersion:2,
+    backupVersion:3,
     appName:getAppName(),
     version:APP_VERSION,
     exportedAt:new Date().toISOString(),
-    userData:currentUser,
-    products:Store.get('products'),
-    sales:Store.get('sales'),
-    purchases:Store.get('purchases'),
-    expenses:Store.get('expenses'),
-    withdrawals:Store.get('withdrawals'),
-    debts:Store.get('debts'),
-    customers:Store.get('customers'),
-    suppliers:Store.get('suppliers'),
-    offers:Store.get('offers'),
-    auditLog:Store.get('auditLog')
+    userData:currentUser
   };
+  // حافظ على تطابق ملف النسخة الاحتياطية مع قائمة المجموعات الفعلية،
+  // حتى لا تسقط المرتجعات أو أي مجموعة جديدة مستقبلًا بالخطأ.
+  getBackupCollections().forEach(key=>{ payload[key]=Store.get(key); });
+  return payload;
 }
 
 
@@ -3724,9 +3718,18 @@ function renderDashboardPage(container){
   const todaySales=sales.filter(s=>s.date===todayStr);
   const todayTotal=todaySales.reduce((sum,s)=>sum+Number(s.total||0),0);
   const todayProfit=todaySales.reduce((sum,s)=>sum+Number(s.profit||0),0);
-  const todayPaid=todaySales.reduce((sum,s)=>sum+Number(s.paid||0),0);
-  const activeDebts=debts.filter(d=>!d.paid&&d.type==='لنا').reduce((sum,d)=>sum+Number(d.amount||0),0);
-  const debtsOnUs=debts.filter(d=>!d.paid&&d.type==='علينا').reduce((sum,d)=>sum+Number(d.amount||0),0);
+  const todayInvoiceMap={};
+  todaySales.forEach(s=>{
+    const key=String(s.saleBatchId||s.invoiceNo||s.id);
+    if(!todayInvoiceMap[key])todayInvoiceMap[key]={total:0,paid:0};
+    todayInvoiceMap[key].total+=Number(s.total||0);
+    todayInvoiceMap[key].paid=Math.max(todayInvoiceMap[key].paid,Number(s.paid||0));
+  });
+  const todayInvoiceList=Object.values(todayInvoiceMap);
+  const todayInvoiceCount=todayInvoiceList.length;
+  const todayPaid=todayInvoiceList.reduce((sum,s)=>sum+Number(s.paid||0),0);
+  const activeDebts=debts.filter(d=>d.type==='لنا').reduce((sum,d)=>sum+getDebtRemaining(d),0);
+  const debtsOnUs=debts.filter(d=>d.type==='علينا').reduce((sum,d)=>sum+getDebtRemaining(d),0);
   const lowStock=products.filter(p=>Number(p.qty||0)<=Number(p.minStock||5));
   const outStock=products.filter(p=>Number(p.qty||0)<=0);
   const inventoryValue=products.reduce((sum,p)=>sum+Number(p.qty||0)*Number(p.purchase||0),0);
@@ -3752,12 +3755,12 @@ function renderDashboardPage(container){
     <div class="dash-kpis">
       <div class="dash-kpi main" onclick="navigateTo('sales')"><div class="dash-kpi-icon"><i class="fas fa-sack-dollar"></i></div><span>مبيعات اليوم</span><strong>${fmt(todayTotal)}</strong>${trend}</div>
       <div class="dash-kpi profit"><div class="dash-kpi-icon"><i class="fas fa-chart-line"></i></div><span>صافي الربح</span><strong>${fmt(todayProfit)}</strong><small>هامش الربح اليوم</small></div>
-      <div class="dash-kpi"><div class="dash-kpi-icon"><i class="fas fa-hand-holding-dollar"></i></div><span>المحصّل اليوم</span><strong>${fmt(todayPaid)}</strong><small>${todaySales.length} عملية بيع</small></div>
+      <div class="dash-kpi"><div class="dash-kpi-icon"><i class="fas fa-hand-holding-dollar"></i></div><span>المحصّل اليوم</span><strong>${fmt(todayPaid)}</strong><small>${todayInvoiceCount} عملية بيع</small></div>
       <div class="dash-kpi" onclick="navigateTo('products')"><div class="dash-kpi-icon"><i class="fas fa-boxes-stacked"></i></div><span>قيمة المخزون</span><strong>${fmt(inventoryValue)}</strong><small>${products.length} صنف</small></div>
     </div>
     <div class="dash-overview">
-      <div class="dash-overview-item"><i class="fas fa-receipt"></i><div><b>${todaySales.length}</b><small>فاتورة اليوم</small></div></div>
-      <div class="dash-overview-item"><i class="fas fa-calculator"></i><div><b>${fmt(todaySales.length?todayTotal/todaySales.length:0)}</b><small>متوسط الفاتورة</small></div></div>
+      <div class="dash-overview-item"><i class="fas fa-receipt"></i><div><b>${todayInvoiceCount}</b><small>فاتورة اليوم</small></div></div>
+      <div class="dash-overview-item"><i class="fas fa-calculator"></i><div><b>${fmt(todayInvoiceCount?todayTotal/todayInvoiceCount:0)}</b><small>متوسط الفاتورة</small></div></div>
       <div class="dash-overview-item"><i class="fas fa-users"></i><div><b>${customers.length}</b><small>إجمالي العملاء</small></div></div>
       <div class="dash-overview-item"><i class="fas fa-triangle-exclamation"></i><div><b>${outStock.length}</b><small>أصناف نافدة</small></div></div>
     </div>
@@ -4034,10 +4037,20 @@ function saveProductEdit(id){
 // ==================== المبيعات ====================
 function renderSalesPage(container){
   const todaySales=(Store.get('sales')||[]).filter(s=>s.date===today());
-  const salesTodayTotal=todaySales.reduce((a,s)=>a+Number(s.total||0),0);
-  const salesTodayProfit=todaySales.reduce((a,s)=>a+Number(s.profit||0),0);
-  const salesTodayPaid=todaySales.reduce((a,s)=>a+Number(s.paid||0),0);
-  const salesTodayCount=todaySales.length;
+  // الفاتورة متعددة الأصناف تحتوي أكثر من سطر، لذلك لا نعدّ paid إلا مرة واحدة لكل فاتورة.
+  const todayInvoices={};
+  todaySales.forEach(s=>{
+    const key=String(s.saleBatchId||s.invoiceNo||s.id);
+    if(!todayInvoices[key])todayInvoices[key]={total:0,profit:0,paid:0};
+    todayInvoices[key].total+=Number(s.total||0);
+    todayInvoices[key].profit+=Number(s.profit||0);
+    todayInvoices[key].paid=Math.max(todayInvoices[key].paid,Number(s.paid||0));
+  });
+  const todayInvoiceList=Object.values(todayInvoices);
+  const salesTodayTotal=todayInvoiceList.reduce((a,s)=>a+Number(s.total||0),0);
+  const salesTodayProfit=todayInvoiceList.reduce((a,s)=>a+Number(s.profit||0),0);
+  const salesTodayPaid=todayInvoiceList.reduce((a,s)=>a+Number(s.paid||0),0);
+  const salesTodayCount=todayInvoiceList.length;
   const products=Store.get('products')||[];
   window.saleProducts=products;
   const customers=Store.get('customers')||[];
@@ -6055,7 +6068,7 @@ function addPurchase(){
     if(remaining>0){
       Store.add('debts',{
         purchaseBatchId,invoiceNo,sourcePurchaseId:null,supplierId:supplierId||null,date,
-        person:supplierName,type:'علينا',amount:remaining,paidAmount:0,paymentHistory:[],debtVersion:2,due:'',
+        person:supplierName,type:'علينا',amount:total,paidAmount:paid,paymentHistory:[],debtVersion:2,due:'',
         note:`آجل من فاتورة الشراء ${invoiceNo}${valid.length>1?' — متعددة الأصناف':''}`,
         paid:false,source:'purchase',purchaseTotal:total
       });
@@ -6187,7 +6200,9 @@ function editPurchaseInvoice(id){
   const oldHistory=Array.isArray(oldDebt?.paymentHistory)?oldDebt.paymentHistory.slice():[];
   const laterPaid=oldHistory.reduce((n,h)=>n+Math.max(0,Number(h.amount)||0),0);
   const linePaid=lines.reduce((n,p)=>n+Math.max(0,Number(p.paid)||0),0);
-  const historicalPaid=Math.max(linePaid,Number(oldDebt?.paidAmount)||0,linePaid+laterPaid);
+  // paidAmount in v2 is cumulative and already includes later payments.
+  // Never add paymentHistory to it again, otherwise 160 becomes 260.
+  const historicalPaid=Math.max(linePaid,Number(first.invoicePaid)||0,getDebtPaidAmount(oldDebt));
 
   const rows=lines.map((p,i)=>`
     <div class="purchase-edit-multi-row" data-purchase-edit-line="${i}">
@@ -6247,25 +6262,30 @@ function savePurchaseInvoiceEdit(id){
   const total=edited.reduce((n,x)=>n+x.total,0);
   const oldDebt=(Store.get('debts')||[]).find(d=>d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===batchId);
   const oldHistory=Array.isArray(oldDebt?.paymentHistory)?oldDebt.paymentHistory.slice():[];
+  const historyPaid=oldHistory.reduce((n,h)=>n+Math.max(0,Number(h.amount)||0),0);
   const oldLinePaid=batch.reduce((n,p)=>n+Math.max(0,Number(p.paid)||0),0);
-  const historicalPaid=Math.max(oldLinePaid,Number(oldDebt?.paidAmount)||0,
-    oldLinePaid+oldHistory.reduce((n,h)=>n+Math.max(0,Number(h.amount)||0),0));
+  // paidAmount is cumulative in v2. Adding paymentHistory to it double-counts
+  // later supplier payments (e.g. 160 + 100 = 260). Use the compatibility-aware
+  // helper, which also understands the old v1.8.7 purchase-debt shape.
+  const totalCollected=Math.max(oldLinePaid,Number(first.invoicePaid)||0,getDebtPaidAmount(oldDebt));
+  const initialPaid=Math.max(0,totalCollected-historyPaid);
 
-  if(total+0.0001<historicalPaid)
-    return showToast(`❌ لا يمكن جعل إجمالي الفاتورة أقل من المدفوع بالفعل (${fmt(historicalPaid)})`,'warning');
+  if(total+0.0001<totalCollected)
+    return showToast(`❌ لا يمكن جعل إجمالي الفاتورة أقل من المدفوع بالفعل (${fmt(totalCollected)})`,'warning');
 
   const supplierId=document.getElementById('mpurSupplier')?.value||'';
   const supplierName=supplierId
     ?(Store.get('suppliers')||[]).find(s=>String(s.id)===String(supplierId))?.name||''
     :'بائع/مورد';
   const oldSupplierId=first.supplierId||oldDebt?.supplierId||'';
-  if(historicalPaid>0 && String(oldSupplierId)!==String(supplierId))
+  if(totalCollected>0 && String(oldSupplierId)!==String(supplierId))
     return showToast('❌ لا يمكن تغيير المورد بعد وجود سداد سابق','warning');
 
+  const newInitialPaid=Math.min(total,initialPaid);
+  const newTotalCollected=Math.min(total,totalCollected);
+  const remaining=Math.max(0,total-newTotalCollected);
   const date=document.getElementById('mpurDate')?.value||first.date||today();
   const note=(document.getElementById('mpurNote')?.value||'').trim();
-  const newPaid=Math.min(total,historicalPaid);
-  const remaining=Math.max(0,total-newPaid);
 
   const snapshot={};
   ['products','purchases','debts'].forEach(k=>{
@@ -6273,68 +6293,81 @@ function savePurchaseInvoiceEdit(id){
   });
 
   try{
-    // عكس الكميات القديمة لكل الأصناف.
+    // Reverse the old stock quantity AND its cost value, so changing an old purchase
+    // cannot corrupt the weighted-average purchase cost of the product.
     const currentProducts=Store.get('products')||[];
     const oldByProduct={};
     batch.forEach(p=>{
       const k=String(p.productId||'');
-      oldByProduct[k]=(oldByProduct[k]||0)+Number(p.qty||0);
+      if(!oldByProduct[k])oldByProduct[k]={qty:0,cost:0};
+      oldByProduct[k].qty+=Math.max(0,Number(p.qty)||0);
+      oldByProduct[k].cost+=Math.max(0,Number(p.qty)||0)*Math.max(0,Number(p.price)||0);
     });
-    Object.entries(oldByProduct).forEach(([pid,oldQty])=>{
+    Object.entries(oldByProduct).forEach(([pid,data])=>{
       const p=currentProducts.find(x=>String(x.id)===pid);
       if(!p)throw new Error('OLD_PRODUCT_NOT_FOUND');
-      const q=Number(p.qty||0)-oldQty;
-      if(q<-0.0001)throw new Error('INVALID_OLD_STOCK');
-      Store.update('products',p.id,{qty:Math.max(0,q)});
+      const currentQty=Math.max(0,Number(p.qty)||0);
+      const newQty=currentQty-data.qty;
+      if(newQty<-0.0001)throw new Error('INVALID_OLD_STOCK');
+      const currentValue=currentQty*Math.max(0,Number(p.purchase)||0);
+      const remainingValue=Math.max(0,currentValue-data.cost);
+      const baseAvg=newQty>0?remainingValue/newQty:0;
+      Store.update('products',p.id,{qty:Math.max(0,newQty),purchase:baseAvg});
     });
 
-    // تجميع البنود الجديدة حسب الصنف؛ يحافظ على كمية المخزون صحيحة حتى لو تكرر الصنف.
+    // Re-apply the edited invoice lines and calculate the weighted average from the
+    // remaining inventory value + the new purchase cost.
     const newByProduct={};
     edited.forEach(x=>{
       const k=String(x.productId||'');
-      if(!newByProduct[k])newByProduct[k]={qty:0,lines:[]};
+      if(!newByProduct[k])newByProduct[k]={qty:0,cost:0,lines:[]};
       newByProduct[k].qty+=x.qty;
+      newByProduct[k].cost+=x.qty*x.price;
       newByProduct[k].lines.push(x);
     });
-
     Object.entries(newByProduct).forEach(([pid,data])=>{
       const p=(Store.get('products')||[]).find(x=>String(x.id)===pid);
       if(!p)throw new Error('NEW_PRODUCT_NOT_FOUND');
-      const oldQty=Math.max(0,Number(p.qty)||0);
-      const oldPurchasePrice=Math.max(0,Number(p.purchase)||0);
-      const weightedPrice=data.lines.reduce((n,x)=>n+x.qty*x.price,0);
-      const finalQty=oldQty+data.qty;
-      const avg=finalQty>0?((oldQty*oldPurchasePrice)+weightedPrice)/finalQty:data.lines[0].price;
+      const baseQty=Math.max(0,Number(p.qty)||0);
+      const baseAvg=Math.max(0,Number(p.purchase)||0);
+      const finalQty=baseQty+data.qty;
+      const finalValue=(baseQty*baseAvg)+data.cost;
+      const avg=finalQty>0?finalValue/finalQty:data.lines[0].price;
       Store.update('products',p.id,{qty:finalQty,purchase:avg});
     });
 
-    // تحديث بنود الفاتورة مع توزيع المدفوع على البنود بنسبة قيمة كل بند.
+    // Preserve the original first payment on invoice lines. Later supplier payments
+    // live only in paymentHistory/paidAmount and are never double-counted here.
     let distributed=0;
     edited.forEach((x,i)=>{
-      const linePaid=i===edited.length-1
-        ?Math.max(0,newPaid-distributed)
-        :(total>0?newPaid*(x.total/total):0);
-      distributed+=linePaid;
+      // paid on each line is the cumulative amount collected for the whole invoice,
+      // distributed by line value. This keeps the cashbox total equal to the real
+      // amount paid, even for multi-item invoices.
+      const cumulativeLinePaid=i===edited.length-1
+        ?Math.max(0,newTotalCollected-distributed)
+        :(total>0?newTotalCollected*(x.total/total):0);
+      distributed+=cumulativeLinePaid;
       Store.update('purchases',x.id,{
         date,productId:x.productId,productName:x.productName,qty:x.qty,price:x.price,total:x.total,
-        invoiceTotal:total,paid:linePaid,remaining:Math.max(0,x.total-linePaid),
-        invoicePaid:newPaid,invoiceRemaining:remaining,
+        invoiceTotal:total,paid:cumulativeLinePaid,remaining:Math.max(0,x.total-cumulativeLinePaid),
+        invoicePaid:newTotalCollected,invoiceRemaining:remaining,
         purchaseBatchId:batchId,invoiceNo:first.invoiceNo,invoiceSeq:first.invoiceSeq||getPurchaseDisplaySequence(batch),
         supplierId:supplierId||null,supplierName,note,
         paymentMethod:remaining>0?'credit':'cash'
       });
     });
 
-    // تحديث/إنشاء دين واحد للفواتير الآجلة مع الاحتفاظ بتاريخ السداد.
+    // Purchase debt uses the standard model: amount = full invoice total,
+    // paidAmount = total collected so far, and paymentHistory = later collections.
     const debts=(Store.get('debts')||[]).filter(d=>d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===batchId);
     debts.forEach(d=>Store.delete('debts',d.id));
     if(remaining>0){
       Store.add('debts',{
         purchaseBatchId:batchId,invoiceNo:first.invoiceNo,sourcePurchaseId:first.id,supplierId:supplierId||null,
-        date,person:supplierName,type:'علينا',amount:remaining,paidAmount:newPaid,
+        date,person:supplierName,type:'علينا',amount:total,paidAmount:newTotalCollected,
         paymentHistory:oldHistory,debtVersion:2,due:'',
         note:`آجل من فاتورة الشراء ${first.invoiceNo||''} — متعددة الأصناف`,
-        paid:newPaid>=total-0.0001,source:'purchase',purchaseTotal:total
+        paid:false,source:'purchase',purchaseTotal:total
       });
     }
 
@@ -6385,95 +6418,88 @@ function savePurchaseEdit(id){
   if(!pid||qty<=0||price<=0)return showToast('أكمل البيانات','warning');
   if(requestedPaid>total+0.0001)return showToast('المبلغ المدفوع أكبر من إجمالي الشراء','warning');
 
-  const products=Store.get('products')||[];
-  const product=products.find(p=>String(p.id)===String(pid));
-  if(!product)return;
-
-  // المدفوعات السابقة للمورد جزء من تاريخ الفاتورة ولا يجوز حذفها أو تصفيرها
-  // بمجرد تعديل الكمية/السعر.
-  const oldDebt=(Store.get('debts')||[]).find(d=>String(d.purchaseBatchId||'')===String(original.purchaseBatchId||'' )&&d.source==='purchase'&&d.type==='علينا');
+  const oldDebt=(Store.get('debts')||[]).find(d=>String(d.purchaseBatchId||'')===String(original.purchaseBatchId||'')&&d.source==='purchase'&&d.type==='علينا');
   const oldHistory=oldDebt&&Array.isArray(oldDebt.paymentHistory)
     ?oldDebt.paymentHistory.map(h=>({...h,amount:Number(h.amount)||0})).filter(h=>h.amount>0):[];
   const laterPaid=oldHistory.reduce((n,h)=>n+(Number(h.amount)||0),0);
   const originalPaid=Math.max(0,Number(original.paid)||0);
-  const historicalPaid=Math.max(originalPaid,Number(oldDebt?.paidAmount)||0,originalPaid+laterPaid);
+  // paidAmount is cumulative in v2; do not add paymentHistory again.
+  const totalCollected=Math.max(originalPaid,Number(original.invoicePaid)||0,getDebtPaidAmount(oldDebt));
+  const initialPaid=Math.max(0,totalCollected-laterPaid);
 
-  // لا نسمح بتعديل الإجمالي إلى أقل من المبلغ الذي تم دفعه بالفعل.
-  if(total+0.0001<historicalPaid){
-    return showToast(`❌ لا يمكن جعل إجمالي الشراء أقل من المدفوع بالفعل (${fmt(historicalPaid)})`,'warning');
-  }
+  if(total+0.0001<totalCollected)
+    return showToast(`❌ لا يمكن جعل إجمالي الشراء أقل من المدفوع بالفعل (${fmt(totalCollected)})`,'warning');
 
   const supplierId=document.getElementById('epurSupplier')?.value||'';
-  const supplierName=supplierId?(Store.get('suppliers')||[]).find(s=>String(s.id)===String(supplierId))?.name||'':'';
+  const supplierName=supplierId?(Store.get('suppliers')||[]).find(s=>String(s.id)===String(supplierId))?.name||'':'بائع/مورد';
   const oldSupplierId=original.supplierId||oldDebt?.supplierId||'';
-
-  // إذا كان هناك سداد سابق، لا ننقل الفاتورة لمورد آخر؛ حتى لا تنتقل أموال سُددت
-  // لمورد إلى حساب مورد مختلف.
-  if(historicalPaid>0 && String(oldSupplierId)!==String(supplierId)){
+  if(totalCollected>0 && String(oldSupplierId)!==String(supplierId)){
     return showToast('❌ لا يمكن تغيير المورد بعد وجود سداد سابق. تراجع عن السداد أولًا ثم غيّر المورد.','warning');
   }
 
-  const newPaid=Math.min(total,historicalPaid>0?historicalPaid:Math.max(0,requestedPaid));
-  const remaining=Math.max(0,total-newPaid);
+  const newTotalCollected=totalCollected>0?Math.min(total,totalCollected):Math.min(total,Math.max(0,requestedPaid));
+  const newInitialPaid=totalCollected>0?Math.min(total,initialPaid):newTotalCollected;
+  const remaining=Math.max(0,total-newTotalCollected);
   const batchId=original.purchaseBatchId||('PUR-'+Date.now()+'-'+Math.random().toString(36).slice(2,8));
 
-  // لقطة أمان: أي فشل أثناء التعديل يعيد المخزون والمشتريات والديون كما كانت.
   const snapshot={};
   ['products','purchases','debts'].forEach(k=>{
     try{snapshot[k]=JSON.parse(JSON.stringify(Store.get(k)||[]));}catch(e){snapshot[k]=[];}
   });
 
   try{
-    // أولًا نعكس كمية الشراء القديمة من نفس الصنف.
     if(original.productId){
       const origProduct=(Store.get('products')||[]).find(p=>String(p.id)===String(original.productId));
-      if(origProduct){
-        const restored=Math.max(0,Number(origProduct.qty)||0)-(Number(original.qty)||0);
-        if(restored< -0.0001)throw new Error('INVALID_OLD_STOCK');
-        Store.update('products',origProduct.id,{qty:Math.max(0,restored)});
-      }
+      if(!origProduct)throw new Error('OLD_PRODUCT_NOT_FOUND');
+      const currentQty=Math.max(0,Number(origProduct.qty)||0);
+      const oldQty=Math.max(0,Number(original.qty)||0);
+      const restoredQty=currentQty-oldQty;
+      if(restoredQty<-0.0001)throw new Error('INVALID_OLD_STOCK');
+      const currentValue=currentQty*Math.max(0,Number(origProduct.purchase)||0);
+      const oldCost=oldQty*Math.max(0,Number(original.price)||0);
+      const remainingValue=Math.max(0,currentValue-oldCost);
+      const baseAvg=restoredQty>0?remainingValue/restoredQty:0;
+      Store.update('products',origProduct.id,{qty:Math.max(0,restoredQty),purchase:baseAvg});
     }
 
-    const currentProducts=Store.get('products')||[];
-    const currentProduct=currentProducts.find(p=>String(p.id)===String(pid));
+    const currentProduct=(Store.get('products')||[]).find(p=>String(p.id)===String(pid));
     if(!currentProduct)throw new Error('PRODUCT_NOT_FOUND');
-    const oldQty=Math.max(0,Number(currentProduct.qty)||0);
-    const oldPurchasePrice=Math.max(0,Number(currentProduct.purchase)||0);
-    const finalQty=oldQty+qty;
-    const avgPurchasePrice=finalQty>0?((oldQty*oldPurchasePrice)+(qty*price))/finalQty:price;
+    const baseQty=Math.max(0,Number(currentProduct.qty)||0);
+    const baseAvg=Math.max(0,Number(currentProduct.purchase)||0);
+    const finalQty=baseQty+qty;
+    const finalValue=(baseQty*baseAvg)+(qty*price);
+    const avgPurchasePrice=finalQty>0?finalValue/finalQty:price;
     Store.update('products',currentProduct.id,{qty:finalQty,purchase:avgPurchasePrice});
 
     const date=document.getElementById('epurDate')?.value||original.date||today();
     const note=document.getElementById('epurNote')?.value||'';
     Store.update('purchases',id,{
-      date,productId:pid,productName:product.name,qty,price,total,
-      paid:newPaid,remaining,paymentMethod:remaining>0?'credit':'cash',
+      date,productId:pid,productName:currentProduct.name,qty,price,total,
+      paid:newTotalCollected,remaining,paymentMethod:remaining>0?'credit':'cash',
+      invoiceTotal:total,invoicePaid:newTotalCollected,invoiceRemaining:remaining,
       purchaseBatchId:batchId,supplierId:supplierId||null,supplierName,note
     });
 
-    // نحدّث نفس دين المورد ونحتفظ بتاريخ كل السداد السابق.
     if(batchId){
       const debts=(Store.get('debts')||[]).filter(d=>String(d.purchaseBatchId||'')===String(batchId)&&d.source==='purchase'&&d.type==='علينا');
       debts.forEach(d=>Store.delete('debts',d.id));
       if(remaining>0){
         Store.add('debts',{
           purchaseBatchId:batchId,sourcePurchaseId:id,supplierId:supplierId||null,
-          date,person:supplierName||'بائع/مورد',type:'علينا',amount:remaining,
-          paidAmount:newPaid,paymentHistory:oldHistory,debtVersion:2,due:'',
-          note:`آجل من شراء ${product.name}`,paid:newPaid>=total-0.0001,
+          date,person:supplierName||'بائع/مورد',type:'علينا',amount:total,
+          paidAmount:newTotalCollected,paymentHistory:oldHistory,debtVersion:2,due:'',
+          note:`آجل من شراء ${currentProduct.name}`,paid:false,
           source:'purchase',purchaseTotal:total
         });
       }
     }
 
     closeModal();
-    showToast('✅ تم تعديل الشراء مع الحفاظ على المدفوعات السابقة','success');
+    showToast('✅ تم تعديل الشراء مع الحفاظ على المدفوعات والتحصيلات السابقة','success');
     renderPurchasesPage(document.getElementById('contentArea'));
     if(typeof renderCashboxData==='function')renderCashboxData();
   }catch(error){
-    ['products','purchases','debts'].forEach(k=>{
-      try{localStorage.setItem('bm_'+k,JSON.stringify(snapshot[k]||[]));}catch(e){}
-    });
+    ['products','purchases','debts'].forEach(k=>{try{Store.set(k,snapshot[k]||[]);}catch(e){}});
     console.error('فشل تعديل الشراء وتم التراجع:',error);
     showToast('❌ تعذر تعديل الشراء — تم التراجع عن العملية','error');
   }
@@ -6494,14 +6520,34 @@ function deletePurchase(id){
   const keys=['products','purchases','debts','auditLog'];
   const snapshot={};keys.forEach(k=>{try{snapshot[k]=JSON.parse(JSON.stringify(Store.get(k)||[]));}catch(e){snapshot[k]=[];}});
   try{
+    // عكس الكمية وقيمة التكلفة التاريخية معًا حتى لا تبقى الفاتورة المحذوفة
+    // مؤثرة في متوسط تكلفة المخزون.
+    const byProduct={};
     batch.forEach(line=>{
       if(!line.productId)return;
-      const product=(Store.get('products')||[]).find(p=>String(p.id)===String(line.productId));
-      if(product){
-        const newQty=Number(product.qty||0)-Number(line.qty||0);
-        if(newQty<0&&!confirm(`⚠️ رصيد ${product.name} أقل من كمية الشراء المراد عكسها.\\nسيصبح الرصيد صفرًا. هل تريد المتابعة؟`))throw new Error('DELETE_CANCELLED');
-        Store.update('products',product.id,{qty:Math.max(0,newQty)});
-      }
+      const k=String(line.productId);
+      if(!byProduct[k])byProduct[k]={qty:0,cost:0};
+      byProduct[k].qty+=Math.max(0,Number(line.qty)||0);
+      byProduct[k].cost+=Math.max(0,Number(line.qty)||0)*Math.max(0,Number(line.price)||0);
+    });
+    Object.entries(byProduct).forEach(([pid,data])=>{
+      const product=(Store.get('products')||[]).find(p=>String(p.id)===pid);
+      if(!product)return;
+      const currentQty=Math.max(0,Number(product.qty)||0);
+      const newQty=currentQty-data.qty;
+      if(newQty<0 && !confirm(`⚠️ رصيد ${product.name} أقل من كمية الشراء المراد عكسها.\\nسيصبح الرصيد صفرًا. هل تريد المتابعة؟`))
+        throw new Error('DELETE_CANCELLED');
+
+      const currentAvg=Math.max(0,Number(product.purchase)||0);
+      const currentValue=currentQty*currentAvg;
+      const remainingQty=Math.max(0,newQty);
+      const remainingValue=Math.max(0,currentValue-data.cost);
+      const newAvg=remainingQty>0 ? remainingValue/remainingQty : 0;
+
+      Store.update('products',product.id,{
+        qty:remainingQty,
+        purchase:newAvg
+      });
     });
     debts.forEach(d=>Store.delete('debts',d.id));
     batch.forEach(line=>Store.delete('purchases',line.id));
@@ -6589,9 +6635,37 @@ function getCashboxData(){
         });
       }
     });
+    // المشتريات: paid داخل سطور الفاتورة يمثل المدفوع التراكمي، وليس حركة نقدية جديدة.
+    // لذلك نجمع كل سطور الفاتورة مرة واحدة، ثم نطرح التحصيلات/السدادات اللاحقة الموجودة
+    // في paymentHistory. النتيجة = الدفعة النقدية الأصلية فقط، بينما السداد اللاحق
+    // يظهر مرة واحدة من سجل debts أسفل هذا القسم.
+    const purchaseGroups=new Map();
     cashboxList('purchases').forEach(p=>{
-      const paid=cashboxNum(p&&p.paid);
-      if(paid>0) movements.push({date:String(p&&p.date||'').slice(0,10),time:'',kind:'out',amount:paid,title:'شراء مدفوع',detail:String(p&&p.productName||'مشتريات')+' • '+String(p&&p.supplierName||'بائع/مورد'),icon:'fa-cart-flatbed',ref:p&&p.purchaseBatchId||p&&p.id});
+      if(!p||typeof p!=='object') return;
+      const key=p.purchaseBatchId?String(p.purchaseBatchId):'purchase:'+String(p.id||'');
+      if(!purchaseGroups.has(key)) purchaseGroups.set(key,[]);
+      purchaseGroups.get(key).push(p);
+    });
+    purchaseGroups.forEach(lines=>{
+      const first=lines[0]||{};
+      const totalPaid=Math.max(0,lines.reduce((n,x)=>n+cashboxNum(x&&x.paid),0));
+      const linkedDebt=(cashboxList('debts')||[]).find(d=>d&&d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===String(first.purchaseBatchId||''));
+      const laterPaid=linkedDebt&&Array.isArray(linkedDebt.paymentHistory)
+        ?linkedDebt.paymentHistory.reduce((n,h)=>n+cashboxNum(h&&h.amount),0):0;
+      const paymentMethod=String(first.paymentMethod||'').toLowerCase();
+      const initialPaid=linkedDebt
+        ?Math.max(0,totalPaid-laterPaid)
+        :((paymentMethod==='cash'||paymentMethod==='نقدي'||paymentMethod==='نقد')
+          ?totalPaid
+          :totalPaid);
+      if(initialPaid>0){
+        movements.push({
+          date:String(first.date||'').slice(0,10),time:'',kind:'out',amount:initialPaid,
+          title:'شراء مدفوع',
+          detail:String(first.invoiceSeq||first.invoiceNo||'فاتورة شراء')+' • '+String(first.supplierName||'بائع/مورد'),
+          icon:'fa-cart-flatbed',ref:first.purchaseBatchId||first.id
+        });
+      }
     });
     cashboxList('expenses').forEach(e=>{
       const amount=cashboxNum(e&&e.amount);
@@ -6838,8 +6912,8 @@ function renderDebtsList(){
 
   list.innerHTML=groupArray.map((g,gi)=>{
     const groupRemaining=g.items.reduce((n,d)=>n+getDebtRemaining(d),0);
-    const groupOriginal=g.items.reduce((n,d)=>n+Number(d.amount||0),0);
-    const groupPaid=g.items.reduce((n,d)=>n+(Number(d.amount||0)-getDebtRemaining(d)),0);
+    const groupOriginal=g.items.reduce((n,d)=>n+getDebtOriginalAmount(d),0);
+    const groupPaid=g.items.reduce((n,d)=>n+getDebtPaidAmount(d),0);
     const phone=(g.items.find(d=>d.phone)?.phone)||'';
     const detailKey=encodeURIComponent((g.type||'')+'|'+(g.person||'')).replace(/%/g,'_');
 
@@ -6854,8 +6928,8 @@ function renderDebtsList(){
 
     const details=g.items.map(d=>{
       const remaining=getDebtRemaining(d);
-      const original=Math.max(0,Number(d.amount||0));
-      const paid=Math.max(0,original-remaining);
+      const original=getDebtOriginalAmount(d);
+      const paid=getDebtPaidAmount(d);
       const now=cairoDateISO();
       const isOverdue=d.due&&d.due<now&&remaining>0;
       return `<div class="debt-group-detail compact-detail" style="${isOverdue?'border-right-color:var(--warning)':''}">
@@ -6992,6 +7066,28 @@ function syncSaleBatchFromDebt(d, paidAfter){
   batch.forEach(s=>Store.update('sales',s.id,{paid,remaining}));
 }
 
+function syncPurchaseBatchFromDebt(d,paidAfter){
+  if(!d || d.source!=='purchase' || !d.purchaseBatchId)return;
+  const purchases=Store.get('purchases')||[];
+  const batch=purchases.filter(p=>String(p.purchaseBatchId||'')===String(d.purchaseBatchId));
+  if(!batch.length)return;
+  const total=Math.max(0,batch.reduce((n,p)=>n+Number(p.total||0),0));
+  const paid=Math.min(total,Math.max(0,Number(paidAfter||0)));
+  let distributed=0;
+  batch.forEach((p,i)=>{
+    const lineTotal=Math.max(0,Number(p.total||0));
+    const share=i===batch.length-1?Math.max(0,paid-distributed):(total>0?paid*(lineTotal/total):0);
+    distributed+=share;
+    Store.update('purchases',p.id,{
+      paid:share,
+      remaining:Math.max(0,lineTotal-share),
+      invoicePaid:paid,
+      invoiceRemaining:Math.max(0,total-paid),
+      paymentMethod:paid>=total-0.0001?'cash':'credit'
+    });
+  });
+}
+
 function applyGroupDebtPayment(person,type,amount,isFull){
   const debts=Store.get('debts')||[];
   const items=getDebtGroup(person,type);
@@ -7019,7 +7115,7 @@ function applyGroupDebtPayment(person,type,amount,isFull){
     history.push({amount:pay,date:now,type:pay>=rem?'full':'partial',groupId});
     Store.update('debts',d.id,{
       paidAmount:paidAfter,
-      paid:paidAfter>=Number(d.amount||0)-0.0001,
+      paid:paidAfter>=getDebtOriginalAmount(d)-0.0001,
       paymentHistory:history,
       debtVersion:2,
       lastPaymentAt:now
@@ -7098,14 +7194,15 @@ function payDebtPart(id,amount){
   const now=cairoDateTimeISO();
   history.push({amount,date:now,type:amount>=remaining?'full':'partial'});
 
-  // مزامنة تحصيل الدين مع الفاتورة الأصلية في سجل المبيعات.
+  // مزامنة الدين مع الفاتورة الأصلية سواء كانت مبيعات أو مشتريات.
   syncSaleBatchFromDebt(d,paidAfter);
+  syncPurchaseBatchFromDebt(d,paidAfter);
 
   const remainingAfter=Math.max(0, remaining-(Number(document.getElementById('debtPayAmount')?.value)||0));
   const actualRemaining=Math.max(0, remaining-Number(history[history.length-1]?.amount||0));
   Store.update('debts',id,{
     paidAmount:paidAfter,
-    paid:paidAfter>=Number(d.amount||0)-0.0001,
+    paid:paidAfter>=getDebtOriginalAmount(d)-0.0001,
     paymentHistory:history,
     debtVersion:2,
     lastPaymentAt:now
@@ -7130,6 +7227,7 @@ function undoLastDebtPayment(id){
     const paidAfter=Math.max(0,Number(d.paidAmount||0)-Number(last.amount||0));
     Store.update('debts',id,{paidAmount:paidAfter,paid:false,paymentHistory:history,lastPaymentAt:history.length?history[history.length-1].date:null,debtVersion:2});
     syncSaleBatchFromDebt(d,paidAfter);
+    syncPurchaseBatchFromDebt(d,paidAfter);
     showToast('↩️ تم التراجع عن آخر سداد');
   }else if(d.paid){
     Store.update('debts',id,{paid:false,paidAmount:0,paymentHistory:[],lastPaymentAt:null,debtVersion:2});
@@ -7145,16 +7243,51 @@ function toggleDebt(id,currentPaid){
   const d=(Store.get('debts')||[]).find(x=>x.id===id);
   if(d)openDebtPayment(id);
 }
-function deleteDebt(id){if(!confirm('حذف الدين؟'))return;Store.delete('debts',id);showToast('🗑️ تم الحذف');renderDebtsList();}
+function deleteDebt(id){
+  const d=(Store.get('debts')||[]).find(x=>x.id===id);
+  if(!d)return;
+  if(d.source==='purchase'||d.source==='sale'){
+    return showToast('🛡️ هذا الدين مرتبط بفاتورة. استخدم سداد/تراجع الفاتورة بدل حذفه مباشرة لحماية الخزنة والمخزون.','warning');
+  }
+  if(!confirm('حذف الدين؟'))return;
+  Store.delete('debts',id);
+  showToast('🗑️ تم الحذف');
+  renderDebtsList();
+}
 
 
+function getDebtOriginalAmount(d){
+  if(!d)return 0;
+  const amount=Math.max(0,Number(d.amount||0));
+  // Compatibility with v1.8.7 purchase debts, where amount stored only
+  // the outstanding balance and purchaseTotal stored the invoice total.
+  if(d.source==='purchase' && Number(d.purchaseTotal||0)>amount+0.0001){
+    return Math.max(amount,Number(d.purchaseTotal||0));
+  }
+  return amount;
+}
+function getDebtPaidAmount(d){
+  if(!d)return 0;
+  const original=getDebtOriginalAmount(d);
+  const amount=Math.max(0,Number(d.amount||0));
+  const historyPaid=(Array.isArray(d.paymentHistory)?d.paymentHistory:[])
+    .reduce((n,h)=>n+Math.max(0,Number(h?.amount)||0),0);
+  const isOldPurchaseShape=d.source==='purchase' && Number(d.purchaseTotal||0)>amount+0.0001;
+  if(isOldPurchaseShape){
+    // In the old purchase format, (purchaseTotal - amount) was the first
+    // payment; paidAmount/history may contain later collections.
+    const firstPaid=Math.max(0,Number(d.purchaseTotal||0)-amount);
+    return Math.min(original,firstPaid+Math.max(0,Number(d.paidAmount||0),historyPaid));
+  }
+  const isLegacySource=(d.debtVersion!==2&&(d.source==='purchase'||d.source==='sale'));
+  if(isLegacySource)return 0;
+  return Math.min(original,Math.max(0,Number(d.paidAmount||0)));
+}
 function getDebtRemaining(d){
   if(!d)return 0;
+  const original=getDebtOriginalAmount(d);
   if(d.paid)return 0;
-  const amount=Math.max(0,Number(d.amount||0));
-  const isLegacySource=(d.debtVersion!==2&&(d.source==='purchase'||d.source==='sale'));
-  const paidAmount=isLegacySource?0:Math.max(0,Number(d.paidAmount||0));
-  return Math.max(0,amount-paidAmount);
+  return Math.max(0,original-getDebtPaidAmount(d));
 }
 function normalizeWhatsAppPhone(phone){
   let p=String(phone||'').replace(/[^\d+]/g,'');
@@ -7195,7 +7328,9 @@ function getCustomerFinancials(customer){
   lines.forEach(s=>{
     const key=s.saleBatchId||s.invoiceNo||s.id;
     if(!batches[key])batches[key]={total:0,paid:0,remaining:0,date:s.date,invoiceNo:s.invoiceNo||key,saleBatchId:s.saleBatchId};
-    batches[key].total=Math.max(batches[key].total,Number(s.total||0));
+    // كل سطر يحمل إجمالي الصنف؛ إجمالي الفاتورة = مجموع السطور.
+    batches[key].total+=Math.max(0,Number(s.total||0));
+    // paid/remaining مخزنان كقيم على مستوى الفاتورة، لذلك نأخذ القيمة التراكمية مرة واحدة.
     batches[key].paid=Math.max(batches[key].paid,Number(s.paid||0));
     batches[key].remaining=Math.max(batches[key].remaining,Number(s.remaining||0));
     batches[key].date=s.date||batches[key].date;
@@ -7229,6 +7364,46 @@ function getCustomerFinancials(customer){
   const totalSpent=invoices.reduce((n,x)=>n+Number(x.total||0),0);
   const paid=Math.max(0,totalSpent-invoiceOutstanding);
   return {lines,invoices,totalSpent,paid,remaining:invoiceOutstanding+manualDebtRemaining,linkedDebts};
+}
+
+function recalculateCustomerStats(customerId){
+  if(!customerId)return;
+  const customers=Store.get('customers')||[];
+  const c=customers.find(x=>String(x.id)===String(customerId));
+  if(!c)return;
+  const sales=Store.get('sales')||[];
+  const totalSpent=money(sales.filter(s=>s.customerId&&String(s.customerId)===String(customerId))
+    .reduce((n,s)=>n+Math.max(0,Number(s.total||0)),0));
+  c.totalSpent=totalSpent;
+  c.points=Math.floor(totalSpent/10);
+  Store.set('customers',customers);
+}
+
+function addCustomer(){
+  const name=(document.getElementById('cName')?.value||'').trim();
+  if(!name)return showToast('أدخل اسم العميل','warning');
+  const phone=(document.getElementById('cPhone')?.value||'').trim();
+  const type=document.getElementById('cType')?.value||'retail';
+  const address=(document.getElementById('cAddress')?.value||'').trim();
+  const note=(document.getElementById('cNote')?.value||'').trim();
+
+  const customers=Store.get('customers')||[];
+  const duplicate=customers.find(c=>{
+    const samePhone=phone && String(c.phone||'').trim()===phone;
+    const sameName=!phone && String(c.name||'').trim().toLowerCase()===name.toLowerCase();
+    return samePhone||sameName;
+  });
+  if(duplicate)return showToast('⚠️ العميل موجود بالفعل','warning');
+
+  Store.add('customers',{
+    name,phone,type,address,note,
+    points:0,totalSpent:0,
+    createdAt:new Date().toISOString()
+  });
+  ['cName','cPhone','cAddress','cNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  const typeEl=document.getElementById('cType'); if(typeEl)typeEl.value='retail';
+  showToast('✅ تم إضافة العميل','success');
+  if(typeof renderCustomersPage==='function')renderCustomersPage(document.getElementById('contentArea'));
 }
 
 function renderCustomersPage(container){
@@ -7638,7 +7813,7 @@ function applySupplierPayment(supplierId,amount){
     const paidAfter=paidBefore+pay;
     Store.update('debts',d.id,{
       paidAmount:paidAfter,
-      paid:paidAfter>=Number(d.amount||0)-0.0001,
+      paid:paidAfter>=getDebtOriginalAmount(d)-0.0001,
       paymentHistory:history,
       debtVersion:2,
       lastPaymentAt:now
@@ -7674,7 +7849,7 @@ function openPurchaseInvoicePayment(purchaseId){
   if(!purchase)return showToast('الفاتورة غير موجودة','error');
   const debt=(Store.get('debts')||[]).find(d=>d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===String(purchase.purchaseBatchId||''));
   if(!debt)return showToast('لا يوجد حساب آجل مرتبط بهذه الفاتورة','warning');
-  const remaining=Math.max(0,Number(debt.amount||0)-Number(debt.paidAmount||0));
+  const remaining=getDebtRemaining(debt);
   if(remaining<=0)return showToast('الفاتورة مسددة بالكامل','info');
   const supplierName=purchase.supplierName||debt.person||'المورد';
   const batchLines=(Store.get('purchases')||[]).filter(p=>String(p.purchaseBatchId||'')===String(purchase.purchaseBatchId||''));
@@ -7695,7 +7870,7 @@ function confirmPurchaseInvoicePayment(purchaseId){
   if(!purchase)return showToast('الفاتورة غير موجودة','error');
   const debt=(Store.get('debts')||[]).find(d=>d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===String(purchase.purchaseBatchId||''));
   if(!debt)return showToast('لا يوجد حساب آجل مرتبط بهذه الفاتورة','warning');
-  const remaining=Math.max(0,Number(debt.amount||0)-Number(debt.paidAmount||0));
+  const remaining=getDebtRemaining(debt);
   const amount=Number(document.getElementById('purchaseInvoicePayAmount')?.value)||0;
   if(amount<=0)return showToast('أدخل مبلغ السداد','warning');
   if(amount>remaining+0.0001)return showToast(`مبلغ السداد لا يمكن أن يتجاوز متبقي الفاتورة (${fmt(remaining)})`,'warning');
@@ -7707,7 +7882,7 @@ function confirmPurchaseInvoicePayment(purchaseId){
   const groupId='SUPINV-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
   history.push({amount,date:now,type:paidAfter>=Number(debt.amount||0)-0.0001?'full':'partial',groupId,source:'purchase_invoice'});
 
-  Store.update('debts',debt.id,{paidAmount:paidAfter,paid:paidAfter>=Number(debt.amount||0)-0.0001,paymentHistory:history,debtVersion:2,lastPaymentAt:now});
+  Store.update('debts',debt.id,{amount:getDebtOriginalAmount(debt),paidAmount:paidAfter,paid:paidAfter>=getDebtOriginalAmount(debt)-0.0001,paymentHistory:history,debtVersion:2,lastPaymentAt:now,purchaseTotal:getDebtOriginalAmount(debt)});
   const batchPurchases=(Store.get('purchases')||[]).filter(p=>String(p.purchaseBatchId||'')===String(purchase.purchaseBatchId||''));
   const batchTotal=batchPurchases.reduce((n,p)=>n+Number(p.total||0),0);
   const batchPaidBefore=batchPurchases.reduce((n,p)=>n+Math.max(0,Number(p.paid||0)),0);
@@ -7737,36 +7912,63 @@ function undoSupplierLastPayment(supplierId){
   if(!confirm(`التراجع عن آخر سداد مسجل للمورد ${supplier.name}؟`))return;
 
   const name=String(supplier.name||'').trim().toLowerCase();
+  const snapshot={};
+  ['debts','purchases'].forEach(k=>{try{snapshot[k]=JSON.parse(JSON.stringify(Store.get(k)||[]));}catch(e){snapshot[k]=[];}});
   let changed=0;
-  (Store.get('debts')||[]).filter(d=>d.type==='علينا'&&(
-    (d.supplierId&&String(d.supplierId)===String(supplierId)) ||
-    (!d.supplierId&&String(d.person||'').trim().toLowerCase()===name)
-  )).forEach(d=>{
-    const history=Array.isArray(d.paymentHistory)?d.paymentHistory.slice():[];
-    const entries=history.filter(h=>h.groupId===groupId);
-    if(!entries.length)return;
-    const amount=entries.reduce((n,h)=>n+Number(h.amount||0),0);
-    const remainingHistory=history.filter(h=>h.groupId!==groupId);
-    const paidAfter=Math.max(0,Number(d.paidAmount||0)-amount);
-    Store.update('debts',d.id,{
-      paidAmount:paidAfter,
-      paid:paidAfter>=Number(d.amount||0)-0.0001,
-      paymentHistory:remainingHistory,
-      lastPaymentAt:remainingHistory.length?remainingHistory[remainingHistory.length-1].date:null,
-      debtVersion:2
-    });
-    const purchase=(Store.get('purchases')||[]).find(p=>String(p.purchaseBatchId||'')===String(d.purchaseBatchId||''));
-    if(purchase){
-      const currentPaid=Math.max(0,Number(purchase.paid||0));
-      const newPaid=Math.max(0,currentPaid-amount);
-      Store.update('purchases',purchase.id,{paid:newPaid,remaining:Math.max(0,Number(purchase.total||0)-newPaid),paymentMethod:newPaid>=Number(purchase.total||0)-0.0001?'cash':'credit'});
-    }
-    changed++;
-  });
-  showToast(changed?'↩️ تم التراجع عن آخر سداد':'لا يوجد سداد يمكن التراجع عنه','info');
-  renderSuppliersPage(document.getElementById('contentArea'));
-}
+  try{
+    (Store.get('debts')||[]).filter(d=>d.type==='علينا'&&(
+      (d.supplierId&&String(d.supplierId)===String(supplierId)) ||
+      (!d.supplierId&&String(d.person||'').trim().toLowerCase()===name)
+    )).forEach(d=>{
+      const history=Array.isArray(d.paymentHistory)?d.paymentHistory.slice():[];
+      const entries=history.filter(h=>h.groupId===groupId);
+      if(!entries.length)return;
+      const amount=entries.reduce((n,h)=>n+Math.max(0,Number(h.amount||0)),0);
+      const remainingHistory=history.filter(h=>h.groupId!==groupId);
+      const paidAfter=Math.max(0,Number(d.paidAmount||0)-amount);
+      Store.update('debts',d.id,{
+        paidAmount:paidAfter,
+        paid:paidAfter>=getDebtOriginalAmount(d)-0.0001,
+        paymentHistory:remainingHistory,
+        lastPaymentAt:remainingHistory.length?remainingHistory[remainingHistory.length-1].date:null,
+        debtVersion:2
+      });
 
+      // Rebuild cumulative paid on EVERY line of a multi-item purchase invoice.
+      const batchId=String(d.purchaseBatchId||'');
+      const batchPurchases=(Store.get('purchases')||[]).filter(p=>String(p.purchaseBatchId||'')===batchId);
+      if(batchPurchases.length){
+        const batchTotal=batchPurchases.reduce((n,p)=>n+Math.max(0,Number(p.total||0)),0);
+        const currentPaid=batchPurchases.reduce((n,p)=>n+Math.max(0,Number(p.paid||0)),0);
+        const targetPaid=Math.max(0,Math.min(batchTotal,currentPaid-amount));
+        let distributed=0;
+        batchPurchases.forEach((p,idx)=>{
+          const lineTotal=Math.max(0,Number(p.total||0));
+          const share=idx===batchPurchases.length-1
+            ?Math.max(0,targetPaid-distributed)
+            :(batchTotal>0?targetPaid*(lineTotal/batchTotal):0);
+          distributed+=share;
+          Store.update('purchases',p.id,{
+            paid:share,
+            remaining:Math.max(0,lineTotal-share),
+            invoicePaid:targetPaid,
+            invoiceRemaining:Math.max(0,batchTotal-targetPaid),
+            paymentMethod:targetPaid>=batchTotal-0.0001?'cash':'credit'
+          });
+        });
+      }
+      changed++;
+    });
+  }catch(error){
+    ['debts','purchases'].forEach(k=>{try{Store.set(k,snapshot[k]||[]);}catch(e){}});
+    console.error('فشل التراجع عن سداد المورد وتم التراجع:',error);
+    return showToast('❌ تعذر التراجع عن السداد — تم استرجاع البيانات كما كانت','error');
+  }
+  showToast(changed?'↩️ تم التراجع عن آخر سداد وتحديث كل بنود الفاتورة':'لا يوجد سداد يمكن التراجع عنه','info');
+  renderSuppliersPage(document.getElementById('contentArea'));
+  if(typeof renderPurchasesTable==='function')renderPurchasesTable();
+  if(typeof renderCashboxData==='function')renderCashboxData();
+}
 
 function openSupplierStatement(id){
   const supplier=(Store.get('suppliers')||[]).find(s=>s.id===id);
@@ -8040,12 +8242,15 @@ function loadSummary(){
   const mExpenses=expenses.filter(e=>inMonth(e.date));
   const mWithdrawals=withdrawals.filter(w=>inMonth(w.date));
 
-  const totalSales=mSales.reduce((sum,s)=>sum+(s.total||0),0);
-  const totalProfit=mSales.reduce((sum,s)=>sum+(s.profit||0),0);
-  const totalPurchases=mPurchases.reduce((sum,p)=>sum+(p.total||0),0);
-  const totalExpenses=mExpenses.reduce((sum,e)=>sum+(e.amount||0),0);
-  const totalWithdrawals=mWithdrawals.reduce((sum,w)=>sum+(w.amount||0),0);
-  const totalDiscounts=mSales.reduce((sum,s)=>sum+((s.price*s.qty)-(s.total||0)),0);
+  const totalSales=mSales.reduce((sum,s)=>sum+Number(s.total||0),0);
+  const totalProfit=mSales.reduce((sum,s)=>sum+Number(s.profit||0),0);
+  const totalPurchases=mPurchases.reduce((sum,p)=>sum+Number(p.total||0),0);
+  const totalExpenses=mExpenses.reduce((sum,e)=>sum+Number(e.amount||0),0);
+  const totalWithdrawals=mWithdrawals.reduce((sum,w)=>sum+Number(w.amount||0),0);
+  // الخصم محفوظ على مستوى كل سطر في discountAmount، وهو أدق من إعادة حسابه من price*qty
+  // خصوصًا مع الوزن، خدمات التوصيل، والضرائب.
+  const totalDiscounts=mSales.reduce((sum,s)=>sum+Math.max(0,Number(s.discountAmount||0)),0);
+  const saleInvoiceKeys=new Set(mSales.map(s=>String(s.saleBatchId||s.invoiceNo||s.id)));
 
   const debtsOnUs=debts.filter(d=>d.type==='علينا'&&!d.paid).reduce((sum,d)=>sum+(d.amount||0),0);
   const debtsForUs=debts.filter(d=>d.type==='لنا'&&!d.paid).reduce((sum,d)=>sum+(d.amount||0),0);
@@ -8074,8 +8279,8 @@ function loadSummary(){
   document.getElementById('sumNetProfit').textContent=fmt(netProfit);
   document.getElementById('sumNetProfit').style.color=netProfit>=0?'#fbbf24':'#f87171';
 
-  document.getElementById('sumSaleCount').textContent=mSales.length;
-  document.getElementById('sumAvgSale').textContent=fmt(mSales.length?totalSales/mSales.length:0);
+  document.getElementById('sumSaleCount').textContent=saleInvoiceKeys.size;
+  document.getElementById('sumAvgSale').textContent=fmt(saleInvoiceKeys.size?totalSales/saleInvoiceKeys.size:0);
   document.getElementById('sumProfitPercent').textContent=totalSales>0?((totalProfit/totalSales)*100).toFixed(1)+'%':'0%';
   document.getElementById('sumTotalDiscounts').textContent=fmt(totalDiscounts);
 
@@ -8181,12 +8386,7 @@ function getAppSettings(){
 function saveAppSettings(data){
   localStorage.setItem('bm_settings',JSON.stringify(data||{}));
 }
-function toggleAppSetting(key,checked){
-  const s=getAppSettings();
-  s[key]=!!checked;
-  saveAppSettings(s);
-  showToast(checked?'✅ تم تفعيل الإعداد':'⏸️ تم إيقاف الإعداد');
-}
+
 function getDataCounts(){
   const keys=['products','sales','purchases','expenses','withdrawals','debts','customers','suppliers','offers'];
   const counts={};
@@ -8611,7 +8811,7 @@ function renderProductsGrid() {
   let html = '<div class="products-grid">';
   products.forEach(product => {
     html += `
-      <div class="pos-product-card" onclick="addToCart('${product.id}')">
+      <div class="pos-product-card" onclick="addToPOSCart('${product.id}',1)">
         <div class="icon"><i class="fas fa-box"></i></div>
         <div class="name">${product.name}</div>
         <div class="price">${fmt(product.price)}</div>
@@ -8702,7 +8902,7 @@ async function replaceCloudDataWithLocal() {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js?v=1.8.1')
+    navigator.serviceWorker.register('sw.js?v=1.8.12')
       .then(function(registration) {
         registration.update().catch(function(){});
         console.log('SW registered: ', registration.scope);
@@ -9205,10 +9405,7 @@ function historyCard(inv){
       if(typeof renderCashboxData==='function')renderCashboxData();
     }catch(error){
       ['products','sales','debts','customers'].forEach(k=>{
-        try{
-          const raw=snapshot[k];
-          if(raw===null)localStorage.removeItem('bm_'+k);else localStorage.setItem('bm_'+k,raw);
-        }catch(e){}
+        try{ Store.set(k, snapshot[k]||[]); }catch(e){}
       });
       if(error.message==='INSUFFICIENT_STOCK')showToast('❌ الكمية الجديدة غير متاحة في المخزون','warning');
       else {console.error('فشل تعديل الفاتورة وتم التراجع:',error);showToast('❌ تعذر تعديل الفاتورة — تم التراجع عن العملية','error');}
@@ -9253,6 +9450,9 @@ function historyCard(inv){
     });
 
     if(!changed)return showToast('حدد كمية المرتجع أولًا','warning');
+
+    // إحصائيات العميل يجب أن تعكس قيمة الفاتورة بعد المرتجع، وليس قيمة البيع القديمة.
+    const affectedCustomerId=inv.customerId||'';
 
     // احسب الحالة المالية قبل تعديل المدفوع، حتى لا نُنشئ ردًا نقديًا أكبر من
     // المبلغ الذي دخل الخزنة فعليًا.
@@ -9299,6 +9499,10 @@ function historyCard(inv){
 
     // حركة مستقلة للمرتجع: تظهر في الخزنة مرة واحدة فقط، وتُحذف تلقائيًا
     // مع الفاتورة إذا تم حذفها.
+    if(affectedCustomerId && typeof recalculateCustomerStats==='function'){
+      recalculateCustomerStats(affectedCustomerId);
+    }
+
     if(cashRefund>0){
       Store.add('returns',{
         returnId,
@@ -9364,6 +9568,7 @@ function historyCard(inv){
       Store.delete('sales',s.id);
     });
 
+    const affectedCustomerId=inv.customerId||'';
     if(inv.saleBatchId){
       (Store.get('debts')||[])
         .filter(d=>d.saleBatchId===inv.saleBatchId&&d.source==='sale')
@@ -9378,6 +9583,9 @@ function historyCard(inv){
         .forEach(r=>Store.delete('returns',r.id));
     }
 
+    if(affectedCustomerId && typeof recalculateCustomerStats==='function'){
+      recalculateCustomerStats(affectedCustomerId);
+    }
     closeIfOpen();
     showToast('🗑️ تم حذف الفاتورة وإلغاء أي رد مرتجع مرتبط بها وإرجاع الكميات للمخزون');
     renderSalesTable();
