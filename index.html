@@ -2800,7 +2800,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-const APP_VERSION='v1.8.20';
+const APP_VERSION='v1.8.22';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "13 سبتمبر 2026 — إصلاح نظام التحديث التلقائي ومنع فشل تثبيت النسخ الجديدة";
 
@@ -9027,16 +9027,63 @@ async function replaceCloudDataWithLocal() {
 
 </script>
 <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js?v=1.8.20')
-      .then(function(registration) {
-        registration.update().catch(function(){});
-        console.log('SW registered: ', registration.scope);
-      })
-      .catch(function(error) { console.log('SW registration failed: ', error); });
+/* Matgary Service Worker lifecycle — v1.8.22
+   التحديث يعتمد على waiting SW + SKIP_WAITING + controllerchange،
+   مع updateViaCache:none لمنع الاحتفاظ بنسخة قديمة من sw.js. */
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  let refreshing=false;
+  let swRegistration=null;
+  window.matgarySWRegistration=null;
+
+  function reloadAfterUpdate(){
+    if(refreshing) return;
+    refreshing=true;
+    const url=new URL(window.location.href);
+    url.searchParams.set('_v',Date.now());
+    window.location.replace(url.toString());
+  }
+
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    reloadAfterUpdate();
   });
-}
+
+  window.addEventListener('load',async function(){
+    try{
+      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.22',{updateViaCache:'none'});
+      window.matgarySWRegistration=swRegistration;
+      console.log('[SW] registered:',swRegistration.scope);
+
+      const showWaiting=()=>{
+        if(swRegistration.waiting && typeof window.showMatgarySWUpdate==='function'){
+          window.showMatgarySWUpdate(swRegistration.waiting);
+        }
+      };
+      showWaiting();
+
+      swRegistration.addEventListener('updatefound',function(){
+        const newSW=swRegistration.installing;
+        if(!newSW) return;
+        newSW.addEventListener('statechange',function(){
+          if(newSW.state==='installed'){
+            if(navigator.serviceWorker.controller){
+              if(typeof window.showMatgarySWUpdate==='function') window.showMatgarySWUpdate(newSW);
+            } else {
+              console.log('[SW] first install completed');
+            }
+          } else if(newSW.state==='redundant'){
+            console.warn('[SW] installation became redundant');
+          }
+        });
+      });
+
+      // فحص دوري خفيف للتأكد من التقاط sw.js الجديد.
+      setInterval(function(){swRegistration.update().catch(function(){});},60*60*1000);
+    }catch(err){
+      console.error('[SW] register failed:',err);
+    }
+  },{once:true});
+})();
 </script>
 <style id="sales-purchases-final-fixes">
 .sale-ref-service-row{display:grid!important;grid-template-columns:minmax(0,1fr) 150px!important;gap:8px!important;align-items:center!important;margin:10px 0!important}
@@ -9914,6 +9961,18 @@ window.addEventListener('online',()=>{try{if(typeof markCloudSyncPending==='func
     overlay.querySelector('#matgaryUpdateNow').onclick=function(){installUpdate(remote,this);};
   }
 
+  // يسمح لمنطق نافذة التحديث الحالي باستخدام waiting Service Worker مباشرة.
+  window.showMatgarySWUpdate=function(waitingSW){
+    try{
+      const modal=document.getElementById('matgaryUpdateModal');
+      if(!modal || !waitingSW)return;
+      const button=modal.querySelector('#matgaryUpdateNow');
+      if(!button)return;
+      button.dataset.swWaiting='1';
+      button.dataset.swState='waiting';
+    }catch(_){ }
+  };
+
   async function clearCachesOnly(){
     if(!('caches' in window))return;
     try{
@@ -9947,54 +10006,67 @@ window.addEventListener('online',()=>{try{if(typeof markCloudSyncPending==='func
     const setStatus=t=>{if(status)status.textContent=t;};
     button.disabled=true;if(later)later.disabled=true;
     button.textContent='جاري التحديث…';
-    const currentPage=window.location.href;
-
     try{
-      setStatus('جاري تنزيل النسخة الجديدة…');
+      setStatus('جاري التحقق من النسخة الجديدة…');
       const response=await fetch(MATGARY_UPDATE.appUrl+'?update='+Date.now(),{
         cache:'no-store',
         headers:{'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache'}
       });
       if(!response.ok)throw new Error('HTTP '+response.status);
       const html=await response.text();
-
-      // لا نسمح بتثبيت ملف لا يحمل نفس رقم النسخة المطلوبة.
       const wanted=normalizeVersion(remote.version).join('.');
       const found=html.match(/APP_VERSION\s*=\s*['"]v?(\d+(?:\.\d+){0,2})['"]/i);
       if(!found || normalizeVersion(found[1]).join('.')!==wanted){
         throw new Error('Downloaded index.html does not match requested version');
       }
-
-      // لا نسجل النسخة كـ"مثبتة" قبل إعادة التحميل؛ الصفحة الجديدة
-      // ستسجل نفسها عند تشغيلها، حتى لا نفقد نافذة التحديث إذا فشلت الملاحة.
       try{localStorage.removeItem(MATGARY_UPDATE.dismissedKey);}catch(_){ }
 
-      setStatus('جاري تنظيف النسخة القديمة…');
-      await unregisterOldServiceWorkers();
-      await clearCachesOnly();
+      // اطلب من Service Worker اكتشاف sw.js الجديد، بدون حذف بيانات التطبيق.
+      const reg=window.matgarySWRegistration ||
+        (navigator.serviceWorker && await navigator.serviceWorker.getRegistration());
+      if(reg){
+        setStatus('جاري تجهيز Service Worker الجديد…');
+        await reg.update();
 
+        let waiting=reg.waiting;
+        if(!waiting && reg.installing){
+          waiting=await new Promise(resolve=>{
+            const worker=reg.installing;
+            let done=false;
+            const finish=()=>{if(done)return;done=true;resolve(reg.waiting||null);};
+            worker.addEventListener('statechange',function(){
+              if(worker.state==='installed' || worker.state==='redundant')finish();
+            });
+            setTimeout(finish,8000);
+          });
+        }
+        waiting=reg.waiting||waiting;
+
+        if(waiting){
+          setStatus('تم تجهيز التحديث، جاري تفعيله…');
+          waiting.postMessage({type:'SKIP_WAITING'});
+          setTimeout(function(){
+            if(!window.__matgaryUpdateReloaded){
+              window.__matgaryUpdateReloaded=true;
+              setStatus('جاري إعادة فتح متجري…');
+              const target=getAppReloadUrl(remote.version);
+              window.location.replace(target);
+            }
+          },3500);
+          return;
+        }
+      }
+
+      // احتياطي آمن: لو لم يوجد Service Worker waiting، افتح index.html الجديد مباشرة.
       setStatus('تم التحقق بنجاح، جاري فتح النسخة الجديدة…');
       sessionStorage.removeItem(MATGARY_UPDATE.busyKey);
       const targetUrl=getAppReloadUrl(remote.version);
-
-      // لا نستخدم document.open/write. هذا الأسلوب غير موصى به وقد يتصرف
-      // بشكل غير متوقع بعد تحميل الصفحة، خصوصًا عند إدخال HTML كبير. 
       window.location.replace(targetUrl);
-
-      // احتياطي: إذا رفض المتصفح الملاحة ولم يتغير العنوان، نعيد الأزرار.
-      setTimeout(function(){
-        if(window.location.href===currentPage){
-          sessionStorage.removeItem(MATGARY_UPDATE.busyKey);
-          button.disabled=false;if(later)later.disabled=false;
-          button.textContent='إعادة التحديث';
-          setStatus('لم يتم فتح النسخة الجديدة تلقائيًا. اضغط «إعادة التحديث».');
-        }
-      },8000);
     }catch(error){
       console.error('Matgary update failed:',error);
       sessionStorage.removeItem(MATGARY_UPDATE.busyKey);
       button.disabled=false;if(later)later.disabled=false;
-      button.textContent='تحديث الآن';
+      button.textContent='إعادة التحديث';
       setStatus('تعذر تثبيت التحديث. لم يتم حذف بيانات البرنامج.');
     }
   }
