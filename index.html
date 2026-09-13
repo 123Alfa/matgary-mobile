@@ -2800,9 +2800,9 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-const APP_VERSION='v1.8.19';
+const APP_VERSION='v1.8.20';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "13 سبتمبر 2026 — توحيد تنسيق صور المنتجات والحفاظ على العرض الكامل بدون قص أو زوم";
+const APP_BUILD_DATE = "13 سبتمبر 2026 — إصلاح نظام التحديث التلقائي ومنع فشل تثبيت النسخ الجديدة";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -9029,7 +9029,7 @@ async function replaceCloudDataWithLocal() {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js?v=1.8.19')
+    navigator.serviceWorker.register('sw.js?v=1.8.20')
       .then(function(registration) {
         registration.update().catch(function(){});
         console.log('SW registered: ', registration.scope);
@@ -9863,9 +9863,10 @@ window.addEventListener('online',()=>{try{if(typeof markCloudSyncPending==='func
 (function(){
   'use strict';
 
-  /* متجري — نظام تحديث جذري وآمن.
-     يعتمد على version.json لاكتشاف النسخة، ثم ينزّل index.html الفعلي من GitHub Raw.
-     لا يحذف localStorage أو IndexedDB أو بيانات البرنامج. */
+  /* متجري — نظام تحديث آمن.
+     يتحقق من النسخة من version.json، وينزّل index.html للتحقق من رقم الإصدار،
+     ثم يعيد فتح نفس عنوان GitHub Pages بعد تنظيف Service Worker والكاش.
+     لا يستخدم document.write ولا يلمس localStorage/IndexedDB الخاصة ببيانات البرنامج. */
   const MATGARY_UPDATE={
     versionUrl:'https://123Alfa.github.io/matgary-mobile/version.json',
     appUrl:'https://raw.githubusercontent.com/123Alfa/matgary-mobile/main/index.html',
@@ -9907,7 +9908,7 @@ window.addEventListener('online',()=>{try{if(typeof markCloudSyncPending==='func
       '</div>';
     document.body.appendChild(overlay);
     overlay.querySelector('#matgaryUpdateLater').onclick=function(){
-      try{localStorage.setItem(MATGARY_UPDATE.dismissedKey,String(remote.version));}catch(_){}
+      try{localStorage.setItem(MATGARY_UPDATE.dismissedKey,String(remote.version));}catch(_){ }
       removeModal();
     };
     overlay.querySelector('#matgaryUpdateNow').onclick=function(){installUpdate(remote,this);};
@@ -9915,12 +9916,27 @@ window.addEventListener('online',()=>{try{if(typeof markCloudSyncPending==='func
 
   async function clearCachesOnly(){
     if(!('caches' in window))return;
-    try{const names=await caches.keys();await Promise.all(names.map(n=>caches.delete(n)));}catch(_){}
+    try{
+      const names=await caches.keys();
+      await Promise.all(names.map(n=>caches.delete(n)));
+    }catch(_){ }
   }
 
   async function unregisterOldServiceWorkers(){
     if(!('serviceWorker' in navigator))return;
-    try{const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.unregister()));}catch(_){}
+    try{
+      const regs=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }catch(_){ }
+  }
+
+  function getAppReloadUrl(remoteVersion){
+    // نعيد فتح نفس GitHub Pages بدل raw.githubusercontent.com حتى تظل
+    // كل الموارد النسبية والصور وملفات sw.js على نفس المسار الصحيح.
+    const target=new URL('index.html',window.location.href);
+    target.searchParams.set('matgary_update',String(Date.now()));
+    target.searchParams.set('v',String(remoteVersion||''));
+    return target.href;
   }
 
   async function installUpdate(remote,button){
@@ -9931,10 +9947,13 @@ window.addEventListener('online',()=>{try{if(typeof markCloudSyncPending==='func
     const setStatus=t=>{if(status)status.textContent=t;};
     button.disabled=true;if(later)later.disabled=true;
     button.textContent='جاري التحديث…';
+    const currentPage=window.location.href;
+
     try{
       setStatus('جاري تنزيل النسخة الجديدة…');
       const response=await fetch(MATGARY_UPDATE.appUrl+'?update='+Date.now(),{
-        cache:'no-store',headers:{'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache'}
+        cache:'no-store',
+        headers:{'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache'}
       });
       if(!response.ok)throw new Error('HTTP '+response.status);
       const html=await response.text();
@@ -9946,22 +9965,31 @@ window.addEventListener('online',()=>{try{if(typeof markCloudSyncPending==='func
         throw new Error('Downloaded index.html does not match requested version');
       }
 
-      // سجّل نجاح التحديث قبل تبديل الصفحة، لمنع أي حلقة تحديث.
-      try{
-        localStorage.setItem(MATGARY_UPDATE.installedKey,String(remote.version));
-        localStorage.removeItem(MATGARY_UPDATE.dismissedKey);
-      }catch(_){}
+      // لا نسجل النسخة كـ"مثبتة" قبل إعادة التحميل؛ الصفحة الجديدة
+      // ستسجل نفسها عند تشغيلها، حتى لا نفقد نافذة التحديث إذا فشلت الملاحة.
+      try{localStorage.removeItem(MATGARY_UPDATE.dismissedKey);}catch(_){ }
 
-      setStatus('جاري تنظيف كاش النسخة القديمة…');
+      setStatus('جاري تنظيف النسخة القديمة…');
       await unregisterOldServiceWorkers();
       await clearCachesOnly();
 
-      setStatus('تم تجهيز النسخة الجديدة، جاري فتحها…');
+      setStatus('تم التحقق بنجاح، جاري فتح النسخة الجديدة…');
       sessionStorage.removeItem(MATGARY_UPDATE.busyKey);
-      // document.write يحافظ على عنوان GitHub Pages الحالي، وبالتالي تظل الموارد النسبية صحيحة.
-      document.open();
-      document.write(html);
-      document.close();
+      const targetUrl=getAppReloadUrl(remote.version);
+
+      // لا نستخدم document.open/write. هذا الأسلوب غير موصى به وقد يتصرف
+      // بشكل غير متوقع بعد تحميل الصفحة، خصوصًا عند إدخال HTML كبير. 
+      window.location.replace(targetUrl);
+
+      // احتياطي: إذا رفض المتصفح الملاحة ولم يتغير العنوان، نعيد الأزرار.
+      setTimeout(function(){
+        if(window.location.href===currentPage){
+          sessionStorage.removeItem(MATGARY_UPDATE.busyKey);
+          button.disabled=false;if(later)later.disabled=false;
+          button.textContent='إعادة التحديث';
+          setStatus('لم يتم فتح النسخة الجديدة تلقائيًا. اضغط «إعادة التحديث».');
+        }
+      },8000);
     }catch(error){
       console.error('Matgary update failed:',error);
       sessionStorage.removeItem(MATGARY_UPDATE.busyKey);
@@ -9974,19 +10002,19 @@ window.addEventListener('online',()=>{try{if(typeof markCloudSyncPending==='func
   async function checkMatgaryUpdate(){
     try{
       const response=await fetch(MATGARY_UPDATE.versionUrl+'?t='+Date.now(),{
-        cache:'no-store',headers:{'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache'}
+        cache:'no-store',
+        headers:{'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache'}
       });
       if(!response.ok)throw new Error('HTTP '+response.status);
       const remote=await response.json();
       if(!remote||!remote.version)return;
 
       if(compareVersions(remote.version,MATGARY_UPDATE.current)<=0){
-        try{localStorage.setItem(MATGARY_UPDATE.installedKey,MATGARY_UPDATE.current);}catch(_){}
+        try{localStorage.setItem(MATGARY_UPDATE.installedKey,MATGARY_UPDATE.current);}catch(_){ }
         return;
       }
 
-      // لا نخفي التحديث الجديد إلا إذا اختار المستخدم «لاحقًا» لنفس الرقم.
-      let dismissed='';try{dismissed=localStorage.getItem(MATGARY_UPDATE.dismissedKey)||'';}catch(_){}
+      let dismissed='';try{dismissed=localStorage.getItem(MATGARY_UPDATE.dismissedKey)||'';}catch(_){ }
       if(dismissed===String(remote.version))return;
       showUpdate(remote);
     }catch(error){
