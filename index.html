@@ -2643,6 +2643,51 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 @media(max-width:380px){.pc-actions{gap:4px}.pc-actions button{font-size:.54rem;padding:5px 3px}.purchase-edit-multi-head,.purchase-edit-multi-row{grid-template-columns:minmax(0,1.25fr) .68fr .68fr}}
 </style>
 
+
+<style id="matgary-product-images-v1817">
+/* =========================================================
+   متجري v1.8.17 — توحيد عرض صور المنتجات
+   الهدف: الحفاظ على تنسيق البطاقات + إظهار المنتج كاملًا بدون قص أو Zoom.
+   لا يغيّر الحسابات أو المخزون أو منطق البيع.
+   ========================================================= */
+.product-item .p-image,
+.sale-product-card .sp-image,
+.pos-sp-image{
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.product-item .p-image img,
+.sale-product-card .sp-image img{
+  width:100%;
+  height:100%;
+  object-fit:contain !important;
+  object-position:center center !important;
+  transform:none !important;
+  padding:4px;
+  display:block;
+}
+.pos-sp-image img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  transform:scale(1) !important;
+  transform-origin:center center !important;
+  padding:0 !important;
+  display:block;
+}
+/* صور المنتج في القوائم والتقارير: لا نقص العبوة */
+.ep-image-preview,
+.dash-best-img img,
+.pos-cart-item .cart-visual img{
+  object-fit:contain !important;
+  object-position:center center !important;
+  transform:none !important;
+}
+</style>
+
 </head>
 <body>
 <div id="loading-screen">
@@ -2712,9 +2757,9 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-const APP_VERSION='v1.8.16';
+const APP_VERSION='v1.8.17';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "13 سبتمبر 2026 — إصلاح عرض صور المنتجات بدون قص أو زوم";
+const APP_BUILD_DATE = "13 سبتمبر 2026 — توحيد تنسيق صور المنتجات والحفاظ على العرض الكامل بدون قص أو زوم";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -8849,7 +8894,7 @@ async function replaceCloudDataWithLocal() {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js?v=1.8.16')
+    navigator.serviceWorker.register('sw.js?v=1.8.17')
       .then(function(registration) {
         registration.update().catch(function(){});
         console.log('SW registered: ', registration.scope);
