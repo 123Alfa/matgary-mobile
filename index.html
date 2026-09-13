@@ -2644,31 +2644,93 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 </style>
 
 
-<style id="matgary-smart-images-v1818">
-/* v1.8.18 — نظام صور ذكي: لا قص، لا زوم، ويحافظ على كامل العبوة */
+
+
+<style id="matgary-product-images-final">
+/* =====================================================
+   متجري v1.8.18 — توحيد عرض صور المنتجات
+   بدون قص / بدون زووم / منع تعارض قواعد الصور
+   ===================================================== */
 .product-item .p-image,
 .sale-product-card .sp-image,
 .pos-sp-image,
 .product-image-preview,
 .dash-best-img,
-.pos-cart-product-cell .cart-visual{overflow:hidden!important;position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;background:#f6f8f7!important}
-.product-item .p-image::before,
-.sale-product-card .sp-image::before,
-.pos-sp-image::before{
-  content:"";position:absolute;inset:0;background-image:var(--smart-img-bg,none);background-position:center;background-size:cover;background-repeat:no-repeat;filter:blur(16px);opacity:.10;transform:scale(1.12);pointer-events:none
+.pos-cart-product-cell .cart-visual,
+.pos-cart-item .cart-visual,
+.sale-selected-preview .ssp-icon,
+.ep-image-preview{
+  position:relative !important;
+  overflow:hidden !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:#f6f8f7 !important;
 }
+
 .product-item .p-image img,
 .sale-product-card .sp-image img,
 .pos-sp-image img,
 .product-image-preview img,
 .dash-best-img img,
 .pos-cart-product-cell .cart-visual img,
-.pos-cart-item .cart-visual img{
-  position:relative!important;z-index:1!important;display:block!important;width:auto!important;height:auto!important;max-width:90%!important;max-height:90%!important;min-width:0!important;min-height:0!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:auto!important;transform:none!important;transform-origin:center!important;border:0!important
+.pos-cart-item .cart-visual img,
+.sale-selected-preview img,
+.ep-image-preview img{
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  padding:4px !important;
+  margin:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  transform:none !important;
+  box-sizing:border-box !important;
 }
-/* في قائمة المنتجات نمنع أي قاعدة قديمة من فرض cover */
-.product-item .p-image img,.sale-product-card .sp-image img,.pos-sp-image img{aspect-ratio:auto!important}
+
+.product-status,
+.sp-stock-badge,
+.sp-best-badge{z-index:3 !important;}
+
+.pos-sp-image{
+  width:100% !important;
+  height:132px !important;
+  border-radius:13px !important;
+  margin-bottom:8px !important;
+}
+
+/* POS تحديدًا: لا تكبير إضافي ولا قص */
+.pos-sp-image img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  padding:0 !important;
+  margin:0 !important;
+  transform:none !important;
+}
+
+.pos-cart-product-cell .cart-visual img,
+.pos-cart-item .cart-visual img{padding:3px !important;}
+
+.product-image-preview img,
+.ep-image-preview img{padding:6px !important;}
+
+@media(max-width:900px){
+  .pos-sp-image{height:125px !important;}
+}
+@media(max-width:520px){
+  .pos-sp-image{height:120px !important;}
+}
 </style>
+
 </head>
 <body>
 <div id="loading-screen">
@@ -2738,9 +2800,9 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-const APP_VERSION='v1.8.18';
+const APP_VERSION='v1.8.19';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "13 سبتمبر 2026 — إصلاح عرض صور المنتجات بدون قص أو زوم";
+const APP_BUILD_DATE = "13 سبتمبر 2026 — توحيد تنسيق صور المنتجات والحفاظ على العرض الكامل بدون قص أو زوم";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -3928,7 +3990,94 @@ function filterProducts(){
     const status=out?'<span class="product-status out">نافد</span>':low?'<span class="product-status low">مخزون منخفض</span>':'<span class="product-status ok">متوفر</span>';
     return `<div class="product-item product-item-v2 ${out?'is-out':''}" onclick="editProduct('${p.id}')"><div class="p-image">${image}${status}</div><div class="p-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div><div class="p-type"><span class="badge badge-${meta.className}">${meta.icon} ${meta.label}</span></div><div class="product-price-row"><b>${fmt(p.retail||0)}</b><small>قطاعي</small></div><div class="product-price-mini"><span>جملة <b>${fmt(p.wholesale||0)}</b></span><span>شراء <b>${fmt(p.purchase||0)}</b></span></div><div class="p-qty">المخزون: <b>${formatProductQty(p,qty)} ${p.unit||'كجم'}</b></div><div class="product-stock-bar"><i style="width:${Math.min(100,Math.max(3,min>0?qty/min*100:100))}%"></i></div><div class="p-profit"><i class="fas fa-arrow-trend-${pr>=0?'up':'down'}"></i> ربح ${fmt(pr)} <small>(${pct}%)</small></div><div class="p-actions"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editProduct('${p.id}')"><i class="fas fa-pen"></i> تعديل</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button></div></div>`;
   }).join('')||'<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-box-open"></i><p>لا توجد أصناف مطابقة للبحث</p></div>';
-  grid.querySelectorAll('.p-image').forEach(box=>{const im=box.querySelector('img');if(im&&im.src)box.style.setProperty('--smart-img-bg',`url(\"${im.src.replace(/\"/g,'') }\")`);});
+}
+
+function trimProductImageCanvas(sourceCanvas){
+  const ctx=sourceCanvas.getContext('2d',{willReadFrequently:true});
+  const w=sourceCanvas.width,h=sourceCanvas.height;
+  if(!w||!h)return sourceCanvas;
+  const data=ctx.getImageData(0,0,w,h).data;
+  const samplePoints=[[0,0],[w-1,0],[0,h-1],[w-1,h-1]];
+  let br=0,bg=0,bb=0,ba=0;
+  samplePoints.forEach(([x,y])=>{const i=(y*w+x)*4;br+=data[i];bg+=data[i+1];bb+=data[i+2];ba+=data[i+3];});
+  br/=4;bg/=4;bb/=4;ba/=4;
+  const threshold=52;
+  const alphaThreshold=18;
+  let minX=w,minY=h,maxX=-1,maxY=-1;
+  const isBackground=(i)=>{
+    const a=data[i+3];
+    if(a<=alphaThreshold)return true;
+    const dr=data[i]-br,dg=data[i+1]-bg,db=data[i+2]-bb;
+    return Math.sqrt(dr*dr+dg*dg+db*db)<=threshold;
+  };
+  // ابحث عن المحتوى الحقيقي مع تجاهل الفراغ المتصل بلون الخلفية من الأطراف.
+  // نستخدم flood-fill من الحواف حتى لا نحذف المساحات البيضاء الموجودة داخل العبوة.
+  const seen=new Uint8Array(w*h),queue=new Int32Array(w*h);
+  let head=0,tail=0;
+  const push=(x,y)=>{const k=y*w+x;if(seen[k])return;seen[k]=1;queue[tail++]=k;};
+  for(let x=0;x<w;x++){push(x,0);push(x,h-1);}
+  for(let y=1;y<h-1;y++){push(0,y);push(w-1,y);}
+  while(head<tail){
+    const k=queue[head++],x=k%w,y=Math.floor(k/w),i=k*4;
+    if(!isBackground(i)){
+      if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;
+      continue;
+    }
+    if(x>0)push(x-1,y);if(x<w-1)push(x+1,y);if(y>0)push(x,y-1);if(y<h-1)push(x,y+1);
+  }
+  // fallback: لو الصورة كلها تقريبًا خلفية أو لم نستطع تحديد حدود واضحة، لا نقصها.
+  if(maxX<0||maxY<0)return sourceCanvas;
+  const pad=Math.max(8,Math.round(Math.min(w,h)*0.025));
+  minX=Math.max(0,minX-pad);minY=Math.max(0,minY-pad);
+  maxX=Math.min(w-1,maxX+pad);maxY=Math.min(h-1,maxY+pad);
+  const cropW=maxX-minX+1,cropH=maxY-minY+1;
+  if(cropW>=w*0.96&&cropH>=h*0.96)return sourceCanvas;
+  const cropped=document.createElement('canvas');
+  cropped.width=cropW;cropped.height=cropH;
+  const cctx=cropped.getContext('2d');
+  cctx.drawImage(sourceCanvas,minX,minY,cropW,cropH,0,0,cropW,cropH);
+  return cropped;
+}
+
+function trimProductImageCanvas(sourceCanvas){
+  const ctx=sourceCanvas.getContext('2d',{willReadFrequently:true});
+  const w=sourceCanvas.width,h=sourceCanvas.height;
+  if(!w||!h)return sourceCanvas;
+  const data=ctx.getImageData(0,0,w,h).data;
+  const pts=[[0,0],[w-1,0],[0,h-1],[w-1,h-1]];
+  let br=0,bg=0,bb=0;
+  pts.forEach(([x,y])=>{const i=(y*w+x)*4;br+=data[i];bg+=data[i+1];bb+=data[i+2];});
+  br/=4;bg/=4;bb/=4;
+  const threshold=52;
+  const isBg=i=>{
+    if(data[i+3]<=18)return true;
+    const dr=data[i]-br,dg=data[i+1]-bg,db=data[i+2]-bb;
+    return Math.sqrt(dr*dr+dg*dg+db*db)<=threshold;
+  };
+  let minX=w,minY=h,maxX=-1,maxY=-1;
+  const seen=new Uint8Array(w*h),queue=new Int32Array(w*h);
+  let head=0,tail=0;
+  const push=(x,y)=>{const k=y*w+x;if(seen[k])return;seen[k]=1;queue[tail++]=k;};
+  for(let x=0;x<w;x++){push(x,0);push(x,h-1);}
+  for(let y=1;y<h-1;y++){push(0,y);push(w-1,y);}
+  while(head<tail){
+    const k=queue[head++],x=k%w,y=Math.floor(k/w),i=k*4;
+    if(!isBg(i)){
+      if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;
+      continue;
+    }
+    if(x>0)push(x-1,y);if(x<w-1)push(x+1,y);if(y>0)push(x,y-1);if(y<h-1)push(x,y+1);
+  }
+  if(maxX<0||maxY<0)return sourceCanvas;
+  const pad=Math.max(8,Math.round(Math.min(w,h)*0.025));
+  minX=Math.max(0,minX-pad);minY=Math.max(0,minY-pad);
+  maxX=Math.min(w-1,maxX+pad);maxY=Math.min(h-1,maxY+pad);
+  const cw=maxX-minX+1,ch=maxY-minY+1;
+  if(cw>=w*0.96&&ch>=h*0.96)return sourceCanvas;
+  const cropped=document.createElement('canvas');
+  cropped.width=cw;cropped.height=ch;
+  cropped.getContext('2d').drawImage(sourceCanvas,minX,minY,cw,ch,0,0,cw,ch);
+  return cropped;
 }
 
 function readProductImage(file, callback){
@@ -3938,19 +4087,23 @@ function readProductImage(file, callback){
   reader.onload=()=>{
     const img=new Image();
     img.onload=()=>{
-      const max=900;
+      const max=1200;
       const scale=Math.min(1,max/Math.max(img.width,img.height));
       const canvas=document.createElement('canvas');
       canvas.width=Math.max(1,Math.round(img.width*scale));
       canvas.height=Math.max(1,Math.round(img.height*scale));
       const ctx=canvas.getContext('2d');
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
       ctx.drawImage(img,0,0,canvas.width,canvas.height);
-      callback(canvas.toDataURL('image/jpeg',0.82));
+      const cropped=trimProductImageCanvas(canvas);
+      callback(cropped.toDataURL('image/jpeg',0.86));
     };
     img.src=reader.result;
   };
   reader.readAsDataURL(file);
 }
+
 function previewProductImage(input){
   readProductImage(input.files[0],data=>{
     if(!data)return; window.pendingProductImage=data;
@@ -5092,7 +5245,7 @@ function renderSaleProductGrid(){
   const result=document.getElementById('posProductsResult');if(result)result.textContent=`${products.length} منتج`;
   grid.innerHTML=products.map(p=>{
     const icon=getProductTypeIcon(p.type);
-    const img=p.image?`<img src="${p.image}" alt="${escapeHtml(p.name)}" loading="lazy" decoding="async">`:icon;
+    const img=p.image?`<img src="${p.image}" alt="${p.name}">`:icon;
     const out=(p.qty||0)<=0;
     const sold=soldMap[p.id]||0;
     const kg=isKgProduct(p);
@@ -5112,8 +5265,6 @@ function renderSaleProductGrid(){
     </div>`;
   }).join('')||'<div class="empty-state" style="grid-column:1/-1;padding:30px"><i class="fas fa-box-open"></i><p>لا توجد منتجات مطابقة</p></div>';
   updateSaleSelectedPreview();
-  // خلفية ناعمة من نفس الصورة فقط لتكبير الإحساس البصري بدون قص الصورة الأصلية.
-  grid.querySelectorAll('.pos-sp-image').forEach(box=>{const im=box.querySelector('img');if(im&&im.src)box.style.setProperty('--smart-img-bg',`url(\"${im.src.replace(/\"/g,'') }\")`);});
 }
 
 function selectSaleProduct(id){
@@ -8878,7 +9029,7 @@ async function replaceCloudDataWithLocal() {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js?v=1.8.18')
+    navigator.serviceWorker.register('sw.js?v=1.8.19')
       .then(function(registration) {
         registration.update().catch(function(){});
         console.log('SW registered: ', registration.scope);
