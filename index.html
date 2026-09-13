@@ -2644,50 +2644,31 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 </style>
 
 
-<style id="matgary-product-images-v1817">
-/* =========================================================
-   متجري v1.8.17 — توحيد عرض صور المنتجات
-   الهدف: الحفاظ على تنسيق البطاقات + إظهار المنتج كاملًا بدون قص أو Zoom.
-   لا يغيّر الحسابات أو المخزون أو منطق البيع.
-   ========================================================= */
+<style id="matgary-smart-images-v1818">
+/* v1.8.18 — نظام صور ذكي: لا قص، لا زوم، ويحافظ على كامل العبوة */
 .product-item .p-image,
 .sale-product-card .sp-image,
-.pos-sp-image{
-  overflow:hidden;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+.pos-sp-image,
+.product-image-preview,
+.dash-best-img,
+.pos-cart-product-cell .cart-visual{overflow:hidden!important;position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;background:#f6f8f7!important}
+.product-item .p-image::before,
+.sale-product-card .sp-image::before,
+.pos-sp-image::before{
+  content:"";position:absolute;inset:0;background-image:var(--smart-img-bg,none);background-position:center;background-size:cover;background-repeat:no-repeat;filter:blur(16px);opacity:.10;transform:scale(1.12);pointer-events:none
 }
 .product-item .p-image img,
-.sale-product-card .sp-image img{
-  width:100%;
-  height:100%;
-  object-fit:contain !important;
-  object-position:center center !important;
-  transform:none !important;
-  padding:4px;
-  display:block;
-}
-.pos-sp-image img{
-  width:100% !important;
-  height:100% !important;
-  object-fit:contain !important;
-  object-position:center center !important;
-  transform:scale(1) !important;
-  transform-origin:center center !important;
-  padding:0 !important;
-  display:block;
-}
-/* صور المنتج في القوائم والتقارير: لا نقص العبوة */
-.ep-image-preview,
+.sale-product-card .sp-image img,
+.pos-sp-image img,
+.product-image-preview img,
 .dash-best-img img,
+.pos-cart-product-cell .cart-visual img,
 .pos-cart-item .cart-visual img{
-  object-fit:contain !important;
-  object-position:center center !important;
-  transform:none !important;
+  position:relative!important;z-index:1!important;display:block!important;width:auto!important;height:auto!important;max-width:90%!important;max-height:90%!important;min-width:0!important;min-height:0!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:auto!important;transform:none!important;transform-origin:center!important;border:0!important
 }
+/* في قائمة المنتجات نمنع أي قاعدة قديمة من فرض cover */
+.product-item .p-image img,.sale-product-card .sp-image img,.pos-sp-image img{aspect-ratio:auto!important}
 </style>
-
 </head>
 <body>
 <div id="loading-screen">
@@ -2757,9 +2738,9 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-const APP_VERSION='v1.8.17';
+const APP_VERSION='v1.8.18';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "13 سبتمبر 2026 — توحيد تنسيق صور المنتجات والحفاظ على العرض الكامل بدون قص أو زوم";
+const APP_BUILD_DATE = "13 سبتمبر 2026 — إصلاح عرض صور المنتجات بدون قص أو زوم";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -3947,6 +3928,7 @@ function filterProducts(){
     const status=out?'<span class="product-status out">نافد</span>':low?'<span class="product-status low">مخزون منخفض</span>':'<span class="product-status ok">متوفر</span>';
     return `<div class="product-item product-item-v2 ${out?'is-out':''}" onclick="editProduct('${p.id}')"><div class="p-image">${image}${status}</div><div class="p-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div><div class="p-type"><span class="badge badge-${meta.className}">${meta.icon} ${meta.label}</span></div><div class="product-price-row"><b>${fmt(p.retail||0)}</b><small>قطاعي</small></div><div class="product-price-mini"><span>جملة <b>${fmt(p.wholesale||0)}</b></span><span>شراء <b>${fmt(p.purchase||0)}</b></span></div><div class="p-qty">المخزون: <b>${formatProductQty(p,qty)} ${p.unit||'كجم'}</b></div><div class="product-stock-bar"><i style="width:${Math.min(100,Math.max(3,min>0?qty/min*100:100))}%"></i></div><div class="p-profit"><i class="fas fa-arrow-trend-${pr>=0?'up':'down'}"></i> ربح ${fmt(pr)} <small>(${pct}%)</small></div><div class="p-actions"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editProduct('${p.id}')"><i class="fas fa-pen"></i> تعديل</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button></div></div>`;
   }).join('')||'<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-box-open"></i><p>لا توجد أصناف مطابقة للبحث</p></div>';
+  grid.querySelectorAll('.p-image').forEach(box=>{const im=box.querySelector('img');if(im&&im.src)box.style.setProperty('--smart-img-bg',`url(\"${im.src.replace(/\"/g,'') }\")`);});
 }
 
 function readProductImage(file, callback){
@@ -5110,7 +5092,7 @@ function renderSaleProductGrid(){
   const result=document.getElementById('posProductsResult');if(result)result.textContent=`${products.length} منتج`;
   grid.innerHTML=products.map(p=>{
     const icon=getProductTypeIcon(p.type);
-    const img=p.image?`<img src="${p.image}" alt="${p.name}">`:icon;
+    const img=p.image?`<img src="${p.image}" alt="${escapeHtml(p.name)}" loading="lazy" decoding="async">`:icon;
     const out=(p.qty||0)<=0;
     const sold=soldMap[p.id]||0;
     const kg=isKgProduct(p);
@@ -5130,6 +5112,8 @@ function renderSaleProductGrid(){
     </div>`;
   }).join('')||'<div class="empty-state" style="grid-column:1/-1;padding:30px"><i class="fas fa-box-open"></i><p>لا توجد منتجات مطابقة</p></div>';
   updateSaleSelectedPreview();
+  // خلفية ناعمة من نفس الصورة فقط لتكبير الإحساس البصري بدون قص الصورة الأصلية.
+  grid.querySelectorAll('.pos-sp-image').forEach(box=>{const im=box.querySelector('img');if(im&&im.src)box.style.setProperty('--smart-img-bg',`url(\"${im.src.replace(/\"/g,'') }\")`);});
 }
 
 function selectSaleProduct(id){
@@ -8894,7 +8878,7 @@ async function replaceCloudDataWithLocal() {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js?v=1.8.17')
+    navigator.serviceWorker.register('sw.js?v=1.8.18')
       .then(function(registration) {
         registration.update().catch(function(){});
         console.log('SW registered: ', registration.scope);
