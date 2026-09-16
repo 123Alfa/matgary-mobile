@@ -9443,7 +9443,7 @@ function historyCard(inv){
 
   window.editInvoicePro=function(key){
     const inv=findInvoice(key);if(!inv)return;
-    const rows=inv.lines.map((s,i)=>{ const p=productForSaleLine(s), ws=isKgProduct(p)||s.isWeightSale; const qv=ws?rawSaleWeight(s):money(s.qty); const up=ws?(Number(s.unitPrice)>0?Number(s.unitPrice):(Number(s.qty)>0?Number(s.total||0)/Number(s.qty):0)):money(s.price); return `<div class="edit-invoice-line"><div class="edit-invoice-name"><strong>${esc(s.productName||'صنف')}</strong><small>المباع: ${ws?weightLabel(qv):formatProductQty(p,s.qty)} ${ws?'بالكيلو':''}</small></div><input data-edit-line="${i}" data-field="qty" type="number" min="0" step="0.001" value="${qv}" placeholder="الكمية"><input data-edit-line="${i}" data-field="price" type="number" min="0" step="0.01" value="${money(up)}" placeholder="${ws?'سعر الكيلو':'السعر'}"><input data-edit-line="${i}" data-field="discount" type="number" min="0" max="100" step="0.1" value="${money(s.discount)}" placeholder="خصم %"></div>`; }).join('');
+    const rows=inv.lines.map((s,i)=>{ const p=productForSaleLine(s), ws=isKgProduct(p)||s.isWeightSale; const wv=ws?rawSaleWeight(s):1; const qv=ws?(s.packages!=null?Number(s.packages):Math.max(0,Number(s.qty||0)/(wv||1))):money(s.qty); const up=ws?(Number(s.unitPrice)>0?Number(s.unitPrice):(Number(s.qty)>0?Number(s.total||0)/Number(s.qty):0)):money(s.price); const soldLabel=ws?`${qv} × ${weightLabel(wv)}`:formatProductQty(p,s.qty); return `<div class="edit-invoice-line"><div class="edit-invoice-name"><strong>${esc(s.productName||'صنف')}</strong><small>المباع: ${soldLabel}</small></div><input data-edit-line="${i}" data-field="qty" type="number" min="0" step="1" value="${qv}" placeholder="الكمية"><input data-edit-line="${i}" data-field="price" type="number" min="0" step="0.01" value="${money(up)}" placeholder="${ws?'سعر الكيلو':'السعر'}"><input data-edit-line="${i}" data-field="discount" type="number" min="0" max="100" step="0.1" value="${money(s.discount)}" placeholder="خصم %"></div>`; }).join('');
     openModal(`<div class="modal-header"><h2><i class="fas fa-pen" style="color:var(--primary);margin-left:8px"></i> تعديل الفاتورة رقم ${esc(invoiceDisplayNumber(inv))}</h2><button class="modal-close" onclick="closeModal()">&times;</button></div><div class="form-group" style="margin-bottom:12px"><label><i class="fas fa-calendar-day" style="color:var(--primary);margin-left:6px"></i> تاريخ الفاتورة</label><input id="editInvoiceDate" type="date" value="${esc(inv.date||'')}" class="sales-date-filter"></div><div class="edit-invoice-head"><span>الصنف</span><span>الكمية</span><span>السعر</span><span>الخصم %</span></div><div id="editInvoiceLines">${rows}</div><div class="form-group" style="margin-top:10px"><label>ملاحظات</label><input id="editInvoiceNote" value="${esc(inv.note)}"></div><button class="btn btn-primary btn-block" onclick="saveInvoiceEditPro('${esc(inv.key)}')"><i class="fas fa-save"></i> حفظ تعديل الفاتورة</button>`);
   };
 
@@ -9458,15 +9458,24 @@ function historyCard(inv){
       const d=Math.min(100,Math.max(0,money(document.querySelector(`[data-edit-line="${i}"][data-field="discount"]`)?.value)));
       if(q<0||p<0)valid=false;
       const oldWeight=rawSaleWeight(s);
-      const packs=weightSale?(s.packages!=null?Math.max(0,q/(oldWeight||1)):1):q;
-      const gross=weightSale?p*q:p*packs;
+      // في الأصناف المباعة بالوزن، خانة الكمية في شاشة التعديل تعني عدد العبوات،
+      // بينما الوزن لكل عبوة محفوظ في s.weight. لذلك لا نحول q إلى وزن مرة أخرى.
+      const packs=weightSale
+        ?Math.max(0,q)
+        :q;
+      const newQty=weightSale
+        ?money(packs*(oldWeight||1))
+        :q;
+      const gross=weightSale
+        ?money(p*newQty)
+        :money(p*packs);
       const total=Math.max(0,money(gross*(1-d/100)));
       // s.cost في فاتورة الوزن هو تكلفة العبوة/الوزن المباع بالفعل،
       // وليس تكلفة الكيلو؛ لذلك نحسب إجمالي التكلفة بعدد العبوات.
       const totalCost=money(s.cost)*Math.max(0,packs);
       const profit=(q>0?Math.max(0,money(total-totalCost)):0);
       newTotal=money(newTotal+total);newProfit=money(newProfit+profit);
-      return {s,q,p,d,total,profit,weightSale};
+      return {s,q,p,d,total,profit,weightSale,packs,newQty,weight:weightSale?(oldWeight||1):1};
     });
     if(!valid)return showToast('تحقق من الكميات والأسعار','warning');
 
@@ -9503,7 +9512,8 @@ function historyCard(inv){
         const p=Store.get('products').find(x=>String(x.id)===String(v.s.productId));
         if(p){
           const restored=Number(p.qty||0)+Number(v.s.qty||0);
-          const finalQty=restored-Number(v.q||0);
+          // v.newQty هو إجمالي الوزن الجديد (عدد العبوات × وزن العبوة) للأصناف الوزنية.
+          const finalQty=restored-Number(v.newQty!=null?v.newQty:v.q||0);
           if(finalQty< -0.0001)throw new Error('INSUFFICIENT_STOCK');
           Store.update('products',p.id,{qty:Math.max(0,Number(finalQty))});
         }
@@ -9518,9 +9528,13 @@ function historyCard(inv){
 
       // تحديث سطور المبيعات مع الإبقاء على initialPaid و collectionHistory كما هما.
       newVals.forEach(v=>Store.update('sales',v.s.id,{
-        qty:v.q,
-        packages:v.s.weight?Math.max(0,Number(v.q||0)/(rawSaleWeight(v.s)||1)):v.q,
+        // احفظ الكمية المحاسبية بالوزن، وعدد العبوات والوزن لكل عبوة بشكل منفصل.
+        qty:v.newQty,
+        packages:v.weightSale?v.packs:v.q,
+        weight:v.weightSale?v.weight:(v.s.weight||1),
+        unitPrice:v.weightSale?v.p:(v.s.unitPrice!=null?v.s.unitPrice:v.p),
         price:v.p,
+        discountedPrice:v.weightSale?money(v.p*(1-v.d/100)):v.p,
         discount:v.d,
         total:v.total,
         profit:v.profit,
