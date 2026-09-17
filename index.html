@@ -2916,6 +2916,254 @@ html[data-theme="dark"] .sales-cv2-grid .is-due b{
   color:var(--danger-light,#ff8f96)!important;
 }
 </style>
+
+<style id="dark-deep-pages-fix-v1">
+/* =========================================================
+   متجري — إصلاح الوضع الداكن للصفحات الداخلية
+   يشمل: الخزنة + المشتريات + حركة الصنف + سجل المبيعات والفلاتر
+   لا يغيّر الوضع الفاتح.
+   ========================================================= */
+html[data-theme="dark"] .cashbox-balance,
+html[data-theme="dark"] .cashbox-stat,
+html[data-theme="dark"] .cashbox-filter,
+html[data-theme="dark"] .cashbox-section{
+  background:var(--bg-card)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+  box-shadow:var(--shadow)!important;
+}
+html[data-theme="dark"] .cashbox-filter input{
+  background:var(--bg-input)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .cashbox-filter button{
+  background:color-mix(in srgb,var(--primary) 15%,var(--bg-input))!important;
+  color:var(--primary-light)!important;
+  border:1px solid var(--border)!important;
+}
+html[data-theme="dark"] .cashbox-balance small,
+html[data-theme="dark"] .cashbox-balance span,
+html[data-theme="dark"] .cashbox-stat small,
+html[data-theme="dark"] .cashbox-filter label,
+html[data-theme="dark"] .cashbox-section-head small,
+html[data-theme="dark"] .cashbox-movement-main small,
+html[data-theme="dark"] .cashbox-empty{
+  color:var(--text-muted)!important;
+}
+html[data-theme="dark"] .cashbox-section-head,
+html[data-theme="dark"] .cashbox-movement{
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .cashbox-movement.in .cashbox-movement-icon{background:rgba(16,185,129,.14)!important}
+html[data-theme="dark"] .cashbox-movement.out .cashbox-movement-icon{background:rgba(239,68,68,.14)!important}
+
+/* فلاتر التاريخ — كانت بخلفية بيضاء ثابتة */
+html[data-theme="dark"] .sales-date-filter,
+html[data-theme="dark"] input[type="date"].sales-date-filter,
+html[data-theme="dark"] .sales-date-wrap,
+html[data-theme="dark"] .cashbox-filter input[type="date"],
+html[data-theme="dark"] #stockMovementFrom,
+html[data-theme="dark"] #stockMovementTo,
+html[data-theme="dark"] #purchaseFrom,
+html[data-theme="dark"] #purchaseTo{
+  background:var(--bg-input)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .sales-date-wrap{color:var(--text-muted)!important}
+html[data-theme="dark"] .sales-date-wrap i{color:var(--primary-light)!important}
+
+/* سجل المبيعات — الكروت والتفاصيل */
+html[data-theme="dark"] .invoice-pro-card,
+html[data-theme="dark"] .sales-cv2-card,
+html[data-theme="dark"] .sh-toolbar{
+  background:var(--bg-card)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .invoice-pro-meta span,
+html[data-theme="dark"] .sales-history-pill,
+html[data-theme="dark"] .sales-cv2-grid>div,
+html[data-theme="dark"] .sales-cv2-total,
+html[data-theme="dark"] .sales-cv2-btn,
+html[data-theme="dark"] .invoice-pro-banner>div,
+html[data-theme="dark"] .invoice-totals-pro,
+html[data-theme="dark"] .invoice-lines-pro{
+  background:var(--bg-input)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .invoice-pro-actions button,
+html[data-theme="dark"] .invoice-actions-pro button{
+  background:var(--bg-input)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .invoice-pro-actions button:nth-child(2),
+html[data-theme="dark"] .invoice-actions-pro button:nth-child(3){color:#82a9ff!important}
+html[data-theme="dark"] .invoice-pro-actions button:nth-child(3),
+html[data-theme="dark"] .invoice-actions-pro button:nth-child(2){color:var(--success-light)!important}
+html[data-theme="dark"] .invoice-pro-actions button:nth-child(4),
+html[data-theme="dark"] .invoice-actions-pro button:nth-child(4){color:#e6bd65!important}
+html[data-theme="dark"] .invoice-pro-actions .invoice-delete-mini,
+html[data-theme="dark"] .invoice-actions-pro .danger{background:rgba(239,68,68,.12)!important;color:#ff8f96!important}
+html[data-theme="dark"] .sales-cv2-btn.view{background:rgba(15,118,110,.14)!important;color:var(--primary-light)!important}
+html[data-theme="dark"] .sales-cv2-btn.return{background:rgba(245,158,11,.12)!important;color:#e6bd65!important}
+html[data-theme="dark"] .sales-cv2-btn.collect,
+html[data-theme="dark"] .sales-cv2-btn.whatsapp{background:rgba(16,185,129,.12)!important;color:var(--success-light)!important}
+html[data-theme="dark"] .sales-cv2-btn.edit{background:rgba(37,99,235,.13)!important;color:#82a9ff!important}
+html[data-theme="dark"] .sales-cv2-btn.print{background:var(--bg-elevated)!important;color:var(--text-light)!important}
+html[data-theme="dark"] .sales-cv2-btn.delete{background:rgba(239,68,68,.12)!important;color:#ff8f96!important}
+
+/* تفاصيل الفاتورة / الاسترجاع / التحصيل */
+html[data-theme="dark"] .invoice-line-pro,
+html[data-theme="dark"] .edit-invoice-line,
+html[data-theme="dark"] .invoice-pro-meta{
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .invoice-line-pro small,
+html[data-theme="dark"] .edit-invoice-name small{color:var(--text-muted)!important}
+html[data-theme="dark"] .invoice-note-pro,
+html[data-theme="dark"] .return-invoice-list,
+html[data-theme="dark"] .return-box,
+html[data-theme="dark"] .collection-pro-box,
+html[data-theme="dark"] .collection-box{
+  background:#252319!important;
+  border-color:#4b4228!important;
+  color:#e6dcae!important;
+}
+html[data-theme="dark"] .return-invoice-line,
+html[data-theme="dark"] .return-row{border-color:#51472c!important}
+html[data-theme="dark"] .return-invoice-line input,
+html[data-theme="dark"] .return-row input,
+html[data-theme="dark"] .collection-pro-box input,
+html[data-theme="dark"] .collection-box input,
+html[data-theme="dark"] .edit-invoice-line input{
+  background:var(--bg-input)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .invoice-line-returned{background:#2b261b!important;border-color:#51472c!important}
+html[data-theme="dark"] .invoice-pro-status.returned,
+html[data-theme="dark"] .invoice-detail-status.returned{background:#30271c!important;color:#e6a75a!important;border-color:#5b4728!important}
+
+/* المشتريات */
+html[data-theme="dark"] .purchase-box-v6,
+html[data-theme="dark"] .purchase-invoice-card-v185{
+  background:var(--bg-card)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+  box-shadow:var(--shadow)!important;
+}
+html[data-theme="dark"] .purchase-form-v6 input,
+html[data-theme="dark"] .purchase-form-v6 select,
+html[data-theme="dark"] .purchase-filters-v6 input,
+html[data-theme="dark"] .purchase-filters-v6 select,
+html[data-theme="dark"] .purchase-line-v185 select,
+html[data-theme="dark"] .purchase-line-v185 input{
+  background:var(--bg-input)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .purchase-line-v185,
+html[data-theme="dark"] .purchase-invoice-summary-v185>div,
+html[data-theme="dark"] .purchase-invoice-totals-v185 div,
+html[data-theme="dark"] .purchase-invoice-items-v185,
+html[data-theme="dark"] .purchase-card-data-v6>div,
+html[data-theme="dark"] .purchase-invoice-no{
+  background:var(--bg-input)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .purchase-box-title-v6 span,
+html[data-theme="dark"] .purchase-card-head-v6 h3,
+html[data-theme="dark"] .purchase-invoice-head-v185 strong,
+html[data-theme="dark"] .purchase-invoice-item-v185,
+html[data-theme="dark"] .purchase-invoice-card-v185 strong{
+  color:var(--text)!important;
+}
+html[data-theme="dark"] .purchase-card-data-v6 span,
+html[data-theme="dark"] .purchase-card-data-v6 b,
+html[data-theme="dark"] .purchase-invoice-head-v185 small,
+html[data-theme="dark"] .purchase-invoice-item-v185 .item-meta,
+html[data-theme="dark"] .purchase-invoice-totals-v185 small,
+html[data-theme="dark"] .purchase-empty-v6,
+html[data-theme="dark"] .purchase-box-title-v6 small{
+  color:var(--text-muted)!important;
+}
+html[data-theme="dark"] .purchase-credit-row button,
+html[data-theme="dark"] .purchase-reset-v6,
+html[data-theme="dark"] .purchase-card-actions-v6 button{
+  background:var(--bg-input)!important;
+  color:var(--text-light)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .purchase-credit-row button.active{background:var(--primary-dark)!important;color:#fff!important;border-color:var(--primary)!important}
+html[data-theme="dark"] .purchase-card-actions-v6 button:first-child{color:var(--primary-light)!important;border-color:var(--primary)!important}
+html[data-theme="dark"] .purchase-card-actions-v6 button:last-child{color:#ff8f96!important;border-color:#63353a!important}
+
+/* حركة الصنف — هذه الكروت كان فيها #fff و #f7faf9 بإجبار !important */
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-stat,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-filter-card,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-list-card,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-card{
+  background:var(--bg-card)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+  box-shadow:var(--shadow)!important;
+}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-card.in,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-card.return{background:linear-gradient(180deg,#172624,#162123)!important}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-card.out{background:linear-gradient(180deg,#241b1d,#182022)!important}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-card.adjust{background:linear-gradient(180deg,#262319,#1a2021)!important}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-field select,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-field input{
+  background:var(--bg-input)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-stat span,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-stat small,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-type small,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-date span,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-body span,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-meta span{
+  color:var(--text-muted)!important;
+}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-stat strong,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-type strong,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-date b,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-product strong,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-qty strong,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-balance strong,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-meta strong{
+  color:var(--text)!important;
+}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-body>div,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-date{
+  background:var(--bg-input)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-top,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-meta{
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-date{background:var(--bg-input)!important}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-adjust-actions{border-color:var(--border)!important}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-adjust-delete{background:rgba(239,68,68,.12)!important;color:#ff8f96!important;border-color:#7a3d44!important}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-back{background:var(--bg-input)!important;color:var(--primary-light)!important}
+
+/* أي عناصر داخل الصفحات الثلاث تستخدم اللون الأبيض مباشرة */
+html[data-theme="dark"] .cashbox-page [style*="background:#fff"],
+html[data-theme="dark"] .cashbox-page [style*="background: #fff"],
+html[data-theme="dark"] .purchase-box-v6 [style*="background:#fff"],
+html[data-theme="dark"] .purchase-box-v6 [style*="background: #fff"]{
+  background:var(--bg-input)!important;
+  color:var(--text)!important;
+}
+</style>
+
 </head>
 <body>
 <div id="loading-screen">
