@@ -2897,6 +2897,25 @@ html[data-theme="dark"] .bottom-nav-item.active i{
 }
 </style>
 
+<style id="dark-sales-invoice-meta-fix-v1">
+/* إصلاح خانات النوع والسداد والمدفوع داخل سجل المبيعات في الوضع الداكن */
+html[data-theme="dark"] .sales-cv2-grid>div{
+  background:var(--bg-input)!important;
+  border:1px solid var(--border)!important;
+}
+html[data-theme="dark"] .sales-cv2-grid small{
+  color:var(--text-muted)!important;
+}
+html[data-theme="dark"] .sales-cv2-grid b{
+  color:var(--text)!important;
+}
+html[data-theme="dark"] .sales-cv2-grid .is-profit b{
+  color:var(--success-light,#77d4af)!important;
+}
+html[data-theme="dark"] .sales-cv2-grid .is-due b{
+  color:var(--danger-light,#ff8f96)!important;
+}
+</style>
 </head>
 <body>
 <div id="loading-screen">
