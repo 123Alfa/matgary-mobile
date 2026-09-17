@@ -2732,6 +2732,171 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 </style>
 
 <!-- MATGARY PHASE-A -->
+
+<style id="dark-mode-complete-fix-v1">
+/* ===== Dark Mode Complete Fix ===== */
+html[data-theme="dark"] .menu-item-v3,
+html[data-theme="dark"] .more-settings-card{
+  background:var(--bg-card)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+  box-shadow:var(--shadow)!important;
+}
+html[data-theme="dark"] .menu-item-v3 b,
+html[data-theme="dark"] .more-settings-card b{
+  color:var(--text)!important;
+}
+html[data-theme="dark"] .menu-item-v3 small,
+html[data-theme="dark"] .more-settings-card small,
+html[data-theme="dark"] .menu-item-v3 .arrow,
+html[data-theme="dark"] .more-settings-card .arrow{
+  color:var(--text-muted)!important;
+}
+html[data-theme="dark"] .menu-item-v3 .menu-icon,
+html[data-theme="dark"] .more-settings-card .menu-icon{
+  background:linear-gradient(135deg,#18332f,#292716)!important;
+  color:var(--primary-light)!important;
+}
+
+/* Dashboard cards that still had fixed light backgrounds */
+html[data-theme="dark"] .dash-kpi,
+html[data-theme="dark"] .dash-actions button,
+html[data-theme="dark"] .dash-debts button,
+html[data-theme="dark"] .dash-overview-item,
+html[data-theme="dark"] .products-kpis>div,
+html[data-theme="dark"] .products-filters select,
+html[data-theme="dark"] .products-filter-buttons button,
+html[data-theme="dark"] .products-view-tools button,
+html[data-theme="dark"] .products-search input,
+html[data-theme="dark"] .sales-today-strip>div{
+  background:var(--bg-card)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .dash-actions button:hover,
+html[data-theme="dark"] .dash-debts button:hover{
+  background:var(--bg-elevated)!important;
+}
+html[data-theme="dark"] .dash-overview-item i,
+html[data-theme="dark"] .dash-kpi-icon,
+html[data-theme="dark"] .products-kpis i,
+html[data-theme="dark"] .sales-today-strip i,
+html[data-theme="dark"] .dash-recent-icon,
+html[data-theme="dark"] .dash-best-img{
+  background:var(--bg-elevated)!important;
+}
+html[data-theme="dark"] .dash-card-head button,
+html[data-theme="dark"] .dash-count,
+html[data-theme="dark"] .dashboard-v2 .dash-recent-more{
+  background:var(--bg-input)!important;
+  color:var(--primary-light)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .products-search input,
+html[data-theme="dark"] .products-filters select{
+  color:var(--text)!important;
+}
+html[data-theme="dark"] .products-search input::placeholder{
+  color:var(--text-muted)!important;
+}
+html[data-theme="dark"] .products-filter-buttons button,
+html[data-theme="dark"] .products-view-tools button{
+  color:var(--text-light)!important;
+}
+html[data-theme="dark"] .products-filter-buttons button.active,
+html[data-theme="dark"] .products-view-tools button.active{
+  background:var(--primary)!important;
+  color:#fff!important;
+}
+html[data-theme="dark"] .product-stock-bar{
+  background:#263638!important;
+}
+
+/* Sales / POS elements with hard-coded white backgrounds */
+html[data-theme="dark"] .pos-products-panel,
+html[data-theme="dark"] .pos-cart-panel,
+html[data-theme="dark"] .sale-product-card,
+html[data-theme="dark"] .sale-selected-preview,
+html[data-theme="dark"] .sale-product-picker{
+  background:var(--bg-card)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .sale-product-card.active{
+  background:linear-gradient(180deg,#1b292b,#162426)!important;
+}
+html[data-theme="dark"] .sale-product-card .sp-size,
+html[data-theme="dark"] .pos-cart-size select,
+html[data-theme="dark"] .pos-category-row button,
+html[data-theme="dark"] .pos-adv-tools button,
+html[data-theme="dark"] .pos-quick-paid button{
+  background:var(--bg-input)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .pos-category-row button.active{
+  background:var(--primary)!important;
+  color:#fff!important;
+  border-color:var(--primary)!important;
+}
+html[data-theme="dark"] .pos-adv-tools b{
+  background:var(--primary)!important;
+}
+html[data-theme="dark"] .pos-tax-line,
+html[data-theme="dark"] .pos-tax-summary,
+html[data-theme="dark"] .pos-quick-info .pos-chip{
+  background:var(--bg-input)!important;
+  color:var(--text-light)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .pos-tax-line input,
+html[data-theme="dark"] .pos-sale-note,
+html[data-theme="dark"] .manual-weight-box input,
+html[data-theme="dark"] .manual-weight-box .weight-unit,
+html[data-theme="dark"] .weight-quick button{
+  background:var(--bg-input)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .weight-quick button.active{
+  background:color-mix(in srgb,var(--primary) 18%,var(--bg-input))!important;
+  border-color:var(--primary)!important;
+}
+
+/* Receipts / invoice preview */
+html[data-theme="dark"] .receipt-pro-new,
+html[data-theme="dark"] .receipt-info-grid>div,
+html[data-theme="dark"] .receipt-summary-pro{
+  background:var(--bg-card)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+html[data-theme="dark"] .receipt-info-grid strong,
+html[data-theme="dark"] .receipt-summary-pro strong{
+  color:var(--text)!important;
+}
+html[data-theme="dark"] .receipt-pro-new th{
+  background:var(--primary-dark)!important;
+}
+html[data-theme="dark"] .receipt-summary-pro .remaining{
+  background:#302a18!important;
+  color:#e6bd65!important;
+}
+
+/* Generic light controls frequently reused across pages */
+html[data-theme="dark"] .more-settings-card:hover,
+html[data-theme="dark"] .menu-item-v3:hover{
+  background:var(--bg-elevated)!important;
+}
+html[data-theme="dark"] .card-title>i,
+html[data-theme="dark"] .section-header h2>i,
+html[data-theme="dark"] .settings-icon,
+html[data-theme="dark"] .bottom-nav-item i,
+html[data-theme="dark"] .bottom-nav-item.active i{
+  background:var(--bg-elevated)!important;
+}
+</style>
+
 </head>
 <body>
 <div id="loading-screen">
