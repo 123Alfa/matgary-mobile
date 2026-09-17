@@ -3397,308 +3397,6 @@ html[data-theme="dark"] .sales-summary-card .value{
 }
 </style>
 
-
-<style id="dark-visibility-final-v1826">
-/* =========================================================
-   متجري v1.8.26 — إصلاح نهائي لضعف النصوص في الوضع الداكن
-   النسخ الاحتياطي + الإيميل + جاهز + سجل المبيعات والإحصائيات
-   ========================================================= */
-/* سجل المبيعات — العنوان والإحصائيات */
-html[data-theme="dark"] .sales-history-modern,
-html[data-theme="dark"] .sales-history-modern *{
-  opacity:1!important;
-}
-html[data-theme="dark"] .sales-history-title h3{
-  color:#ffffff!important;
-  font-weight:900!important;
-}
-html[data-theme="dark"] .sales-history-title small{
-  color:#b9cbc7!important;
-  opacity:1!important;
-}
-html[data-theme="dark"] .sales-history-head{
-  color:#ffffff!important;
-  border-bottom-color:#33484b!important;
-}
-html[data-theme="dark"] .sales-stat{
-  background:#1d2a2c!important;
-  border-color:#34474a!important;
-  color:#ffffff!important;
-  opacity:1!important;
-}
-html[data-theme="dark"] .sales-stat small{
-  color:#d0dfdc!important;
-  font-weight:900!important;
-  opacity:1!important;
-}
-html[data-theme="dark"] .sales-stat strong{
-  color:#ffffff!important;
-  font-weight:900!important;
-  opacity:1!important;
-}
-html[data-theme="dark"] .sales-stat-icon{
-  background:#263b3b!important;
-  color:#65d7b0!important;
-}
-
-/* مركز النسخ الاحتياطي — الحساب والإيميل */
-html[data-theme="dark"] .backup-account,
-html[data-theme="dark"] .backup-account *{
-  opacity:1!important;
-}
-html[data-theme="dark"] .backup-account{
-  background:#1d2a2c!important;
-  border-color:#34474a!important;
-  color:#ffffff!important;
-}
-html[data-theme="dark"] .backup-account-main strong{
-  color:#ffffff!important;
-  font-weight:900!important;
-}
-html[data-theme="dark"] .backup-account-main span{
-  color:#d0dfdc!important;
-  font-weight:700!important;
-}
-html[data-theme="dark"] .backup-account-badge{
-  color:#79e0bb!important;
-  background:rgba(21,154,114,.20)!important;
-  border:1px solid rgba(121,224,187,.20)!important;
-}
-
-/* جاهز + بطاقات النسخة المحلية وGoogle Drive */
-html[data-theme="dark"] .backup-head-status{
-  color:#ffffff!important;
-  font-weight:900!important;
-  opacity:1!important;
-}
-html[data-theme="dark"] .backup-status-card,
-html[data-theme="dark"] .backup-status-card *{
-  opacity:1!important;
-}
-html[data-theme="dark"] .backup-status-card .top{
-  color:#d5e2df!important;
-  font-weight:900!important;
-}
-html[data-theme="dark"] .backup-status-card .top i{
-  color:#65d7b0!important;
-  background:#263b3b!important;
-}
-html[data-theme="dark"] .backup-status-card.cloud .top i{
-  color:#72a8ff!important;
-  background:#24344f!important;
-}
-html[data-theme="dark"] .backup-status-card strong{
-  color:#ffffff!important;
-  font-weight:900!important;
-}
-html[data-theme="dark"] .backup-status-card small{
-  color:#b9cbc7!important;
-}
-
-/* أرقام أصناف/مبيعات/مشتريات/عملاء وعناوين الإجراءات */
-html[data-theme="dark"] .backup-data-item,
-html[data-theme="dark"] .backup-data-item *{
-  opacity:1!important;
-}
-html[data-theme="dark"] .backup-data-item{
-  background:#172123!important;
-  border-color:#34474a!important;
-}
-html[data-theme="dark"] .backup-data-item strong{
-  color:#65d7b0!important;
-  font-weight:900!important;
-}
-html[data-theme="dark"] .backup-data-item span{
-  color:#d0dfdc!important;
-  font-weight:800!important;
-}
-html[data-theme="dark"] .backup-section-label{
-  color:#ffffff!important;
-  font-weight:900!important;
-  opacity:1!important;
-}
-html[data-theme="dark"] .backup-section-label i{
-  color:#65d7b0!important;
-}
-
-/* نسخة فاتحة أيضًا حتى لا ترجع المشكلة عند تبديل الثيم */
-html[data-theme="light"] .sales-history-title h3{color:#263238!important;font-weight:900!important;}
-html[data-theme="light"] .sales-history-title small{color:#60736f!important;opacity:1!important;}
-html[data-theme="light"] .sales-stat{color:#263238!important;opacity:1!important;}
-html[data-theme="light"] .sales-stat small{color:#526763!important;opacity:1!important;font-weight:900!important;}
-html[data-theme="light"] .sales-stat strong{color:#263238!important;opacity:1!important;font-weight:900!important;}
-html[data-theme="light"] .backup-account-main strong{color:#263238!important;opacity:1!important;}
-html[data-theme="light"] .backup-account-main span{color:#526763!important;opacity:1!important;}
-html[data-theme="light"] .backup-head-status{color:#ffffff!important;opacity:1!important;}
-html[data-theme="light"] .backup-status-card .top{color:#526763!important;opacity:1!important;}
-html[data-theme="light"] .backup-status-card strong{color:#263238!important;opacity:1!important;}
-html[data-theme="light"] .backup-status-card small{color:#60736f!important;opacity:1!important;}
-html[data-theme="light"] .backup-data-item strong{color:#0f766e!important;opacity:1!important;}
-html[data-theme="light"] .backup-data-item span{color:#526763!important;opacity:1!important;}
-html[data-theme="light"] .backup-section-label{color:#263238!important;opacity:1!important;}
-</style>
-
-
-<style id="visibility-final-v1828">
-/* ===== متجري v1.8.28 — تثبيت وضوح النصوص والعناوين في الوضع الفاتح ===== */
-html[data-theme="light"] .sale-ref-payment,
-html[data-theme="light"] .sale-ref-invoice,
-html[data-theme="light"] .sales-history-modern,
-html[data-theme="light"] .backup-center{
-  opacity:1!important;
-  filter:none!important;
-}
-html[data-theme="light"] .sale-ref-section-title,
-html[data-theme="light"] .sale-ref-section-title span{
-  color:#263238!important;
-  -webkit-text-fill-color:#263238!important;
-  opacity:1!important;
-  font-weight:950!important;
-}
-html[data-theme="light"] .sale-ref-section-title i{color:#08796d!important;opacity:1!important}
-html[data-theme="light"] .sale-ref-paid-label{
-  color:#263238!important;
-  -webkit-text-fill-color:#263238!important;
-  opacity:1!important;
-  font-weight:900!important;
-}
-html[data-theme="light"] .sale-ref-paid-input,
-html[data-theme="light"] .sale-ref-paid-input *{
-  opacity:1!important;
-  filter:none!important;
-}
-html[data-theme="light"] .sale-ref-paid-input input{
-  color:#263238!important;
-  -webkit-text-fill-color:#263238!important;
-  opacity:1!important;
-  font-weight:900!important;
-}
-html[data-theme="light"] .sale-ref-paid-input input::placeholder{
-  color:#4b5a60!important;
-  -webkit-text-fill-color:#4b5a60!important;
-  opacity:1!important;
-}
-html[data-theme="light"] .sale-ref-paid-input span,
-html[data-theme="light"] .sale-ref-paid-input button{
-  color:#52636a!important;
-  -webkit-text-fill-color:#52636a!important;
-  opacity:1!important;
-}
-html[data-theme="light"] .sale-ref-line,
-html[data-theme="light"] .sale-ref-line span{
-  color:#4b5a60!important;
-  -webkit-text-fill-color:#4b5a60!important;
-  opacity:1!important;
-}
-html[data-theme="light"] .sale-ref-line strong{color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important}
-html[data-theme="light"] .sale-ref-final,
-html[data-theme="light"] .sale-ref-final strong{color:#08796d!important;-webkit-text-fill-color:#08796d!important;opacity:1!important}
-
-/* سجل المبيعات */
-html[data-theme="light"] .sales-history-modern,
-html[data-theme="light"] .sales-history-modern *{opacity:1!important;filter:none!important}
-html[data-theme="light"] .sales-history-title h3{
-  color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important;opacity:1!important
-}
-html[data-theme="light"] .sales-history-title small{
-  color:#4f625d!important;-webkit-text-fill-color:#4f625d!important;font-weight:800!important;opacity:1!important
-}
-html[data-theme="light"] .sales-history-head{color:#263238!important;border-bottom-color:#cfdcd7!important;opacity:1!important}
-html[data-theme="light"] .sales-history-icon{color:#08796d!important;background:#e8f6f1!important;opacity:1!important}
-html[data-theme="light"] .sales-refresh-btn,
-html[data-theme="light"] .sales-history-open-btn{color:#08796d!important;opacity:1!important}
-html[data-theme="light"] .sales-stat,
-html[data-theme="light"] .sales-stat *{opacity:1!important;filter:none!important}
-html[data-theme="light"] .sales-stat{background:#f9fcfb!important;border-color:#d5e3de!important;color:#263238!important}
-html[data-theme="light"] .sales-stat small{color:#4b625c!important;-webkit-text-fill-color:#4b625c!important;font-weight:900!important}
-html[data-theme="light"] .sales-stat strong{color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important}
-html[data-theme="light"] .sales-stat-icon{color:#08796d!important;background:#e8f6f1!important}
-
-/* مركز النسخة الاحتياطية */
-html[data-theme="light"] .backup-center,
-html[data-theme="light"] .backup-center *{opacity:1!important;filter:none!important}
-html[data-theme="light"] .backup-account-main strong{color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important}
-html[data-theme="light"] .backup-account-main span{color:#425952!important;-webkit-text-fill-color:#425952!important;font-weight:800!important}
-html[data-theme="light"] .backup-account-badge{color:#087443!important;-webkit-text-fill-color:#087443!important;opacity:1!important}
-html[data-theme="light"] .backup-status-card .top{color:#425952!important;-webkit-text-fill-color:#425952!important;font-weight:900!important}
-html[data-theme="light"] .backup-status-card strong{color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important}
-html[data-theme="light"] .backup-status-card small{color:#536762!important;-webkit-text-fill-color:#536762!important;font-weight:700!important}
-html[data-theme="light"] .backup-data-item strong{color:#08796d!important;-webkit-text-fill-color:#08796d!important;font-weight:950!important}
-html[data-theme="light"] .backup-data-item span{color:#425952!important;-webkit-text-fill-color:#425952!important;font-weight:900!important}
-html[data-theme="light"] .backup-section-label,
-html[data-theme="light"] .backup-section-label span{color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important}
-html[data-theme="light"] .backup-section-label i{color:#08796d!important;-webkit-text-fill-color:#08796d!important}
-
-/* نفس الإصلاح في الوضع الداكن */
-html[data-theme="dark"] .sale-ref-section-title,
-html[data-theme="dark"] .sale-ref-paid-label,
-html[data-theme="dark"] .sales-history-title h3,
-html[data-theme="dark"] .backup-section-label{opacity:1!important;filter:none!important}
-</style>
-
-
-<style id="v1829-final-visibility-and-sales-fix">
-/* ===== v1.8.29 — تثبيت وضوح النصوص + حماية صفحة المبيعات ===== */
-html[data-theme="light"] .sales-history-modern,
-html[data-theme="light"] .sales-history-modern *,
-html[data-theme="light"] .sale-ref-payment,
-html[data-theme="light"] .sale-ref-payment *,
-html[data-theme="light"] .backup-center,
-html[data-theme="light"] .backup-center *{
-  opacity:1!important;
-  filter:none!important;
-  -webkit-text-fill-color:inherit;
-}
-html[data-theme="light"] .sales-history-title h3,
-html[data-theme="light"] .sales-history-title small,
-html[data-theme="light"] .sales-history-head,
-html[data-theme="light"] .sales-stat small,
-html[data-theme="light"] .sales-stat strong{
-  opacity:1!important;
-}
-html[data-theme="light"] .sales-history-title h3{color:#263238!important;-webkit-text-fill-color:#263238!important}
-html[data-theme="light"] .sales-history-title small{color:#4f625d!important;-webkit-text-fill-color:#4f625d!important}
-html[data-theme="light"] .sales-stat small{color:#3f5550!important;-webkit-text-fill-color:#3f5550!important}
-html[data-theme="light"] .sales-stat strong{color:#263238!important;-webkit-text-fill-color:#263238!important}
-html[data-theme="light"] .sale-ref-section-title,
-html[data-theme="light"] .sale-ref-section-title span{
-  color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important;
-}
-html[data-theme="light"] .sale-ref-section-title i{color:#08796d!important;-webkit-text-fill-color:#08796d!important;opacity:1!important}
-html[data-theme="light"] .backup-section-label,
-html[data-theme="light"] .backup-section-label span{
-  color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important;
-}
-html[data-theme="light"] .backup-section-label i{color:#08796d!important;-webkit-text-fill-color:#08796d!important;opacity:1!important}
-html[data-theme="light"] .backup-account-main strong{color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important}
-html[data-theme="light"] .backup-account-main span{color:#425952!important;-webkit-text-fill-color:#425952!important;opacity:1!important}
-html[data-theme="light"] .backup-status-card strong{color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important}
-html[data-theme="light"] .backup-status-card small,
-html[data-theme="light"] .backup-status-card .top{color:#425952!important;-webkit-text-fill-color:#425952!important;opacity:1!important}
-html[data-theme="light"] .backup-data-item strong{color:#08796d!important;-webkit-text-fill-color:#08796d!important;opacity:1!important}
-html[data-theme="light"] .backup-data-item span{color:#425952!important;-webkit-text-fill-color:#425952!important;opacity:1!important}
-
-/* المبلغ المدفوع */
-html[data-theme="light"] .sale-ref-paid-label{color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important}
-html[data-theme="light"] .sale-ref-paid-input,
-html[data-theme="light"] .sale-ref-paid-input input,
-html[data-theme="light"] .sale-ref-paid-input span,
-html[data-theme="light"] .sale-ref-paid-input button{
-  opacity:1!important;filter:none!important;
-}
-html[data-theme="light"] .sale-ref-paid-input input{color:#263238!important;-webkit-text-fill-color:#263238!important}
-html[data-theme="light"] .sale-ref-paid-input input::placeholder{color:#4b5a60!important;-webkit-text-fill-color:#4b5a60!important;opacity:1!important}
-
-/* طريقة السداد — العنوان والأزرار */
-html[data-theme="light"] .sale-ref-methods,
-html[data-theme="light"] .sale-ref-methods *{opacity:1!important;filter:none!important}
-html[data-theme="light"] .sale-ref-methods button{color:#263238!important;-webkit-text-fill-color:#263238!important}
-html[data-theme="light"] .sale-ref-methods button i{color:#08796d!important;-webkit-text-fill-color:#08796d!important}
-html[data-theme="light"] .sale-ref-methods button.active,
-html[data-theme="light"] .sale-ref-methods button.active span,
-html[data-theme="light"] .sale-ref-methods button.active i{color:#fff!important;-webkit-text-fill-color:#fff!important}
-</style>
-
 </head>
 <body>
 <div id="loading-screen">
@@ -3768,10 +3466,10 @@ html[data-theme="light"] .sale-ref-methods button.active i{color:#fff!important;
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-// متجري v1.8.29 — إصلاح فتح قسم المبيعات وتثبيت وضوح العناوين
-const APP_VERSION='v1.8.29';
+// متجري v1.8.25 — إصلاحات الوضع الداكن وسجل المبيعات والفاتورة
+const APP_VERSION='v1.8.25';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "18 سبتمبر 2026 — إصلاح فتح قسم المبيعات وتثبيت وضوح العناوين";
+const APP_BUILD_DATE = "18 سبتمبر 2026 — إصلاحات الوضع الداكن وسجل المبيعات ووضوح الفاتورة";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -5161,7 +4859,7 @@ function saveProductEdit(id){
 
 // ==================== المبيعات ====================
 function renderSalesPage(container){
-  const todaySales=(Store.get('sales')||[]).filter(s=>s && typeof s==='object' && s.date===today());
+  const todaySales=(Store.get('sales')||[]).filter(s=>s.date===today());
   // الفاتورة متعددة الأصناف تحتوي أكثر من سطر، لذلك لا نعدّ paid إلا مرة واحدة لكل فاتورة.
   const todayInvoices={};
   todaySales.forEach(s=>{
@@ -5176,9 +4874,9 @@ function renderSalesPage(container){
   const salesTodayProfit=todayInvoiceList.reduce((a,s)=>a+Number(s.profit||0),0);
   const salesTodayPaid=todayInvoiceList.reduce((a,s)=>a+Number(s.paid||0),0);
   const salesTodayCount=todayInvoiceList.length;
-  const products=(Store.get('products')||[]).filter(p=>p && typeof p==='object');
+  const products=Store.get('products')||[];
   window.saleProducts=products;
-  const customers=(Store.get('customers')||[]).filter(c=>c && typeof c==='object');
+  const customers=Store.get('customers')||[];
   window.saleCustomers=customers;
   window.posCart=window.posCart||[];
   window.posSort=window.posSort||'default';
@@ -5292,19 +4990,13 @@ function renderSalesPage(container){
         <div class="sales-filters"><div class="sales-search-wrap"><i class="fas fa-search"></i><input type="text" id="saleSearch" placeholder="ابحث عن صنف أو عميل أو ملاحظة..." oninput="renderSalesTable()"><button type="button" onclick="document.getElementById('saleSearch').value='';renderSalesTable()"><i class="fas fa-xmark"></i></button></div><div class="sales-quick-filters"><button type="button" class="active" data-range="all" onclick="setSalesRange('all',this)">الكل</button><button type="button" data-range="today" onclick="setSalesRange('today',this)">اليوم</button><button type="button" data-range="week" onclick="setSalesRange('week',this)">هذا الأسبوع</button><button type="button" data-range="month" onclick="setSalesRange('month',this)">هذا الشهر</button></div><div class="sales-filter-row"><select id="saleTypeFilter" onchange="renderSalesTable()"><option value="">كل أنواع البيع</option><option value="retail">🛍️ قطاعي</option><option value="wholesale">📦 جملة</option></select><select id="salePaymentFilter" onchange="renderSalesTable()"><option value="">كل طرق السداد</option><option value="cash">💵 نقدي</option><option value="credit">⏳ آجل</option><option value="transfer">📱 تحويل</option><option value="card">💳 بطاقة</option></select><label class="sales-date-wrap" title="اختيار تاريخ محدد"><i class="fas fa-calendar-days"></i><span id="saleFilterDateLabel">اختر التاريخ</span><input type="date" id="saleFilterDate" onchange="setSalesRange('custom')" class="sales-date-filter" aria-label="اختيار تاريخ محدد"></label><button type="button" class="sales-clear-filters" onclick="clearSalesFilters()"><i class="fas fa-filter-circle-xmark"></i> مسح الفلاتر</button></div></div><div id="salesTable" class="sales-cards-list"></div></div>
     </section>
   </div>`;
-  // لا نسمح لجزء واحد (خصوصًا سجل المبيعات) بإسقاط صفحة المبيعات بالكامل.
-  // أي بيانات قديمة/ناقصة يتم تجاوزها بدل إظهار شاشة "وضع عدم الاتصال".
-  try{renderSaleProductGrid();}catch(e){console.error('خطأ في قائمة منتجات البيع:',e);}
-  try{renderPOSCart();}catch(e){console.error('خطأ في سلة البيع:',e);}
-  try{togglePOSCustomCustomer();}catch(e){console.error('خطأ في اختيار العميل:',e);}
-  try{togglePOSCredit();}catch(e){console.error('خطأ في طريقة السداد:',e);}
-  try{renderSalesTable();}catch(e){
-    console.error('خطأ في سجل المبيعات:',e);
-    const st=document.getElementById('salesTable');
-    if(st) st.innerHTML='<div class="sales-empty"><div><i class="fas fa-triangle-exclamation"></i></div><strong>تعذر تحميل سجل المبيعات</strong><span>تم فتح قسم المبيعات، ويمكن متابعة البيع.</span></div>';
-  }
-  try{updatePOSCustomerPill();}catch(e){console.error('خطأ في اسم العميل:',e);}
-  try{setPOSPaymentMethod('cash');}catch(e){console.error('خطأ في تهيئة طريقة السداد:',e);}
+  renderSaleProductGrid();
+  renderPOSCart();
+  togglePOSCustomCustomer();
+  togglePOSCredit();
+  renderSalesTable();
+  updatePOSCustomerPill();
+  setPOSPaymentMethod('cash');
 }
 
 function toggleSalesHistory(force){
@@ -5604,7 +5296,7 @@ function removePOSItem(index){window.posCart.splice(index,1);renderPOSCart();ren
 function clearPOSCart(){window.posCart=[];renderPOSCart();renderSaleProductGrid();}
 function refreshPOSCartPrices(){renderPOSCart();renderSaleProductGrid();}
 function getLastSalePrice(productId,type){
-  const sales=(Store.get('sales')||[]).filter(s=>s && typeof s==='object' && s.productId===productId && s.type===type && Number(s.price)>0);
+  const sales=Store.get('sales').filter(s=>s.productId===productId && s.type===type && Number(s.price)>0);
   if(!sales.length)return null;
   sales.sort((a,b)=>String(b.createdAt||b.date).localeCompare(String(a.createdAt||a.date)));
   const last=sales[0];
@@ -6011,105 +5703,7 @@ function printPOSReceipt(){
   const w=window.open('','_blank','width=760,height=900'); if(!w)return showToast('المتصفح منع نافذة الطباعة','warning');
   const doc=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${inv.invoiceNo}</title><style>
   @page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#222;margin:0;background:#fff}.page{max-width:760px;margin:0 auto;padding:18px}.brand{text-align:center;font-size:24px;font-weight:900;margin-bottom:4px}.sub{text-align:center;color:#666;font-size:12px;line-height:1.8}.line{border-top:1px dashed #888;margin:14px 0}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 5px;border-bottom:1px solid #ddd;text-align:right}.r{display:flex;justify-content:space-between;padding:8px 0}.grand{font-size:19px;font-weight:900;border-top:2px solid #222;margin-top:8px;padding-top:12px}.thanks{text-align:center;margin-top:20px;font-size:12px;color:#666}@media print{.page{padding:0}}
-  </style>
-<style id="visibility-final-v1828">
-/* ===== متجري v1.8.28 — تثبيت وضوح النصوص والعناوين في الوضع الفاتح ===== */
-html[data-theme="light"] .sale-ref-payment,
-html[data-theme="light"] .sale-ref-invoice,
-html[data-theme="light"] .sales-history-modern,
-html[data-theme="light"] .backup-center{
-  opacity:1!important;
-  filter:none!important;
-}
-html[data-theme="light"] .sale-ref-section-title,
-html[data-theme="light"] .sale-ref-section-title span{
-  color:#263238!important;
-  -webkit-text-fill-color:#263238!important;
-  opacity:1!important;
-  font-weight:950!important;
-}
-html[data-theme="light"] .sale-ref-section-title i{color:#08796d!important;opacity:1!important}
-html[data-theme="light"] .sale-ref-paid-label{
-  color:#263238!important;
-  -webkit-text-fill-color:#263238!important;
-  opacity:1!important;
-  font-weight:900!important;
-}
-html[data-theme="light"] .sale-ref-paid-input,
-html[data-theme="light"] .sale-ref-paid-input *{
-  opacity:1!important;
-  filter:none!important;
-}
-html[data-theme="light"] .sale-ref-paid-input input{
-  color:#263238!important;
-  -webkit-text-fill-color:#263238!important;
-  opacity:1!important;
-  font-weight:900!important;
-}
-html[data-theme="light"] .sale-ref-paid-input input::placeholder{
-  color:#4b5a60!important;
-  -webkit-text-fill-color:#4b5a60!important;
-  opacity:1!important;
-}
-html[data-theme="light"] .sale-ref-paid-input span,
-html[data-theme="light"] .sale-ref-paid-input button{
-  color:#52636a!important;
-  -webkit-text-fill-color:#52636a!important;
-  opacity:1!important;
-}
-html[data-theme="light"] .sale-ref-line,
-html[data-theme="light"] .sale-ref-line span{
-  color:#4b5a60!important;
-  -webkit-text-fill-color:#4b5a60!important;
-  opacity:1!important;
-}
-html[data-theme="light"] .sale-ref-line strong{color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important}
-html[data-theme="light"] .sale-ref-final,
-html[data-theme="light"] .sale-ref-final strong{color:#08796d!important;-webkit-text-fill-color:#08796d!important;opacity:1!important}
-
-/* سجل المبيعات */
-html[data-theme="light"] .sales-history-modern,
-html[data-theme="light"] .sales-history-modern *{opacity:1!important;filter:none!important}
-html[data-theme="light"] .sales-history-title h3{
-  color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important;opacity:1!important
-}
-html[data-theme="light"] .sales-history-title small{
-  color:#4f625d!important;-webkit-text-fill-color:#4f625d!important;font-weight:800!important;opacity:1!important
-}
-html[data-theme="light"] .sales-history-head{color:#263238!important;border-bottom-color:#cfdcd7!important;opacity:1!important}
-html[data-theme="light"] .sales-history-icon{color:#08796d!important;background:#e8f6f1!important;opacity:1!important}
-html[data-theme="light"] .sales-refresh-btn,
-html[data-theme="light"] .sales-history-open-btn{color:#08796d!important;opacity:1!important}
-html[data-theme="light"] .sales-stat,
-html[data-theme="light"] .sales-stat *{opacity:1!important;filter:none!important}
-html[data-theme="light"] .sales-stat{background:#f9fcfb!important;border-color:#d5e3de!important;color:#263238!important}
-html[data-theme="light"] .sales-stat small{color:#4b625c!important;-webkit-text-fill-color:#4b625c!important;font-weight:900!important}
-html[data-theme="light"] .sales-stat strong{color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important}
-html[data-theme="light"] .sales-stat-icon{color:#08796d!important;background:#e8f6f1!important}
-
-/* مركز النسخة الاحتياطية */
-html[data-theme="light"] .backup-center,
-html[data-theme="light"] .backup-center *{opacity:1!important;filter:none!important}
-html[data-theme="light"] .backup-account-main strong{color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important}
-html[data-theme="light"] .backup-account-main span{color:#425952!important;-webkit-text-fill-color:#425952!important;font-weight:800!important}
-html[data-theme="light"] .backup-account-badge{color:#087443!important;-webkit-text-fill-color:#087443!important;opacity:1!important}
-html[data-theme="light"] .backup-status-card .top{color:#425952!important;-webkit-text-fill-color:#425952!important;font-weight:900!important}
-html[data-theme="light"] .backup-status-card strong{color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important}
-html[data-theme="light"] .backup-status-card small{color:#536762!important;-webkit-text-fill-color:#536762!important;font-weight:700!important}
-html[data-theme="light"] .backup-data-item strong{color:#08796d!important;-webkit-text-fill-color:#08796d!important;font-weight:950!important}
-html[data-theme="light"] .backup-data-item span{color:#425952!important;-webkit-text-fill-color:#425952!important;font-weight:900!important}
-html[data-theme="light"] .backup-section-label,
-html[data-theme="light"] .backup-section-label span{color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important}
-html[data-theme="light"] .backup-section-label i{color:#08796d!important;-webkit-text-fill-color:#08796d!important}
-
-/* نفس الإصلاح في الوضع الداكن */
-html[data-theme="dark"] .sale-ref-section-title,
-html[data-theme="dark"] .sale-ref-paid-label,
-html[data-theme="dark"] .sales-history-title h3,
-html[data-theme="dark"] .backup-section-label{opacity:1!important;filter:none!important}
-</style>
-
-</head><body><div class="page"><div class="brand">متجري</div><div class="sub">فاتورة بيع رقم ${inv.invoiceSeq||inv.invoiceNo}<br>${invoiceDisplayDate(inv)}${invoiceDisplayTime(inv)?' • '+invoiceDisplayTime(inv):''}<br>العميل: ${inv.customerName}<br>نوع البيع: ${inv.type==='wholesale'?'جملة':'قطاعي'}</div><div class="line"></div><table><thead><tr><th>الصنف</th><th>الكمية</th><th>الإجمالي</th></tr></thead><tbody>${rows}</tbody></table><div class="line"></div><div class="r"><span>الإجمالي قبل الخصم</span><b>${fmt(inv.subtotal)}</b></div><div class="r"><span>الخصم</span><b>${fmt(inv.discount||0)}</b></div><div class="r"><span>الضريبة</span><b>${fmt(inv.tax)}</b></div><div class="r grand"><span>الإجمالي النهائي</span><b>${fmt(inv.total)}</b></div><div class="r"><span>المدفوع</span><b>${fmt(inv.paid)}</b></div><div class="r"><span>${inv.method==='cash'?'الباقي':'المتبقي'}</span><b>${fmt(inv.method==='cash'?inv.change:inv.remaining)}</b></div><div class="r"><span>السداد</span><b>${({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[inv.method]||inv.method||'نقدي'}</b></div><div class="thanks">شكرًا لتعاملكم معنا ❤️</div></div>
+  </style></head><body><div class="page"><div class="brand">متجري</div><div class="sub">فاتورة بيع رقم ${inv.invoiceSeq||inv.invoiceNo}<br>${invoiceDisplayDate(inv)}${invoiceDisplayTime(inv)?' • '+invoiceDisplayTime(inv):''}<br>العميل: ${inv.customerName}<br>نوع البيع: ${inv.type==='wholesale'?'جملة':'قطاعي'}</div><div class="line"></div><table><thead><tr><th>الصنف</th><th>الكمية</th><th>الإجمالي</th></tr></thead><tbody>${rows}</tbody></table><div class="line"></div><div class="r"><span>الإجمالي قبل الخصم</span><b>${fmt(inv.subtotal)}</b></div><div class="r"><span>الخصم</span><b>${fmt(inv.discount||0)}</b></div><div class="r"><span>الضريبة</span><b>${fmt(inv.tax)}</b></div><div class="r grand"><span>الإجمالي النهائي</span><b>${fmt(inv.total)}</b></div><div class="r"><span>المدفوع</span><b>${fmt(inv.paid)}</b></div><div class="r"><span>${inv.method==='cash'?'الباقي':'المتبقي'}</span><b>${fmt(inv.method==='cash'?inv.change:inv.remaining)}</b></div><div class="r"><span>السداد</span><b>${({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[inv.method]||inv.method||'نقدي'}</b></div><div class="thanks">شكرًا لتعاملكم معنا ❤️</div></div>
 
 
 <style id="stock-movement-style">
@@ -6329,8 +5923,8 @@ function renderSaleProductGrid(){
   if(!grid)return;
   const search=(document.getElementById('saleProductSearch')?.value||'').toLowerCase().trim();
   const cat=window.posCategory||'all';
-  let products=(window.saleProducts||[]).filter(p=>p && typeof p==='object').filter(p=>{const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();return hay.includes(search)&&(cat==='all'||p.type===cat);});
-  const sales=(Store.get('sales')||[]).filter(s=>s && typeof s==='object');
+  let products=(window.saleProducts||[]).filter(p=>{const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();return hay.includes(search)&&(cat==='all'||p.type===cat);});
+  const sales=Store.get('sales')||[];
   const soldMap={}; sales.forEach(s=>{if(s.productId)soldMap[s.productId]=(soldMap[s.productId]||0)+Number(s.qty||0);});
   const sort=window.posSort||'default';
   if(sort==='best')products.sort((a,b)=>(soldMap[b.id]||0)-(soldMap[a.id]||0));
@@ -6769,7 +6363,7 @@ function openSaleDetails(id){
     <div class="sale-detail-actions"><button class="btn btn-primary btn-block" onclick="closeModal();editSale('${s.id}')"><i class="fas fa-edit"></i> تعديل العملية</button><button class="btn btn-danger" onclick="closeModal();deleteSale('${s.id}','${s.productId||''}',${Number(s.qty)||0})"><i class="fas fa-trash"></i></button></div>`);
 }
 function renderSalesTable(){
-  const sales=(Store.get('sales')||[]).filter(s=>s && typeof s==='object');
+  const sales=Store.get('sales')||[];
   const fs=(document.getElementById('saleSearch')?.value||'').toLowerCase().trim();
   const fd=document.getElementById('saleFilterDate')?.value||'';
   const type=document.getElementById('saleTypeFilter')?.value||'';
@@ -10538,105 +10132,7 @@ function historyCard(inv){
     const inv=findInvoice(key);if(!inv)return;
     const rows=inv.lines.map(s=>{const q=Number(s.packages||s.qty||1),w=rawSaleWeight(s);const p=productForSaleLine(s);const qty=invoiceSaleQuantityLabel(s,p);return `<tr><td>${esc(s.productName||'صنف')}</td><td>${esc(qty)}</td><td>${fmt((isKgProduct(p)||s.isWeightSale)?(s.unitPrice||s.price||0):(s.price||0))}</td><td>${fmt(s.total)}</td></tr>`}).join('');
     const w=window.open('','_blank','width=900,height=800');if(!w){showToast('اسمح بفتح نافذة الطباعة','warning');return;}
-    const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>فاتورة رقم '+esc(invoiceDisplayNumber(inv))+'</title><style>@page{size:A4;margin:12mm}body{margin:0;font-family:Arial,Tahoma,sans-serif;color:#173b32;background:#fff}.page{width:100%;max-width:190mm;margin:auto;padding:6mm;box-sizing:border-box}.brand{text-align:center;font-size:28px;font-weight:900;color:#0f766e;margin-bottom:4px}.sub{text-align:center;color:#66756f;font-size:12px;line-height:1.8}.line{border-top:1px solid #dce8e3;margin:14px 0}table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}th{background:#eef7f3;color:#0f766e}th,td{padding:9px 7px;border-bottom:1px solid #e6eeeb;text-align:right}.r{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}.grand{font-size:19px;font-weight:900;border-top:2px solid #0f766e;margin-top:8px;padding-top:10px}.thanks{text-align:center;margin-top:25px;color:#71827b;font-size:12px}.meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.meta div{border:1px solid #dfeae5;border-radius:10px;padding:8px}.meta small{display:block;color:#778780;font-size:10px}.meta b{display:block;margin-top:3px;font-size:12px}@media print{button{display:none}}</style>
-<style id="visibility-final-v1828">
-/* ===== متجري v1.8.28 — تثبيت وضوح النصوص والعناوين في الوضع الفاتح ===== */
-html[data-theme="light"] .sale-ref-payment,
-html[data-theme="light"] .sale-ref-invoice,
-html[data-theme="light"] .sales-history-modern,
-html[data-theme="light"] .backup-center{
-  opacity:1!important;
-  filter:none!important;
-}
-html[data-theme="light"] .sale-ref-section-title,
-html[data-theme="light"] .sale-ref-section-title span{
-  color:#263238!important;
-  -webkit-text-fill-color:#263238!important;
-  opacity:1!important;
-  font-weight:950!important;
-}
-html[data-theme="light"] .sale-ref-section-title i{color:#08796d!important;opacity:1!important}
-html[data-theme="light"] .sale-ref-paid-label{
-  color:#263238!important;
-  -webkit-text-fill-color:#263238!important;
-  opacity:1!important;
-  font-weight:900!important;
-}
-html[data-theme="light"] .sale-ref-paid-input,
-html[data-theme="light"] .sale-ref-paid-input *{
-  opacity:1!important;
-  filter:none!important;
-}
-html[data-theme="light"] .sale-ref-paid-input input{
-  color:#263238!important;
-  -webkit-text-fill-color:#263238!important;
-  opacity:1!important;
-  font-weight:900!important;
-}
-html[data-theme="light"] .sale-ref-paid-input input::placeholder{
-  color:#4b5a60!important;
-  -webkit-text-fill-color:#4b5a60!important;
-  opacity:1!important;
-}
-html[data-theme="light"] .sale-ref-paid-input span,
-html[data-theme="light"] .sale-ref-paid-input button{
-  color:#52636a!important;
-  -webkit-text-fill-color:#52636a!important;
-  opacity:1!important;
-}
-html[data-theme="light"] .sale-ref-line,
-html[data-theme="light"] .sale-ref-line span{
-  color:#4b5a60!important;
-  -webkit-text-fill-color:#4b5a60!important;
-  opacity:1!important;
-}
-html[data-theme="light"] .sale-ref-line strong{color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important}
-html[data-theme="light"] .sale-ref-final,
-html[data-theme="light"] .sale-ref-final strong{color:#08796d!important;-webkit-text-fill-color:#08796d!important;opacity:1!important}
-
-/* سجل المبيعات */
-html[data-theme="light"] .sales-history-modern,
-html[data-theme="light"] .sales-history-modern *{opacity:1!important;filter:none!important}
-html[data-theme="light"] .sales-history-title h3{
-  color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important;opacity:1!important
-}
-html[data-theme="light"] .sales-history-title small{
-  color:#4f625d!important;-webkit-text-fill-color:#4f625d!important;font-weight:800!important;opacity:1!important
-}
-html[data-theme="light"] .sales-history-head{color:#263238!important;border-bottom-color:#cfdcd7!important;opacity:1!important}
-html[data-theme="light"] .sales-history-icon{color:#08796d!important;background:#e8f6f1!important;opacity:1!important}
-html[data-theme="light"] .sales-refresh-btn,
-html[data-theme="light"] .sales-history-open-btn{color:#08796d!important;opacity:1!important}
-html[data-theme="light"] .sales-stat,
-html[data-theme="light"] .sales-stat *{opacity:1!important;filter:none!important}
-html[data-theme="light"] .sales-stat{background:#f9fcfb!important;border-color:#d5e3de!important;color:#263238!important}
-html[data-theme="light"] .sales-stat small{color:#4b625c!important;-webkit-text-fill-color:#4b625c!important;font-weight:900!important}
-html[data-theme="light"] .sales-stat strong{color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important}
-html[data-theme="light"] .sales-stat-icon{color:#08796d!important;background:#e8f6f1!important}
-
-/* مركز النسخة الاحتياطية */
-html[data-theme="light"] .backup-center,
-html[data-theme="light"] .backup-center *{opacity:1!important;filter:none!important}
-html[data-theme="light"] .backup-account-main strong{color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important}
-html[data-theme="light"] .backup-account-main span{color:#425952!important;-webkit-text-fill-color:#425952!important;font-weight:800!important}
-html[data-theme="light"] .backup-account-badge{color:#087443!important;-webkit-text-fill-color:#087443!important;opacity:1!important}
-html[data-theme="light"] .backup-status-card .top{color:#425952!important;-webkit-text-fill-color:#425952!important;font-weight:900!important}
-html[data-theme="light"] .backup-status-card strong{color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important}
-html[data-theme="light"] .backup-status-card small{color:#536762!important;-webkit-text-fill-color:#536762!important;font-weight:700!important}
-html[data-theme="light"] .backup-data-item strong{color:#08796d!important;-webkit-text-fill-color:#08796d!important;font-weight:950!important}
-html[data-theme="light"] .backup-data-item span{color:#425952!important;-webkit-text-fill-color:#425952!important;font-weight:900!important}
-html[data-theme="light"] .backup-section-label,
-html[data-theme="light"] .backup-section-label span{color:#263238!important;-webkit-text-fill-color:#263238!important;font-weight:950!important}
-html[data-theme="light"] .backup-section-label i{color:#08796d!important;-webkit-text-fill-color:#08796d!important}
-
-/* نفس الإصلاح في الوضع الداكن */
-html[data-theme="dark"] .sale-ref-section-title,
-html[data-theme="dark"] .sale-ref-paid-label,
-html[data-theme="dark"] .sales-history-title h3,
-html[data-theme="dark"] .backup-section-label{opacity:1!important;filter:none!important}
-</style>
-
-</head><body><div class="page"><div class="brand">متجري</div><div class="sub">فاتورة بيع رقم '+esc(invoiceDisplayNumber(inv))+'<br>'+esc(inv.date)+' '+esc(inv.time)+'</div><div class="line"></div><div class="meta"><div><small>العميل</small><b>'+esc(inv.customerName)+'</b></div><div><small>نوع البيع</small><b>'+(inv.type==='wholesale'?'جملة':'قطاعي')+'</b></div><div><small>السداد</small><b>'+paymentLabel(inv.paymentMethod)+'</b></div></div><div class="line"></div><table><thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody>'+rows+'</tbody></table><div class="line"></div><div class="r"><span>الإجمالي</span><b>'+fmt(inv.total)+'</b></div><div class="r"><span>المدفوع</span><b>'+fmt(inv.paid)+'</b></div><div class="r grand"><span>المتبقي</span><b>'+fmt(inv.remaining)+'</b></div>'+(inv.note?'<div class="line"></div><div class="r"><span>ملاحظات</span><b>'+esc(inv.note)+'</b></div>':'')+'<div class="thanks">شكرًا لتعاملكم معنا ❤️</div></div></body></html>';
+    const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>فاتورة رقم '+esc(invoiceDisplayNumber(inv))+'</title><style>@page{size:A4;margin:12mm}body{margin:0;font-family:Arial,Tahoma,sans-serif;color:#173b32;background:#fff}.page{width:100%;max-width:190mm;margin:auto;padding:6mm;box-sizing:border-box}.brand{text-align:center;font-size:28px;font-weight:900;color:#0f766e;margin-bottom:4px}.sub{text-align:center;color:#66756f;font-size:12px;line-height:1.8}.line{border-top:1px solid #dce8e3;margin:14px 0}table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}th{background:#eef7f3;color:#0f766e}th,td{padding:9px 7px;border-bottom:1px solid #e6eeeb;text-align:right}.r{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}.grand{font-size:19px;font-weight:900;border-top:2px solid #0f766e;margin-top:8px;padding-top:10px}.thanks{text-align:center;margin-top:25px;color:#71827b;font-size:12px}.meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.meta div{border:1px solid #dfeae5;border-radius:10px;padding:8px}.meta small{display:block;color:#778780;font-size:10px}.meta b{display:block;margin-top:3px;font-size:12px}@media print{button{display:none}}</style></head><body><div class="page"><div class="brand">متجري</div><div class="sub">فاتورة بيع رقم '+esc(invoiceDisplayNumber(inv))+'<br>'+esc(inv.date)+' '+esc(inv.time)+'</div><div class="line"></div><div class="meta"><div><small>العميل</small><b>'+esc(inv.customerName)+'</b></div><div><small>نوع البيع</small><b>'+(inv.type==='wholesale'?'جملة':'قطاعي')+'</b></div><div><small>السداد</small><b>'+paymentLabel(inv.paymentMethod)+'</b></div></div><div class="line"></div><table><thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody>'+rows+'</tbody></table><div class="line"></div><div class="r"><span>الإجمالي</span><b>'+fmt(inv.total)+'</b></div><div class="r"><span>المدفوع</span><b>'+fmt(inv.paid)+'</b></div><div class="r grand"><span>المتبقي</span><b>'+fmt(inv.remaining)+'</b></div>'+(inv.note?'<div class="line"></div><div class="r"><span>ملاحظات</span><b>'+esc(inv.note)+'</b></div>':'')+'<div class="thanks">شكرًا لتعاملكم معنا ❤️</div></div></body></html>';
     w.document.open();w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),350);
   };
 
