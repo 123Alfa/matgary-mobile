@@ -3636,6 +3636,69 @@ html[data-theme="dark"] .sales-history-title h3,
 html[data-theme="dark"] .backup-section-label{opacity:1!important;filter:none!important}
 </style>
 
+
+<style id="v1829-final-visibility-and-sales-fix">
+/* ===== v1.8.29 — تثبيت وضوح النصوص + حماية صفحة المبيعات ===== */
+html[data-theme="light"] .sales-history-modern,
+html[data-theme="light"] .sales-history-modern *,
+html[data-theme="light"] .sale-ref-payment,
+html[data-theme="light"] .sale-ref-payment *,
+html[data-theme="light"] .backup-center,
+html[data-theme="light"] .backup-center *{
+  opacity:1!important;
+  filter:none!important;
+  -webkit-text-fill-color:inherit;
+}
+html[data-theme="light"] .sales-history-title h3,
+html[data-theme="light"] .sales-history-title small,
+html[data-theme="light"] .sales-history-head,
+html[data-theme="light"] .sales-stat small,
+html[data-theme="light"] .sales-stat strong{
+  opacity:1!important;
+}
+html[data-theme="light"] .sales-history-title h3{color:#263238!important;-webkit-text-fill-color:#263238!important}
+html[data-theme="light"] .sales-history-title small{color:#4f625d!important;-webkit-text-fill-color:#4f625d!important}
+html[data-theme="light"] .sales-stat small{color:#3f5550!important;-webkit-text-fill-color:#3f5550!important}
+html[data-theme="light"] .sales-stat strong{color:#263238!important;-webkit-text-fill-color:#263238!important}
+html[data-theme="light"] .sale-ref-section-title,
+html[data-theme="light"] .sale-ref-section-title span{
+  color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important;
+}
+html[data-theme="light"] .sale-ref-section-title i{color:#08796d!important;-webkit-text-fill-color:#08796d!important;opacity:1!important}
+html[data-theme="light"] .backup-section-label,
+html[data-theme="light"] .backup-section-label span{
+  color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important;
+}
+html[data-theme="light"] .backup-section-label i{color:#08796d!important;-webkit-text-fill-color:#08796d!important;opacity:1!important}
+html[data-theme="light"] .backup-account-main strong{color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important}
+html[data-theme="light"] .backup-account-main span{color:#425952!important;-webkit-text-fill-color:#425952!important;opacity:1!important}
+html[data-theme="light"] .backup-status-card strong{color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important}
+html[data-theme="light"] .backup-status-card small,
+html[data-theme="light"] .backup-status-card .top{color:#425952!important;-webkit-text-fill-color:#425952!important;opacity:1!important}
+html[data-theme="light"] .backup-data-item strong{color:#08796d!important;-webkit-text-fill-color:#08796d!important;opacity:1!important}
+html[data-theme="light"] .backup-data-item span{color:#425952!important;-webkit-text-fill-color:#425952!important;opacity:1!important}
+
+/* المبلغ المدفوع */
+html[data-theme="light"] .sale-ref-paid-label{color:#263238!important;-webkit-text-fill-color:#263238!important;opacity:1!important}
+html[data-theme="light"] .sale-ref-paid-input,
+html[data-theme="light"] .sale-ref-paid-input input,
+html[data-theme="light"] .sale-ref-paid-input span,
+html[data-theme="light"] .sale-ref-paid-input button{
+  opacity:1!important;filter:none!important;
+}
+html[data-theme="light"] .sale-ref-paid-input input{color:#263238!important;-webkit-text-fill-color:#263238!important}
+html[data-theme="light"] .sale-ref-paid-input input::placeholder{color:#4b5a60!important;-webkit-text-fill-color:#4b5a60!important;opacity:1!important}
+
+/* طريقة السداد — العنوان والأزرار */
+html[data-theme="light"] .sale-ref-methods,
+html[data-theme="light"] .sale-ref-methods *{opacity:1!important;filter:none!important}
+html[data-theme="light"] .sale-ref-methods button{color:#263238!important;-webkit-text-fill-color:#263238!important}
+html[data-theme="light"] .sale-ref-methods button i{color:#08796d!important;-webkit-text-fill-color:#08796d!important}
+html[data-theme="light"] .sale-ref-methods button.active,
+html[data-theme="light"] .sale-ref-methods button.active span,
+html[data-theme="light"] .sale-ref-methods button.active i{color:#fff!important;-webkit-text-fill-color:#fff!important}
+</style>
+
 </head>
 <body>
 <div id="loading-screen">
@@ -3705,10 +3768,10 @@ html[data-theme="dark"] .backup-section-label{opacity:1!important;filter:none!im
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-// متجري v1.8.28 — تثبيت وضوح النصوص في سجل المبيعات والسداد والنسخة الاحتياطية
-const APP_VERSION='v1.8.26';
+// متجري v1.8.29 — إصلاح فتح قسم المبيعات وتثبيت وضوح العناوين
+const APP_VERSION='v1.8.29';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "18 سبتمبر 2026 — تثبيت وضوح النصوص في سجل المبيعات والسداد والنسخة الاحتياطية";
+const APP_BUILD_DATE = "18 سبتمبر 2026 — إصلاح فتح قسم المبيعات وتثبيت وضوح العناوين";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -5098,7 +5161,7 @@ function saveProductEdit(id){
 
 // ==================== المبيعات ====================
 function renderSalesPage(container){
-  const todaySales=(Store.get('sales')||[]).filter(s=>s.date===today());
+  const todaySales=(Store.get('sales')||[]).filter(s=>s && typeof s==='object' && s.date===today());
   // الفاتورة متعددة الأصناف تحتوي أكثر من سطر، لذلك لا نعدّ paid إلا مرة واحدة لكل فاتورة.
   const todayInvoices={};
   todaySales.forEach(s=>{
@@ -5113,9 +5176,9 @@ function renderSalesPage(container){
   const salesTodayProfit=todayInvoiceList.reduce((a,s)=>a+Number(s.profit||0),0);
   const salesTodayPaid=todayInvoiceList.reduce((a,s)=>a+Number(s.paid||0),0);
   const salesTodayCount=todayInvoiceList.length;
-  const products=Store.get('products')||[];
+  const products=(Store.get('products')||[]).filter(p=>p && typeof p==='object');
   window.saleProducts=products;
-  const customers=Store.get('customers')||[];
+  const customers=(Store.get('customers')||[]).filter(c=>c && typeof c==='object');
   window.saleCustomers=customers;
   window.posCart=window.posCart||[];
   window.posSort=window.posSort||'default';
@@ -5229,13 +5292,19 @@ function renderSalesPage(container){
         <div class="sales-filters"><div class="sales-search-wrap"><i class="fas fa-search"></i><input type="text" id="saleSearch" placeholder="ابحث عن صنف أو عميل أو ملاحظة..." oninput="renderSalesTable()"><button type="button" onclick="document.getElementById('saleSearch').value='';renderSalesTable()"><i class="fas fa-xmark"></i></button></div><div class="sales-quick-filters"><button type="button" class="active" data-range="all" onclick="setSalesRange('all',this)">الكل</button><button type="button" data-range="today" onclick="setSalesRange('today',this)">اليوم</button><button type="button" data-range="week" onclick="setSalesRange('week',this)">هذا الأسبوع</button><button type="button" data-range="month" onclick="setSalesRange('month',this)">هذا الشهر</button></div><div class="sales-filter-row"><select id="saleTypeFilter" onchange="renderSalesTable()"><option value="">كل أنواع البيع</option><option value="retail">🛍️ قطاعي</option><option value="wholesale">📦 جملة</option></select><select id="salePaymentFilter" onchange="renderSalesTable()"><option value="">كل طرق السداد</option><option value="cash">💵 نقدي</option><option value="credit">⏳ آجل</option><option value="transfer">📱 تحويل</option><option value="card">💳 بطاقة</option></select><label class="sales-date-wrap" title="اختيار تاريخ محدد"><i class="fas fa-calendar-days"></i><span id="saleFilterDateLabel">اختر التاريخ</span><input type="date" id="saleFilterDate" onchange="setSalesRange('custom')" class="sales-date-filter" aria-label="اختيار تاريخ محدد"></label><button type="button" class="sales-clear-filters" onclick="clearSalesFilters()"><i class="fas fa-filter-circle-xmark"></i> مسح الفلاتر</button></div></div><div id="salesTable" class="sales-cards-list"></div></div>
     </section>
   </div>`;
-  renderSaleProductGrid();
-  renderPOSCart();
-  togglePOSCustomCustomer();
-  togglePOSCredit();
-  renderSalesTable();
-  updatePOSCustomerPill();
-  setPOSPaymentMethod('cash');
+  // لا نسمح لجزء واحد (خصوصًا سجل المبيعات) بإسقاط صفحة المبيعات بالكامل.
+  // أي بيانات قديمة/ناقصة يتم تجاوزها بدل إظهار شاشة "وضع عدم الاتصال".
+  try{renderSaleProductGrid();}catch(e){console.error('خطأ في قائمة منتجات البيع:',e);}
+  try{renderPOSCart();}catch(e){console.error('خطأ في سلة البيع:',e);}
+  try{togglePOSCustomCustomer();}catch(e){console.error('خطأ في اختيار العميل:',e);}
+  try{togglePOSCredit();}catch(e){console.error('خطأ في طريقة السداد:',e);}
+  try{renderSalesTable();}catch(e){
+    console.error('خطأ في سجل المبيعات:',e);
+    const st=document.getElementById('salesTable');
+    if(st) st.innerHTML='<div class="sales-empty"><div><i class="fas fa-triangle-exclamation"></i></div><strong>تعذر تحميل سجل المبيعات</strong><span>تم فتح قسم المبيعات، ويمكن متابعة البيع.</span></div>';
+  }
+  try{updatePOSCustomerPill();}catch(e){console.error('خطأ في اسم العميل:',e);}
+  try{setPOSPaymentMethod('cash');}catch(e){console.error('خطأ في تهيئة طريقة السداد:',e);}
 }
 
 function toggleSalesHistory(force){
@@ -5535,7 +5604,7 @@ function removePOSItem(index){window.posCart.splice(index,1);renderPOSCart();ren
 function clearPOSCart(){window.posCart=[];renderPOSCart();renderSaleProductGrid();}
 function refreshPOSCartPrices(){renderPOSCart();renderSaleProductGrid();}
 function getLastSalePrice(productId,type){
-  const sales=Store.get('sales').filter(s=>s.productId===productId && s.type===type && Number(s.price)>0);
+  const sales=(Store.get('sales')||[]).filter(s=>s && typeof s==='object' && s.productId===productId && s.type===type && Number(s.price)>0);
   if(!sales.length)return null;
   sales.sort((a,b)=>String(b.createdAt||b.date).localeCompare(String(a.createdAt||a.date)));
   const last=sales[0];
@@ -6260,8 +6329,8 @@ function renderSaleProductGrid(){
   if(!grid)return;
   const search=(document.getElementById('saleProductSearch')?.value||'').toLowerCase().trim();
   const cat=window.posCategory||'all';
-  let products=(window.saleProducts||[]).filter(p=>{const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();return hay.includes(search)&&(cat==='all'||p.type===cat);});
-  const sales=Store.get('sales')||[];
+  let products=(window.saleProducts||[]).filter(p=>p && typeof p==='object').filter(p=>{const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();return hay.includes(search)&&(cat==='all'||p.type===cat);});
+  const sales=(Store.get('sales')||[]).filter(s=>s && typeof s==='object');
   const soldMap={}; sales.forEach(s=>{if(s.productId)soldMap[s.productId]=(soldMap[s.productId]||0)+Number(s.qty||0);});
   const sort=window.posSort||'default';
   if(sort==='best')products.sort((a,b)=>(soldMap[b.id]||0)-(soldMap[a.id]||0));
@@ -6700,7 +6769,7 @@ function openSaleDetails(id){
     <div class="sale-detail-actions"><button class="btn btn-primary btn-block" onclick="closeModal();editSale('${s.id}')"><i class="fas fa-edit"></i> تعديل العملية</button><button class="btn btn-danger" onclick="closeModal();deleteSale('${s.id}','${s.productId||''}',${Number(s.qty)||0})"><i class="fas fa-trash"></i></button></div>`);
 }
 function renderSalesTable(){
-  const sales=Store.get('sales')||[];
+  const sales=(Store.get('sales')||[]).filter(s=>s && typeof s==='object');
   const fs=(document.getElementById('saleSearch')?.value||'').toLowerCase().trim();
   const fd=document.getElementById('saleFilterDate')?.value||'';
   const type=document.getElementById('saleTypeFilter')?.value||'';
