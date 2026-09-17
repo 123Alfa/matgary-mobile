@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<!-- MATGARY SURGICAL-2 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>متجري - نظام إدارة المبيعات والمخزون</title>
@@ -12,7 +11,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 
 <!-- لون شريط المتصفح العلوي في الموبايل -->
-<meta name="theme-color" content="#00897B">
+<meta name="theme-color" content="#0B4DA2">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" async></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
@@ -2732,17 +2731,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 }
 </style>
 
-<style>
-/* MATGARY SURGICAL-2: reduced motion */
-@media (prefers-reduced-motion: reduce){
-  *,*::before,*::after{
-    animation-duration:.01ms !important;
-    animation-iteration-count:1 !important;
-    transition-duration:.01ms !important;
-    scroll-behavior:auto !important;
-  }
-}
-</style>
+<!-- MATGARY PHASE-A -->
 </head>
 <body>
 <div id="loading-screen">
@@ -3508,26 +3497,14 @@ let currentTab='dashboard';
 // Lightweight local transaction helper. It snapshots selected collections and
 // restores them if the supplied operation throws. This is intentionally opt-in
 // so legacy data is not changed just by loading the app.
-function cloneForTransaction(value){
-  if(value===undefined) return undefined;
-  return JSON.parse(JSON.stringify(value));
-}
-
 function runLocalTransaction(keys, operation){
   const snapshot={};
-  (keys||[]).forEach(k=>{
-    snapshot[k]=cloneForTransaction(Store.get(k));
-  });
+  (keys||[]).forEach(k=>{ snapshot[k]=Store.get(k); });
   try{
-    return operation();
+    const result=operation();
+    return result;
   }catch(error){
-    (keys||[]).forEach(k=>{
-      try{
-        Store.set(k,cloneForTransaction(snapshot[k]));
-      }catch(e){
-        console.error('فشل rollback:',k,e);
-      }
-    });
+    (keys||[]).forEach(k=>{ try{ Store.set(k,snapshot[k]); }catch(e){} });
     throw error;
   }
 }
@@ -4237,57 +4214,6 @@ function renderSalesPage(container){
   const customers=Store.get('customers')||[];
   window.saleCustomers=customers;
   window.posCart=window.posCart||[];
-  const __matgaryPOSResume=restorePOSCartState();
-
-// ============================================================
-// Surgical-2: POS Cart Recovery
-// ============================================================
-function persistPOSCartState(){
-  try{
-    const cart=Array.isArray(window.posCart)
-      ? JSON.parse(JSON.stringify(window.posCart))
-      : [];
-    if(!cart.length){
-      localStorage.removeItem('bm_posCart_temp');
-      return;
-    }
-    const snapshot={
-      cart,
-      saleType:document.getElementById('posSaleType')?.value||'retail',
-      customerId:document.getElementById('posCustomer')?.value||'',
-      customCustomer:document.getElementById('posCustomCustomer')?.value||'',
-      payment:document.getElementById('posPaymentMethod')?.value||'cash',
-      paid:document.getElementById('posPaid')?.value||'',
-      discount:document.getElementById('posDiscount')?.value||'',
-      taxRate:document.getElementById('posTaxRate')?.value||'0',
-      note:document.getElementById('posSaleNote')?.value||'',
-      invoiceDate:document.getElementById('posInvoiceDate')?.value||today(),
-      savedAt:Date.now()
-    };
-    localStorage.setItem('bm_posCart_temp',JSON.stringify(snapshot));
-  }catch(e){
-    console.warn('[Matgary] تعذر حفظ سلة POS المؤقتة:',e);
-  }
-}
-
-function restorePOSCartState(){
-  try{
-    const raw=localStorage.getItem('bm_posCart_temp');
-    if(!raw) return null;
-    const s=JSON.parse(raw);
-    if(!s || !s.savedAt || Date.now()-Number(s.savedAt)>24*60*60*1000){
-      localStorage.removeItem('bm_posCart_temp');
-      return null;
-    }
-    if(!Array.isArray(s.cart) || !s.cart.length) return null;
-    window.posCart=s.cart;
-    return s;
-  }catch(e){
-    console.warn('[Matgary] تعذر استرجاع سلة POS المؤقتة:',e);
-    return null;
-  }
-}
-
   window.posSort=window.posSort||'default';
   const customerOpts=customers.map(c=>`<option value="${escapeHtml(c.id)}" data-type="${escapeHtml(c.type||'retail')}">${c.type==='wholesale'?'📦':'🛍️'} ${escapeHtml(c.name)}</option>`).join('');
 
@@ -4406,30 +4332,6 @@ function restorePOSCartState(){
   renderSalesTable();
   updatePOSCustomerPill();
   setPOSPaymentMethod('cash');
-
-  // Surgical-2: استرجاع حقول الفاتورة بعد بناء واجهة POS.
-  if(__matgaryPOSResume){
-    try{
-      const setVal=(id,v)=>{
-        const el=document.getElementById(id);
-        if(el && v!==undefined && v!==null) el.value=v;
-      };
-      setVal('posSaleType',__matgaryPOSResume.saleType);
-      setVal('posCustomer',__matgaryPOSResume.customerId);
-      setVal('posCustomCustomer',__matgaryPOSResume.customCustomer);
-      setVal('posPaymentMethod',__matgaryPOSResume.payment);
-      setVal('posPaid',__matgaryPOSResume.paid);
-      setVal('posDiscount',__matgaryPOSResume.discount);
-      setVal('posTaxRate',__matgaryPOSResume.taxRate);
-      setVal('posSaleNote',__matgaryPOSResume.note);
-      setVal('posInvoiceDate',__matgaryPOSResume.invoiceDate);
-      if(typeof updatePOSSummary==='function') updatePOSSummary();
-      if(typeof renderPOSCart==='function') renderPOSCart();
-    }catch(e){
-      console.warn('[Matgary] تعذر استكمال استرجاع بيانات سلة POS:',e);
-    }
-  }
-
 }
 
 function toggleSalesHistory(force){
@@ -4640,8 +4542,6 @@ function addToPOSCart(id, weight = 1) {
   renderPOSCart();
   renderSaleProductGrid();
   showPOSProductSelected(productId);
-
-  try{persistPOSCartState();}catch(e){}
 }
 
 function changePOSQty(index,delta){
@@ -4663,8 +4563,6 @@ function changePOSQty(index,delta){
   if(needed>(Number(p.qty)||0)+0.000001)return showToast(`المتاح فقط ${formatProductQty(p, p.qty)} ${p.unit||'كجم'}`,'warning');
   item.qty=newQty;
   renderPOSCart(); renderSaleProductGrid();
-
-  try{persistPOSCartState();}catch(e){}
 }
 function changePOSWeight(index,newWeight){
   const item=(window.posCart||[])[index];
@@ -4679,8 +4577,6 @@ function changePOSWeight(index,newWeight){
   const same=window.posCart.find((x,i)=>i!==index && String(x.id)===String(p.id) && Math.abs(Number(x.weight||1)-newWeight)<0.000001);
   if(same){same.qty+=item.qty;window.posCart.splice(index,1);}else item.weight=newWeight;
   renderPOSCart(); renderSaleProductGrid();
-
-  try{persistPOSCartState();}catch(e){}
 }
 function setPOSQuickWeight(index,grams){
   const kg = Number(grams) / 1000;
@@ -4731,12 +4627,8 @@ function togglePOSCredit(){
   if(row)row.classList.toggle('show',method==='credit');
   updatePOSSummary();
 }
-function removePOSItem(index){window.posCart.splice(index,1);renderPOSCart();renderSaleProductGrid();
-  try{persistPOSCartState();}catch(e){}
-}
-function clearPOSCart(){window.posCart=[];renderPOSCart();renderSaleProductGrid();
-  try{localStorage.removeItem('bm_posCart_temp');}catch(e){}
-}
+function removePOSItem(index){window.posCart.splice(index,1);renderPOSCart();renderSaleProductGrid();}
+function clearPOSCart(){window.posCart=[];renderPOSCart();renderSaleProductGrid();}
 function refreshPOSCartPrices(){renderPOSCart();renderSaleProductGrid();}
 function getLastSalePrice(productId,type){
   const sales=Store.get('sales').filter(s=>s.productId===productId && s.type===type && Number(s.price)>0);
@@ -4788,15 +4680,11 @@ function updatePOSItemPrice(index,value){
   if(!Number.isFinite(price)||price<0)return showToast('أدخل سعرًا صحيحًا','warning');
   item.priceOverride=price;
   renderPOSCart();
-
-  try{persistPOSCartState();}catch(e){}
 }
 function resetPOSItemPrice(index){
   const item=(window.posCart||[])[index]; if(!item)return;
   item.priceOverride=null;
   renderPOSCart();
-
-  try{persistPOSCartState();}catch(e){}
 }
 function updatePOSCustomerPill(){
   const sel=document.getElementById('posCustomer'); const pill=document.getElementById('posCustomerPillName');
@@ -4828,8 +4716,6 @@ function addPOSDeliveryService(){
   }
   if(input)input.value='';
   renderPOSCart();
-
-  try{persistPOSCartState();}catch(e){}
 }
 
 function addPOSService(){
@@ -4841,8 +4727,6 @@ function addPOSService(){
   window.posCart=window.posCart||[];
   window.posCart.push({id:'service_'+Date.now().toString(36),service:true,name:clean,qty:1,weight:1,price,priceOverride:price});
   renderPOSCart();
-
-  try{persistPOSCartState();}catch(e){}
 }
 
 function isPOSWeightProduct(p){
@@ -4860,8 +4744,6 @@ function setPOSCartSaleMode(index,mode){
     item.valueAmount=roundPOSMoney(price*Number(item.weight||1));
   }
   renderPOSCart();
-
-  try{persistPOSCartState();}catch(e){}
 }
 function updatePOSCartValue(index,value){
   const item=(window.posCart||[])[index]; if(!item)return;
@@ -4872,8 +4754,6 @@ function updatePOSCartValue(index,value){
   item.saleMode='value'; item.valueAmount=amount;
   item.weight=price>0?amount/price:0;
   renderPOSCart();
-
-  try{persistPOSCartState();}catch(e){}
 }
 
 function renderPOSCart(){
@@ -5845,11 +5725,7 @@ function renderSalesTable(){
   filtered.forEach(s=>{
     const key=String(s.saleBatchId||s.id);
     if(!groups.has(key))groups.set(key,{key,lines:[],total:0,paid:0,profit:0,remaining:0});
-    const g=groups.get(key); g.lines.push(s); g.total+=Number(s.total||0);
-    // paid و remaining على مستوى الفاتورة؛ لا نجمعهما مع كل سطر.
-    g.paid=Math.max(g.paid,Number(s.paid??s.total??0));
-    g.profit+=Number(s.profit||0);
-    g.remaining=Math.max(g.remaining,Math.max(0,Number(s.remaining??(Number(s.total||0)-Number(s.paid??s.total??0)))));
+    const g=groups.get(key); g.lines.push(s); g.total+=Number(s.total||0); g.paid+=Number(s.paid??s.total??0); g.profit+=Number(s.profit||0); g.remaining+=Math.max(0,Number(s.remaining??(Number(s.total||0)-Number(s.paid??s.total??0))));
   });
   const invoices=Array.from(groups.values()).sort((a,b)=>String(b.lines[0]?.date||'').localeCompare(String(a.lines[0]?.date||'')));
   if(!invoices.length){target.innerHTML=`<div class="sales-empty"><div><i class="fas fa-receipt"></i></div><strong>لا توجد مبيعات</strong><span>جرّب تغيير الفلاتر أو البحث عن عملية أخرى</span></div>`;return;}
@@ -9740,9 +9616,9 @@ function historyCard(inv){
       }
 
       if(oldCustomer){
-        const cs=Store.get('customers');
-        const c=cs.find(x=>x.id===oldCustomer);
-        if(c){c.totalSpent=Math.max(0,money(c.totalSpent)+delta);Store.set('customers',cs);}
+        // أعد بناء إجمالي مشتريات العميل والنقاط من المبيعات الفعلية.
+        // التعديل السابق كان يغيّر totalSpent فقط ويترك points قديمة.
+        if(typeof recalculateCustomerStats==='function') recalculateCustomerStats(oldCustomer);
       }
       closeIfOpen();
       showToast('✅ تم تعديل الفاتورة مع الحفاظ على كل المدفوعات والتحصيلات','success');
@@ -9804,7 +9680,11 @@ function historyCard(inv){
     const oldPaid=money(inv.paid);
     const updated=findInvoice(key);
     const newTotal=updated?money(updated.total):Math.max(0,money(inv.total)-refund);
-    const cashRefund=Math.min(refund,oldPaid);
+    // المبلغ النقدي المستحق للرد هو فقط الجزء الذي أصبح زائدًا عن
+    // إجمالي الفاتورة الجديد بعد المرتجع، وليس قيمة المرتجع نفسها.
+    // مثال: فاتورة 100 مدفوع منها 40 ومرتجع 20 => لا يوجد رد نقدي؛
+    // المتبقي يصبح 40. أما إذا صار الإجمالي الجديد 20 => نرد 20 نقدًا.
+    const cashRefund=Math.max(0,money(oldPaid-newTotal));
     const paid=Math.min(oldPaid,newTotal);
     const remaining=Math.max(0,money(newTotal-paid));
 
