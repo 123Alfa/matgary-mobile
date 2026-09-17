@@ -3341,6 +3341,62 @@ html[data-theme="dark"] .receipt-pro-new .receipt-summary-pro .discount-row stro
 }
 </style>
 
+
+<style id="invoice-detail-dark-final-v4">
+/* ===== إصلاح سجل المبيعات / تفاصيل الفاتورة في Dark Mode ===== */
+html[data-theme="dark"] .invoice-detail-customer{
+  background:#1d2a2c!important;
+  border-color:#34474a!important;
+  color:#edf7f5!important;
+}
+html[data-theme="dark"] .invoice-detail-customer-info span{
+  color:#9fb3af!important;
+}
+html[data-theme="dark"] .invoice-detail-customer-info strong{
+  color:#ffffff!important;
+  font-weight:900!important;
+}
+html[data-theme="dark"] .invoice-detail-customer-info small{
+  color:#a9bcb8!important;
+}
+html[data-theme="dark"] .invoice-detail-avatar{
+  background:#263b3b!important;
+  color:#ff747b!important;
+}
+html[data-theme="dark"] .invoice-detail-wa{
+  background:#18352b!important;
+  border-color:#2e5c4c!important;
+  color:#55d39a!important;
+}
+html[data-theme="dark"] .invoice-detail-section-label{
+  color:#d6e4e1!important;
+}
+
+/* بطاقات إحصائيات سجل المبيعات: منع الأرقام من الاختفاء */
+html[data-theme="light"] .sales-stat-card,
+html[data-theme="light"] .sales-summary-card{
+  color:#334155!important;
+}
+html[data-theme="light"] .sales-stat-card strong,
+html[data-theme="light"] .sales-summary-card strong,
+html[data-theme="light"] .sales-stat-card .value,
+html[data-theme="light"] .sales-summary-card .value{
+  color:#334155!important;
+  opacity:1!important;
+}
+html[data-theme="dark"] .sales-stat-card,
+html[data-theme="dark"] .sales-summary-card{
+  color:#edf7f5!important;
+}
+html[data-theme="dark"] .sales-stat-card strong,
+html[data-theme="dark"] .sales-summary-card strong,
+html[data-theme="dark"] .sales-stat-card .value,
+html[data-theme="dark"] .sales-summary-card .value{
+  color:#edf7f5!important;
+  opacity:1!important;
+}
+</style>
+
 </head>
 <body>
 <div id="loading-screen">
