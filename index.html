@@ -3164,6 +3164,135 @@ html[data-theme="dark"] .purchase-box-v6 [style*="background: #fff"]{
 }
 </style>
 
+
+<style id="dark-mode-final-polish-v2">
+/* ===== Dark Mode Final Polish v2 =====
+   إصلاح عناصر شاشة البيع التي كانت ما زالت تستخدم ألوان الوضع الفاتح.
+*/
+html[data-theme="dark"] .sale-ref-payment-discount{
+  background:#1b292b!important;
+  border-color:#5b4c22!important;
+}
+html[data-theme="dark"] .sale-ref-payment-discount label{
+  color:#e3b93f!important;
+}
+html[data-theme="dark"] .sale-ref-payment-discount>div span{
+  color:#c9b96f!important;
+}
+html[data-theme="dark"] .sale-ref-payment-discount input{
+  background:#121c1e!important;
+  color:#edf7f5!important;
+  -webkit-text-fill-color:#edf7f5!important;
+  border-color:#5b6b6d!important;
+  caret-color:#14b8a6!important;
+}
+html[data-theme="dark"] .sale-ref-payment-discount input::placeholder{
+  color:#8ea6a2!important;
+  opacity:1!important;
+  -webkit-text-fill-color:#8ea6a2!important;
+}
+
+/* الضريبة */
+html[data-theme="dark"] .pos-tax-line{
+  background:#172426!important;
+  border-color:#2d3d40!important;
+}
+html[data-theme="dark"] .pos-tax-line label,
+html[data-theme="dark"] .pos-tax-line span{
+  color:#b7c9c6!important;
+}
+html[data-theme="dark"] .pos-tax-line input{
+  background:#121c1e!important;
+  color:#edf7f5!important;
+  -webkit-text-fill-color:#edf7f5!important;
+  border-color:#3b5053!important;
+}
+
+/* الحقول والأزرار السريعة في شاشة البيع */
+html[data-theme="dark"] .sale-ref-paid-input button,
+html[data-theme="dark"] .sale-ref-methods button,
+html[data-theme="dark"] .pos-quick-paid button,
+html[data-theme="dark"] .pos-adv-tools button{
+  background:#1d2a2c!important;
+  color:#b7c9c6!important;
+  border-color:#35484b!important;
+}
+html[data-theme="dark"] .sale-ref-methods button.active{
+  background:#153b36!important;
+  color:#53c59c!important;
+  border-color:#14b8a6!important;
+}
+html[data-theme="dark"] .sale-ref-payment-discount input:focus,
+html[data-theme="dark"] .pos-tax-line input:focus{
+  border-color:#14b8a6!important;
+  box-shadow:0 0 0 3px rgba(20,184,166,.14)!important;
+}
+
+/* سجل/ملخص البيع */
+html[data-theme="dark"] .receipt-pro-new,
+html[data-theme="dark"] .receipt-info-grid>div,
+html[data-theme="dark"] .receipt-summary-pro{
+  background:#172123!important;
+  border-color:#2d3d40!important;
+}
+html[data-theme="dark"] .receipt-info-grid small,
+html[data-theme="dark"] .receipt-summary-pro>div{
+  color:#8ea6a2!important;
+}
+html[data-theme="dark"] .receipt-info-grid strong,
+html[data-theme="dark"] .receipt-summary-pro strong{
+  color:#edf7f5!important;
+}
+html[data-theme="dark"] .receipt-summary-pro .grand,
+html[data-theme="dark"] .receipt-summary-pro .grand strong{
+  color:#53c59c!important;
+}
+html[data-theme="dark"] .receipt-summary-pro .remaining,
+html[data-theme="dark"] .receipt-summary-pro .remaining strong{
+  background:#332d1b!important;
+  color:#e3b93f!important;
+}
+
+/* منع أي لون أبيض ثابت من إخفاء النصوص داخل عناصر شاشة البيع */
+html[data-theme="dark"] .sale-ref-delivery-input,
+html[data-theme="dark"] .pos-sale-note,
+html[data-theme="dark"] .pos-receipt-preview,
+html[data-theme="dark"] .pos-receipt-preview table,
+html[data-theme="dark"] .pos-receipt-preview th,
+html[data-theme="dark"] .pos-receipt-preview td{
+  color:#edf7f5!important;
+}
+html[data-theme="dark"] .sale-ref-delivery-input,
+html[data-theme="dark"] .pos-sale-note{
+  background:#121c1e!important;
+  border-color:#35484b!important;
+}
+html[data-theme="dark"] .sale-ref-delivery-input::placeholder,
+html[data-theme="dark"] .pos-sale-note::placeholder{
+  color:#8ea6a2!important;
+  opacity:1!important;
+}
+
+/* زر إتمام الدفع */
+html[data-theme="dark"] .pos-checkout:disabled{
+  background:linear-gradient(135deg,#315e59,#386f68)!important;
+  color:#dcebe8!important;
+  opacity:.9!important;
+}
+
+/* عناصر السجل والإحصائيات ذات الخلفيات البيضاء الثابتة */
+html[data-theme="dark"] .purchases-stats-v6>div,
+html[data-theme="dark"] .purchase-box-v6,
+html[data-theme="dark"] .sale-product-picker,
+html[data-theme="dark"] .sale-selected-preview,
+html[data-theme="dark"] .pos-products-panel,
+html[data-theme="dark"] .pos-cart-panel{
+  background:var(--bg-card)!important;
+  color:var(--text)!important;
+  border-color:var(--border)!important;
+}
+</style>
+
 </head>
 <body>
 <div id="loading-screen">
