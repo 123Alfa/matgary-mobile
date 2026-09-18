@@ -3466,10 +3466,10 @@ html[data-theme="dark"] .sales-summary-card .value{
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-// متجري v1.8.25 — إصلاحات الوضع الداكن وسجل المبيعات والفاتورة
-const APP_VERSION='v1.8.25';
+// متجري v1.8.30 — تحسين شامل ودقيق للوضع الداكن
+const APP_VERSION='v1.8.30';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "18 سبتمبر 2026 — إصلاحات الوضع الداكن وسجل المبيعات ووضوح الفاتورة";
+const APP_BUILD_DATE = "18 سبتمبر 2026 — تحسين شامل ودقيق للوضع الداكن وتوحيد الألوان";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -10621,6 +10621,734 @@ window.addEventListener('online',()=>{try{if(typeof markCloudSyncPending==='func
   .purchase-line-v185 .remove-line{width:100%;grid-column:1/-1}
   .purchase-invoice-summary-v185,.purchase-invoice-totals-v185{grid-template-columns:1fr 1fr}
 }
+
+
+/* =========================================================
+   متجري — DARK MODE FINAL / v1.8.30
+   طبقة توحيد شاملة للوضع الداكن.
+   لا تغيّر أي ألوان في الوضع الفاتح.
+   ========================================================= */
+html[data-theme="dark"]{
+  --dm-bg:#0b1214;
+  --dm-surface:#121c1f;
+  --dm-surface-2:#172326;
+  --dm-surface-3:#1c2a2d;
+  --dm-input:#0f191b;
+  --dm-border:#2b3d41;
+  --dm-border-2:#385055;
+  --dm-text:#f1f8f6;
+  --dm-text-2:#c1d0cd;
+  --dm-muted:#91a5a1;
+  --dm-soft:#203033;
+  --dm-primary:var(--primary,#14b8a6);
+  --dm-accent:var(--accent,#d4af37);
+}
+
+/* الأساس */
+html[data-theme="dark"] body,
+html[data-theme="dark"] #app{
+  background:var(--dm-bg)!important;
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] *{
+  scrollbar-color:var(--dm-border-2) var(--dm-bg);
+}
+html[data-theme="dark"] ::selection{
+  background:color-mix(in srgb,var(--primary) 35%,#000);
+  color:#fff;
+}
+
+/* الهيدر + التنقل السفلي */
+html[data-theme="dark"] .app-header{
+  background:linear-gradient(135deg,#0e181a 0%,#142124 62%,#211d12 100%)!important;
+  color:var(--dm-text)!important;
+  border-bottom:1px solid var(--dm-border)!important;
+  box-shadow:0 6px 24px rgba(0,0,0,.34)!important;
+}
+html[data-theme="dark"] .app-header h1,
+html[data-theme="dark"] .app-header .logo-text,
+html[data-theme="dark"] .app-header .logo-text small{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .app-header .logo-text small{color:var(--dm-muted)!important}
+html[data-theme="dark"] .bottom-nav{
+  background:rgba(11,18,20,.98)!important;
+  border-top:1px solid var(--dm-border)!important;
+  box-shadow:0 -10px 30px rgba(0,0,0,.38)!important;
+}
+html[data-theme="dark"] .bottom-nav-item{
+  color:var(--dm-muted)!important;
+}
+html[data-theme="dark"] .bottom-nav-item.active{
+  color:var(--dm-primary)!important;
+  background:color-mix(in srgb,var(--primary) 15%,transparent)!important;
+}
+
+/* كل البطاقات العامة */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .quick-action,
+html[data-theme="dark"] .product-item,
+html[data-theme="dark"] .menu-item,
+html[data-theme="dark"] .customer-card,
+html[data-theme="dark"] .supplier-card,
+html[data-theme="dark"] .offer-card,
+html[data-theme="dark"] .debt-card,
+html[data-theme="dark"] .sales-history-card,
+html[data-theme="dark"] .sales-history-modern,
+html[data-theme="dark"] .purchase-record-card,
+html[data-theme="dark"] .purchase-stat-card,
+html[data-theme="dark"] .sale-record-card,
+html[data-theme="dark"] .sh-toolbar,
+html[data-theme="dark"] .sh-invoice,
+html[data-theme="dark"] .sh-empty,
+html[data-theme="dark"] .menu-item-v3,
+html[data-theme="dark"] .more-settings-card,
+html[data-theme="dark"] .cashbox-stat,
+html[data-theme="dark"] .cashbox-filter,
+html[data-theme="dark"] .cashbox-section,
+html[data-theme="dark"] .backup-account,
+html[data-theme="dark"] .backup-data-item,
+html[data-theme="dark"] .backup-action.outline,
+html[data-theme="dark"] .backup-action.google{
+  background:var(--dm-surface)!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+}
+
+/* العناوين والنصوص العامة */
+html[data-theme="dark"] .card-title,
+html[data-theme="dark"] .section-header h2,
+html[data-theme="dark"] .settings-row-title,
+html[data-theme="dark"] .menu-item span,
+html[data-theme="dark"] .quick-action span,
+html[data-theme="dark"] .product-item .p-name,
+html[data-theme="dark"] .sale-product-card .sp-name,
+html[data-theme="dark"] .pos-product-card .name,
+html[data-theme="dark"] .pos-cart-name,
+html[data-theme="dark"] .customer-info .customer-name,
+html[data-theme="dark"] .debt-card .debt-person,
+html[data-theme="dark"] .offer-card .offer-title{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .settings-row-sub,
+html[data-theme="dark"] .settings-arrow,
+html[data-theme="dark"] .settings-profile-info span,
+html[data-theme="dark"] .stat-label,
+html[data-theme="dark"] .product-item .p-type,
+html[data-theme="dark"] .product-item .p-qty,
+html[data-theme="dark"] .sale-product-card .sp-stock,
+html[data-theme="dark"] .sale-product-card .sp-size-note,
+html[data-theme="dark"] .pos-cart-meta,
+html[data-theme="dark"] .pos-live-card small,
+html[data-theme="dark"] .customer-info .customer-meta,
+html[data-theme="dark"] .debt-card .debt-meta,
+html[data-theme="dark"] .offer-card .offer-details{
+  color:var(--dm-muted)!important;
+}
+
+/* النماذج — منع الأبيض والرمادي الباهت */
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea{
+  color:var(--dm-text)!important;
+  background:var(--dm-input)!important;
+  border-color:var(--dm-border)!important;
+  color-scheme:dark;
+}
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder{
+  color:#718782!important;
+}
+html[data-theme="dark"] select option{
+  background:#111c1e!important;
+  color:#eef7f5!important;
+}
+html[data-theme="dark"] .form-group label,
+html[data-theme="dark"] .pos-payment-grid label{
+  color:var(--dm-text-2)!important;
+}
+html[data-theme="dark"] input:focus,
+html[data-theme="dark"] select:focus,
+html[data-theme="dark"] textarea:focus{
+  border-color:var(--dm-primary)!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 18%,transparent)!important;
+}
+
+/* الأزرار الصغيرة ذات الخلفية البيضاء */
+html[data-theme="dark"] .pos-sale-mode button,
+html[data-theme="dark"] .pos-category-row button,
+html[data-theme="dark"] .pos-qty button,
+html[data-theme="dark"] .sp-size,
+html[data-theme="dark"] .pos-adv-tools button,
+html[data-theme="dark"] .pos-quick-paid button,
+html[data-theme="dark"] .sales-refresh-btn,
+html[data-theme="dark"] .sales-quick-filters button,
+html[data-theme="dark"] .sh-chip,
+html[data-theme="dark"] .purchase-credit-row button,
+html[data-theme="dark"] .supplier-whatsapp-mini,
+html[data-theme="dark"] .supplier-edit-mini,
+html[data-theme="dark"] .supplier-delete-mini{
+  background:var(--dm-surface-2)!important;
+  color:var(--dm-text-2)!important;
+  border-color:var(--dm-border-2)!important;
+}
+html[data-theme="dark"] .pos-sale-mode button.active,
+html[data-theme="dark"] .pos-category-row button.active,
+html[data-theme="dark"] .sp-size:hover,
+html[data-theme="dark"] .sales-quick-filters button.active{
+  background:var(--dm-primary)!important;
+  color:#fff!important;
+  border-color:var(--dm-primary)!important;
+}
+
+/* قسم المبيعات / الكاشير بالكامل */
+html[data-theme="dark"] .pos-products-panel,
+html[data-theme="dark"] .pos-cart-panel{
+  background:var(--dm-surface)!important;
+  border-color:var(--dm-border)!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.30)!important;
+}
+html[data-theme="dark"] .pos-panel-head,
+html[data-theme="dark"] .pos-cart-panel .pos-panel-head,
+html[data-theme="dark"] .pos-cart-toolbar{
+  background:linear-gradient(180deg,#19272a,#121c1f)!important;
+  border-color:var(--dm-border)!important;
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .pos-panel-head h3,
+html[data-theme="dark"] .pos-panel-head small{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .sale-product-card,
+html[data-theme="dark"] .sale-product-picker,
+html[data-theme="dark"] .sale-selected-preview,
+html[data-theme="dark"] .pos-product-card{
+  background:var(--dm-surface-2)!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .sale-product-card.active,
+html[data-theme="dark"] .sale-product-card.sale-selected{
+  background:linear-gradient(180deg,#18302e,#142422)!important;
+  border-color:var(--dm-primary)!important;
+}
+html[data-theme="dark"] .sale-product-card .sp-image,
+html[data-theme="dark"] .sale-selected-preview img,
+html[data-theme="dark"] .sale-selected-preview .ssp-icon{
+  background:#0d1719!important;
+}
+html[data-theme="dark"] .pos-cart-body,
+html[data-theme="dark"] .pos-live-summary,
+html[data-theme="dark"] .pos-cart-list{
+  background:var(--dm-surface)!important;
+}
+html[data-theme="dark"] .pos-cart-item,
+html[data-theme="dark"] .pos-cart-item.pos-cart-product-row,
+html[data-theme="dark"] .pos-cart-item.pos-cart-service-row{
+  background:var(--dm-surface)!important;
+  border-bottom-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .pos-cart-item img,
+html[data-theme="dark"] .pos-cart-item .cart-icon{
+  background:#0d1719!important;
+}
+html[data-theme="dark"] .pos-cart-main,
+html[data-theme="dark"] .pos-cart-controls,
+html[data-theme="dark"] .pos-summary-card{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .pos-live-card{
+  background:var(--dm-surface-2)!important;
+  border-color:var(--dm-border)!important;
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .pos-live-card strong,
+html[data-theme="dark"] .pos-live-card b{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .pos-customer-pill{
+  background:var(--dm-input)!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .pos-cart-table-head{
+  background:linear-gradient(135deg,#075e54,#0b786d)!important;
+  color:#fff!important;
+}
+html[data-theme="dark"] .pos-cart-table-head *{
+  color:#fff!important;
+}
+html[data-theme="dark"] .pos-add-service{
+  background:var(--dm-surface-2)!important;
+  color:#65d6bd!important;
+  border-color:#35645a!important;
+}
+html[data-theme="dark"] .manual-weight-box{
+  background:var(--dm-surface-2)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .manual-weight-box .weight-unit,
+html[data-theme="dark"] .weight-quick button{
+  background:var(--dm-input)!important;
+  color:#6ed9c2!important;
+  border-color:var(--dm-border-2)!important;
+}
+html[data-theme="dark"] .weight-quick button.active{
+  background:#164238!important;
+  color:#9cebd8!important;
+}
+html[data-theme="dark"] .pos-summary,
+html[data-theme="dark"] .pos-summary-row{
+  color:var(--dm-text-2)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .pos-summary-row.total{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .pos-summary-row.total strong,
+html[data-theme="dark"] .pos-line-total,
+html[data-theme="dark"] .pos-cart-total{
+  color:#5fddc2!important;
+}
+html[data-theme="dark"] .pos-change,
+html[data-theme="dark"] .pos-change-modern{
+  background:#143228!important;
+  border-color:#285c4b!important;
+  color:#8fe2c2!important;
+}
+html[data-theme="dark"] .pos-change strong,
+html[data-theme="dark"] .pos-change-modern strong{
+  color:#a7f0d4!important;
+}
+
+/* سجل المبيعات والفلاتر */
+html[data-theme="dark"] .sales-history-hero,
+html[data-theme="dark"] .sales-history-pro .sh-hero{
+  color:#fff!important;
+}
+html[data-theme="dark"] .sales-history-card,
+html[data-theme="dark"] .sales-history-modern{
+  background:var(--dm-surface)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .sales-search-wrap,
+html[data-theme="dark"] .sales-filter-row select,
+html[data-theme="dark"] .sales-filter-row input,
+html[data-theme="dark"] .sh-filter-row select,
+html[data-theme="dark"] .sh-filter-row input,
+html[data-theme="dark"] .sh-toolbar{
+  background:var(--dm-input)!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .sales-search-wrap i,
+html[data-theme="dark"] .sales-search-wrap input{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .sale-record-card,
+html[data-theme="dark"] .sh-invoice{
+  background:var(--dm-surface-2)!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .sale-record-card *,
+html[data-theme="dark"] .sh-invoice *{
+  border-color:var(--dm-border);
+}
+html[data-theme="dark"] .sales-stat-card,
+html[data-theme="dark"] .sales-summary-card{
+  background:var(--dm-surface-2)!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+  opacity:1!important;
+}
+html[data-theme="dark"] .sales-stat-card *,
+html[data-theme="dark"] .sales-summary-card *{
+  opacity:1!important;
+}
+html[data-theme="dark"] .sales-stat-card strong,
+html[data-theme="dark"] .sales-stat-card .value,
+html[data-theme="dark"] .sales-summary-card strong,
+html[data-theme="dark"] .sales-summary-card .value{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .sales-date-filter,
+html[data-theme="dark"] input[type="date"].sales-date-filter,
+html[data-theme="dark"] .sales-date-wrap{
+  background:var(--dm-input)!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .sales-date-filter::-webkit-calendar-picker-indicator{
+  filter:invert(1) brightness(1.5);
+}
+html[data-theme="dark"] .sh-empty{
+  color:var(--dm-muted)!important;
+}
+
+/* تفاصيل الفاتورة */
+html[data-theme="dark"] .invoice-detail-modern{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .invoice-detail-customer{
+  background:linear-gradient(135deg,#172a2a,#142321)!important;
+  border-color:#31504b!important;
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .invoice-detail-customer-info span,
+html[data-theme="dark"] .invoice-detail-customer-info small{
+  color:#a9bcb8!important;
+}
+html[data-theme="dark"] .invoice-detail-customer-info strong{
+  color:#f1f8f6!important;
+}
+html[data-theme="dark"] .invoice-detail-avatar{
+  background:#263b3b!important;
+  color:#ff747b!important;
+}
+html[data-theme="dark"] .invoice-detail-wa{
+  background:#18352b!important;
+  border-color:#2e5c4c!important;
+  color:#55d39a!important;
+}
+html[data-theme="dark"] .invoice-detail-section-label{
+  color:#d6e4e1!important;
+}
+html[data-theme="dark"] .invoice-detail-totals,
+html[data-theme="dark"] .invoice-detail-totals>div{
+  color:var(--dm-text-2)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .invoice-detail-totals .due-row{
+  background:#2b2415!important;
+  color:#f0d27c!important;
+}
+html[data-theme="dark"] .invoice-detail-totals .invoice-remaining-row{
+  background:#2b2415!important;
+  color:#f0d27c!important;
+}
+html[data-theme="dark"] .invoice-detail-totals strong{
+  color:var(--dm-text)!important;
+}
+
+/* الإيصال */
+html[data-theme="dark"] .receipt-pro-new{
+  background:var(--dm-surface)!important;
+  border-color:var(--dm-border)!important;
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .receipt-title{
+  color:var(--dm-text-2)!important;
+}
+html[data-theme="dark"] .receipt-info-grid>div,
+html[data-theme="dark"] .receipt-summary-pro,
+html[data-theme="dark"] .receipt-note{
+  background:var(--dm-surface-2)!important;
+  border-color:var(--dm-border)!important;
+  color:var(--dm-text-2)!important;
+}
+html[data-theme="dark"] .receipt-info-grid small,
+html[data-theme="dark"] .receipt-summary-pro>div{
+  color:var(--dm-muted)!important;
+}
+html[data-theme="dark"] .receipt-info-grid strong,
+html[data-theme="dark"] .receipt-summary-pro strong{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .receipt-pro-new table,
+html[data-theme="dark"] .receipt-pro-new th,
+html[data-theme="dark"] .receipt-pro-new td{
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .receipt-pro-new td{
+  color:var(--dm-text-2)!important;
+  background:var(--dm-surface)!important;
+}
+html[data-theme="dark"] .receipt-pro-new th{
+  background:var(--primary-dark)!important;
+  color:#fff!important;
+}
+html[data-theme="dark"] .receipt-summary-pro .grand{
+  color:#62ddc3!important;
+  border-top-color:#37645b!important;
+}
+html[data-theme="dark"] .receipt-summary-pro .grand strong{
+  color:#7ce7d0!important;
+}
+html[data-theme="dark"] .receipt-summary-pro .remaining{
+  background:#2b2415!important;
+  color:#e8c76c!important;
+}
+html[data-theme="dark"] .receipt-summary-pro .remaining strong{
+  color:#f0d27c!important;
+}
+
+/* النسخ والحفظ / Google Drive */
+html[data-theme="dark"] .backup-status-card{
+  background:var(--dm-surface-2)!important;
+  border-color:var(--dm-border)!important;
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .backup-head{
+  color:#fff!important;
+}
+html[data-theme="dark"] .backup-body{
+  background:transparent!important;
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .backup-account,
+html[data-theme="dark"] .backup-data-item{
+  background:var(--dm-surface)!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .backup-google-icon{
+  background:#172b2b!important;
+  border-color:#34484a!important;
+}
+html[data-theme="dark"] .backup-data-item strong,
+html[data-theme="dark"] .backup-data-item b,
+html[data-theme="dark"] .backup-account strong{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .backup-data-item span,
+html[data-theme="dark"] .backup-account small{
+  color:var(--dm-muted)!important;
+}
+html[data-theme="dark"] .backup-action.outline,
+html[data-theme="dark"] .backup-action.google{
+  color:var(--dm-text)!important;
+  background:var(--dm-surface-2)!important;
+  border-color:var(--dm-border-2)!important;
+}
+html[data-theme="dark"] .backup-restore-note{
+  color:#f0a6a6!important;
+}
+html[data-theme="dark"] .backup-section-title,
+html[data-theme="dark"] .backup-title,
+html[data-theme="dark"] .backup-label,
+html[data-theme="dark"] .backup-description{
+  color:var(--dm-text)!important;
+}
+
+/* الإعدادات + المزيد */
+html[data-theme="dark"] .settings-row{
+  border-bottom-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .settings-icon{
+  background:color-mix(in srgb,var(--primary) 15%,#111b1d)!important;
+  color:#63d8c1!important;
+}
+html[data-theme="dark"] .settings-badge{
+  background:#15372e!important;
+  color:#76ddb9!important;
+}
+html[data-theme="dark"] .settings-mini-stat,
+html[data-theme="dark"] .settings-profile,
+html[data-theme="dark"] .theme-choice,
+html[data-theme="dark"] .theme-color-field,
+html[data-theme="dark"] .theme-current-preview{
+  background:var(--dm-surface-2)!important;
+  border-color:var(--dm-border)!important;
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .settings-mini-stat strong,
+html[data-theme="dark"] .theme-choice,
+html[data-theme="dark"] .theme-current-preview strong{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .theme-current-preview span,
+html[data-theme="dark"] .theme-color-field label{
+  color:var(--dm-muted)!important;
+}
+html[data-theme="dark"] .more-hero,
+html[data-theme="dark"] .settings-hero{
+  color:#fff!important;
+}
+
+/* المشتريات */
+html[data-theme="dark"] .purchase-filter-grid input,
+html[data-theme="dark"] .purchase-filter-grid select,
+html[data-theme="dark"] .purchase-credit-row button{
+  background:var(--dm-input)!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .purchase-stat-card,
+html[data-theme="dark"] .purchase-record-card{
+  background:var(--dm-surface-2)!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .purchase-invoice-card-v185{
+  background:var(--dm-surface-2)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .purchase-invoice-items-v185,
+html[data-theme="dark"] .purchase-invoice-summary-v185>div,
+html[data-theme="dark"] .purchase-invoice-totals-v185 div{
+  background:var(--dm-surface)!important;
+  border-color:var(--dm-border)!important;
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .purchase-invoice-item-v185{
+  border-bottom-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .purchase-invoice-item-v185 .item-meta,
+html[data-theme="dark"] .purchase-invoice-summary-v185 small,
+html[data-theme="dark"] .purchase-invoice-totals-v185 small{
+  color:var(--dm-muted)!important;
+}
+
+/* حركة المخزون */
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-filter-card,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-list-card,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-card,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-product,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-stat{
+  background:var(--dm-surface-2)!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-back{
+  background:var(--dm-surface-3)!important;
+  color:#67dbc3!important;
+}
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-date b,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-product *,
+html[data-theme="dark"] #contentArea .stock-movement-page .sm-movement-card *{
+  color:var(--dm-text-2);
+}
+html[data-theme="dark"] .sm-stat.out .sm-stat-icon{
+  background:#351f22!important;
+  color:#ff858c!important;
+}
+
+/* الجداول */
+html[data-theme="dark"] table{
+  color:var(--dm-text-2)!important;
+}
+html[data-theme="dark"] th{
+  background:#1d3032!important;
+  color:#72dbc5!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] td{
+  background:var(--dm-surface)!important;
+  color:var(--dm-text-2)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] tr:nth-child(even) td{
+  background:#101a1c!important;
+}
+html[data-theme="dark"] tr:hover td{
+  background:#18302e!important;
+}
+
+/* الملخصات والإحصائيات */
+html[data-theme="dark"] .summary-box{
+  color:#fff!important;
+  background:linear-gradient(135deg,#075e54 0%,#0f766e 60%,#66521b 145%)!important;
+}
+html[data-theme="dark"] .summary-item{
+  background:rgba(255,255,255,.07)!important;
+  border-color:rgba(255,255,255,.12)!important;
+  color:#fff!important;
+}
+html[data-theme="dark"] .summary-item h3{
+  color:#d8e8e5!important;
+}
+html[data-theme="dark"] .stat-value{
+  opacity:1!important;
+}
+html[data-theme="dark"] .stat-card.primary .stat-value{color:#5fddc2!important}
+html[data-theme="dark"] .stat-card.danger .stat-value{color:#ff858c!important}
+html[data-theme="dark"] .stat-card.accent .stat-value{color:#f2ce6b!important}
+html[data-theme="dark"] .stat-card.success .stat-value{color:#70ddb8!important}
+html[data-theme="dark"] .stat-card.info .stat-value{color:#70c7f1!important}
+
+/* النوافذ المنبثقة والتنبيهات */
+html[data-theme="dark"] .modal-overlay{
+  background:rgba(0,0,0,.62)!important;
+}
+html[data-theme="dark"] .modal{
+  background:var(--dm-surface)!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .modal-header h2{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .toast{
+  background:#1a292b!important;
+  color:var(--dm-text)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .toast.success{
+  background:#15372e!important;color:#7ee3bb!important;
+}
+html[data-theme="dark"] .toast.error{
+  background:#3a2024!important;color:#ff9b9f!important;
+}
+html[data-theme="dark"] .toast.warning{
+  background:#3a2d17!important;color:#f1cd70!important;
+}
+
+/* الحالات الفارغة / الملاحظات */
+html[data-theme="dark"] .empty-state,
+html[data-theme="dark"] .pos-empty-cart{
+  color:var(--dm-muted)!important;
+}
+html[data-theme="dark"] .settings-note{
+  background:#2d2819!important;
+  border-color:#5b4b25!important;
+  color:#d7cda9!important;
+}
+
+/* الصور والتحميل */
+html[data-theme="dark"] .product-image-upload,
+html[data-theme="dark"] .product-image-preview,
+html[data-theme="dark"] .ep-image-preview,
+html[data-theme="dark"] .product-item .p-image{
+  background:#0d1719!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .product-image-upload-text{
+  color:var(--dm-text-2)!important;
+}
+html[data-theme="dark"] .product-image-upload-text small{
+  color:var(--dm-muted)!important;
+}
+
+/* ألوان نصوص وروابط شائعة لا تسمح لها القواعد القديمة أن تبهت */
+html[data-theme="dark"] a:not(.btn){
+  color:#6bd8c1;
+}
+html[data-theme="dark"] .text-muted,
+html[data-theme="dark"] .muted,
+html[data-theme="dark"] small{
+  color:var(--dm-muted);
+}
+html[data-theme="dark"] strong,
+html[data-theme="dark"] b{
+  color:inherit;
+}
+
+/* قواعد أمان للعناصر ذات الخلفية البيضاء المكتوبة Inline.
+   لا تستهدف العناصر التي لون نصها أبيض فقط. */
+html[data-theme="dark"] [style*="background:#fff"],
+html[data-theme="dark"] [style*="background: #fff"],
+html[data-theme="dark"] [style*="background:#ffffff"],
+html[data-theme="dark"] [style*="background: #ffffff"],
+html[data-theme="dark"] [style*="background-color:#fff"],
+html[data-theme="dark"] [style*="background-color: #fff"],
+html[data-theme="dark"] [style*="background-color:#ffffff"],
+html[data-theme="dark"] [style*="background-color: #ffffff"]{
+  background:var(--dm-surface-2)!important;
+  border-color:var(--dm-border)!important;
+}
+
 </style>
 <script>
 (function(){
