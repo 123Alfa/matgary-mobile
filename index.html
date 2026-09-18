@@ -3466,8 +3466,8 @@ html[data-theme="dark"] .sales-summary-card .value{
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-// متجري v1.8.30 — تحسين شامل ودقيق للوضع الداكن
-const APP_VERSION='v1.8.30';
+// متجري v1.8.31 — تحسين شامل ودقيق للوضع الداكن
+const APP_VERSION='v1.8.31';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "18 سبتمبر 2026 — تحسين شامل ودقيق للوضع الداكن وتوحيد الألوان";
 
@@ -5531,6 +5531,9 @@ function updatePOSSummary(){
   const method=document.getElementById('posPaymentMethod')?.value||'cash';
   const change=roundPOSMoney(Math.max(0,paid-total));
   const remaining=roundPOSMoney(Math.max(0,total-paid));
+  // في البيع النقدي: لو المدفوع أقل من الإجمالي، اعرض الفرق كـ«الباقي»
+  // بدل إظهار 0.00. بعد إدخال الخصم وإغلاق الفرق سيصبح الباقي 0.00 تلقائيًا.
+  const cashBalanceDisplay=paid<total?remaining:change;
   const el=id=>document.getElementById(id);
   if(el('posSubtotal'))el('posSubtotal').textContent=fmt(subtotal);
   if(el('posDiscountDisplay'))el('posDiscountDisplay').textContent=fmt(discount);
@@ -5540,9 +5543,12 @@ function updatePOSSummary(){
   if(el('posLiveRemaining'))el('posLiveRemaining').textContent=fmt(remaining);
   if(el('posTaxDisplay'))el('posTaxDisplay').textContent=fmt(tax);
   if(el('posTaxRateDisplay'))el('posTaxRateDisplay').textContent=taxRate.toFixed(2)+'%';
-  if(el('posChange'))el('posChange').textContent=method==='credit'?`آجل: ${fmt(remaining)}`:fmt(change);
+  if(el('posChange'))el('posChange').textContent=method==='credit'?`آجل: ${fmt(remaining)}`:fmt(cashBalanceDisplay);
   if(el('posChangeLabel'))el('posChangeLabel').textContent=method==='credit'?'المتبقي':'الباقي';
-  const cb=el('posChangeBox'); if(cb){cb.classList.toggle('remaining',method==='credit'&&remaining>0);cb.classList.toggle('positive',method==='cash'&&change>0);}
+  const cb=el('posChangeBox'); if(cb){
+    cb.classList.toggle('remaining',(method==='credit'||method==='cash')&&remaining>0);
+    cb.classList.toggle('positive',method==='cash'&&change>0);
+  }
   if(el('posCartCount'))el('posCartCount').textContent=`${cart.reduce((n,x)=>n+Number(x.qty||0),0)} صنف`;
   if(el('posCartCountNumber'))el('posCartCountNumber').textContent=cart.reduce((n,x)=>n+Number(x.qty||0),0);
   if(el('posCartItemsBadge'))el('posCartItemsBadge').textContent=cart.length;
