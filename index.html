@@ -5168,7 +5168,7 @@ function invoiceSaleDetailHtml(s, p){
   else if(Math.abs(weight-0.25)<0.000001) packText=`${packs} أرباع كيلو`;
   const packPrice=unitPrice>0?roundPOSMoney(unitPrice*weight):0;
   const priceLine=unitPrice>0
-    ? `<span class="sc-detail-price">سعر الكيلو: <b>${fmt(unitPrice)} ج.م</b>${packPrice>0?` • سعر العبوة: <b>${fmt(packPrice)} ج.م</b>`:''}</span>`
+    ? `<span class="sc-detail-price">سعر الكيلو: <b>${fmt(unitPrice)}</b>${packPrice>0?` • سعر العبوة: <b>${fmt(packPrice)}</b>`:''}</span>`
     : '';
   return `<span class="sc-item-detail"><b class="sc-detail-total-weight">${salesEscape(totalLabel)}</b><small>${salesEscape(packText)}${grams===500?'':' • وزن العبوة: '+salesEscape(weightLabel(weight))}</small>${priceLine}</span>`;
 }
@@ -10177,10 +10177,10 @@ function historyCard(inv){
         ? (hasValueSale||priceLooksLikeTotal
             ? `${fmt(grossValue)} (بالقيمة)`
             : (Math.abs(packWeight-0.5)<0.000001
-                ? `سعر الكيلو: ${fmt(reliableKgPrice)} ج.م • سعر النصف كيلو: ${fmt(packPriceForDisplay)} ج.م`
+                ? `سعر الكيلو: ${fmt(reliableKgPrice)} • سعر النصف كيلو: ${fmt(packPriceForDisplay)}`
                 : Math.abs(packWeight-0.25)<0.000001
-                  ? `سعر الكيلو: ${fmt(reliableKgPrice)} ج.م • سعر الربع كيلو: ${fmt(packPriceForDisplay)} ج.م`
-                  : `سعر الكيلو: ${fmt(reliableKgPrice)} ج.م`))
+                  ? `سعر الكيلو: ${fmt(reliableKgPrice)} • سعر الربع كيلو: ${fmt(packPriceForDisplay)}`
+                  : `سعر الكيلو: ${fmt(reliableKgPrice)}`))
         : `${fmt(s.price||0)}`;
       const detailLabel=invoiceSaleDetailLabel(s,p);
       const returned=money(s.returnedQty)>0;
