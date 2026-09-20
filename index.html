@@ -5137,6 +5137,18 @@ function invoiceSaleQuantityLabel(s, p){
   return `${Number(s?.packages||s?.qty||1)} ${isFixedPackProduct(p)?'علبة':(s?.sellUnit||p?.unit||'علبة')}`;
 }
 
+// تسمية موحدة لعرض الوزن في تفاصيل الفاتورة: الإجمالي أولًا ثم عدد العبوات/الأنصاف.
+function invoiceSaleDetailLabel(s, p){
+  const weightSale=isKgProduct(p)||s?.isWeightSale;
+  if(!weightSale) return invoiceSaleQuantityLabel(s,p);
+  const packs=Math.max(1,Number(s?.packages||1));
+  const weight=rawSaleWeight(s);
+  const totalKg=Number.isFinite(weight)?packs*weight:Number(s?.qty||0);
+  const totalLabel=weightLabel(totalKg);
+  if(Math.abs(weight-0.5)<0.000001) return `${totalLabel} • ${packs} أنصاف كيلو`;
+  if(Math.abs(weight-0.25)<0.000001) return `${totalLabel} • ${packs} أرباع كيلو`;
+  return `${totalLabel} • ${packs} × ${weightLabel(weight)}`;
+}
 
 // تفصيل واضح لسطر الصنف في سجل المبيعات؛ للعرض فقط ولا يغيّر أي قيمة محاسبية.
 function invoiceSaleDetailHtml(s, p){
@@ -10160,8 +10172,9 @@ function historyCard(inv){
       const priceText=weightSale
         ? (hasValueSale||priceLooksLikeTotal ? `${fmt(grossValue)} (بالقيمة)` : `${fmt(reliableKgPrice)} / كجم`)
         : `${fmt(s.price||0)}`;
+      const detailLabel=invoiceSaleDetailLabel(s,p);
       const returned=money(s.returnedQty)>0;
-      return `<div class="invoice-line-pro ${returned?'invoice-line-returned':''}"><div><strong>${esc(s.productName||'صنف')} ${returned?'<em>↩️ مرتجع</em>':''}</strong><small>${esc(qty)} × ${priceText}${returned?' • مرتجع '+fmt(s.returnedAmount||0):''}</small></div><b>${fmt(s.total)}</b></div>`;
+      return `<div class="invoice-line-pro ${returned?'invoice-line-returned':''}"><div><strong>${esc(s.productName||'صنف')} ${returned?'<em>↩️ مرتجع</em>':''}</strong><small>${esc(detailLabel)} • ${priceText}${returned?' • مرتجع '+fmt(s.returnedAmount||0):''}</small></div><b>${fmt(s.total)}</b></div>`;
     }).join('');
     const status=inv.returnStatus==='partial'?`<span class="invoice-detail-status returned">مرتجع جزئي ↩️</span>`:inv.returnStatus==='full'?`<span class="invoice-detail-status returned">مرتجع بالكامل ↩️</span>`:inv.remaining>0?`<span class="invoice-detail-status due">متبقي ${fmt(inv.remaining)}</span>`:`<span class="invoice-detail-status paid">مدفوعة بالكامل ✓</span>`;
     openModal(`<div class="invoice-modal-pro invoice-detail-modern">
