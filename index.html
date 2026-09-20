@@ -5769,56 +5769,69 @@ async function shareInvoiceAsImage(inv,lines){
     const ready=await ensureHtml2CanvasReady();
     if(!ready)throw new Error('HTML2CANVAS_NOT_READY');
 
+    // نستخدم حاوية مرئية فعليًا أثناء الالتقاط؛ إصدارات Android من html2canvas
+    // قد تفشل إذا كان العنصر خارج الشاشة أو داخل طبقة مخفية/سالبة z-index.
     stage=document.createElement('div');
     stage.className='whatsapp-invoice-stage';
-    // مهم: لا نضع المرحلة خارج الشاشة أو خلف z-index سالب؛ بعض إصدارات html2canvas لا تلتقطها.
-    stage.style.cssText='position:fixed;left:0;top:0;width:1080px;z-index:2147483000;opacity:1;pointer-events:none;display:block;background:#fff;';
+    stage.style.cssText='position:fixed;left:0;top:0;width:1080px;height:auto;z-index:2147483000;opacity:1;visibility:visible;pointer-events:none;display:block;background:#fff;overflow:visible;';
     stage.innerHTML=buildWhatsAppInvoiceHTML(inv,lines);
     document.body.appendChild(stage);
 
     const target=stage.querySelector('.wa-invoice');
     if(!target)throw new Error('WA_TARGET_NOT_FOUND');
+    target.style.visibility='visible';
+    target.style.display='block';
+    target.style.opacity='1';
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 
     const canvas=await html2canvas(target,{
       scale:2,
       backgroundColor:'#fbfdfb',
-      useCORS:true,
-      allowTaint:true,
+      useCORS:false,
+      allowTaint:false,
       logging:false,
       width:1080,
       windowWidth:1080,
       scrollX:0,
-      scrollY:0
+      scrollY:0,
+      foreignObjectRendering:false,
+      imageTimeout:0,
+      removeContainer:true
     });
 
-    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png',1));
-    if(!blob)throw new Error('IMAGE_BLOB_FAILED');
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+    if(!blob||blob.size<1000)throw new Error('IMAGE_BLOB_FAILED');
     const file=new File([blob],`فاتورة_${inv.invoiceSeq||inv.invoiceNo||'بيع'}.png`,{type:'image/png'});
-    const textMessage=invoiceTextPro(inv,lines);
     stage.remove(); stage=null;
 
-    // المسار الأساسي: مشاركة ملف الصورة نفسها. سيظهر واتساب ضمن شاشة المشاركة في أندرويد.
+    // مهم: لا نرسل نصًا مع الصورة؛ بعض أجهزة Android/WhatsApp ترفض مشاركة
+    // file + text معًا. مشاركة الملف وحده أكثر توافقًا.
     if(navigator.share){
       let canShareFile=true;
       try{canShareFile=typeof navigator.canShare!=='function'||navigator.canShare({files:[file]});}catch(e){canShareFile=false;}
       if(canShareFile){
-        await navigator.share({files:[file],title:`فاتورة بيع رقم ${inv.invoiceSeq||inv.invoiceNo||''}`,text:textMessage});
-        return true;
+        try{
+          await navigator.share({files:[file],title:`فاتورة بيع رقم ${inv.invoiceSeq||inv.invoiceNo||''}`});
+          return true;
+        }catch(shareError){
+          // إلغاء شاشة المشاركة من المستخدم ليس خطأ في إنشاء الصورة.
+          if(shareError?.name==='AbortError')return false;
+          console.warn('File share failed, falling back to save:',shareError);
+        }
       }
     }
 
-    // لو الجهاز لا يدعم مشاركة الملفات: نحفظ الصورة فقط، ولا نرسل نصًا بدلها.
+    // fallback مضمون: تنزيل الصورة نفسها بدل الرجوع لإرسال فاتورة نصية.
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),30000);
-    showToast('📷 تم تجهيز صورة الفاتورة وحفظها. افتح واتساب وأرفق الصورة.','success');
+    showToast('📷 تم إنشاء صورة الفاتورة وحفظها. أرفقها في واتساب.','success');
     return true;
   }catch(error){
     console.error('WhatsApp invoice image error:',error);
     if(stage)stage.remove();
-    showToast('تعذر تجهيز صورة الفاتورة. حاول مرة أخرى.','error');
+    showToast('تعذر إنشاء صورة الفاتورة. تأكد من اتصال الإنترنت وحاول مرة أخرى.','error');
     return false;
   }
 }
@@ -10463,7 +10476,7 @@ function historyCard(inv){
           <strong>${esc(inv.customerName)}</strong>
           ${phone?`<small><i class="fas fa-phone"></i> ${esc(phone)}</small>`:''}
         </div>
-        ${phone?`<button class="invoice-detail-wa" title="إرسال الفاتورة على واتساب" onclick="openWhatsApp('${esc(phone)}',invoiceText(findInvoice('${esc(inv.key)}')))"><i class="fab fa-whatsapp"></i></button>`:''}
+        ${phone?`<button class="invoice-detail-wa" title="إرسال الفاتورة كصورة على واتساب" onclick="shareInvoicePro('${esc(inv.key)}')"><i class="fab fa-whatsapp"></i></button>`:''}
       </div>
 
       <div class="invoice-pro-banner invoice-detail-banner">
