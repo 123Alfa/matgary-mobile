@@ -2606,6 +2606,19 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 @media(max-width:380px){.pc-title b{font-size:.72rem}.pc-product strong{font-size:.68rem}}
 </style>
 
+<style id="matgary-invoice-weight-detail">
+/* تفصيل وزن عبوات الأصناف في سجل المبيعات */
+.sc-item-qty-detail{background:#f1f6f4!important;padding:4px 7px!important;text-align:center;line-height:1.25;min-width:92px}
+.sc-item-detail{display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap}
+.sc-detail-total-weight{font-size:.60rem;color:#087c60;font-weight:950}
+.sc-detail-total-weight:after{content:""}
+.sc-item-detail small{font-size:.49rem;color:#667570;font-weight:850}
+.sc-detail-price{font-size:.47rem;color:#75837f;font-weight:800}
+.sc-detail-price b{color:#087c60}
+.sc-detail-simple{font-size:.52rem;color:var(--text-muted);font-weight:850;white-space:nowrap}
+@media(max-width:480px){.sc-item-qty-detail{min-width:88px;padding:4px 5px!important}.sc-detail-total-weight{font-size:.56rem}.sc-item-detail small{font-size:.46rem}.sc-detail-price{font-size:.44rem}}
+</style>
+
 <style id="matgary-invoice-final-polish">
 /* ===== Matgary Invoice Card — Final Mobile Polish ===== */
 .sale-compact-card{border:1px solid #d9e7e2;border-radius:20px;padding:12px 13px;background:linear-gradient(180deg,#ffffff 0%,#fcfefd 100%);box-shadow:0 7px 24px rgba(25,75,60,.07)}
@@ -6485,7 +6498,7 @@ function renderSalesTable(){
     const itemRows=visibleLines.map(x=>{
       const p=productForSaleLine(x);
       const detail=invoiceSaleDetailHtml(x,p);
-      return `<div class="sc-item-row"><div class="sc-item-name"><i class="fas fa-box-open"></i><strong>${salesEscape(x.productName||'صنف')}</strong></div><span class="sc-item-qty">${detail}</span><b class="sc-item-total">${fmt(x.total||0)}</b></div>`;
+      return `<div class="sc-item-row"><div class="sc-item-name"><i class="fas fa-box-open"></i><strong>${salesEscape(x.productName||'صنف')}</strong></div><div class="sc-item-qty sc-item-qty-detail">${detail}</div><b class="sc-item-total">${fmt(x.total||0)}</b></div>`;
     }).join('');
     const moreItems='';
     const customer=s.customerName||'عميل عادي';
