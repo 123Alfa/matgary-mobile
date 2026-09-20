@@ -795,7 +795,7 @@ tr:hover td{background:rgba(15,118,110,.045)}
 .pos-cart-item:last-child{border-bottom:0!important}
 .pos-cart-product-cell{display:flex;align-items:center;gap:9px;min-width:0;position:relative}.pos-cart-product-cell .cart-visual{width:54px;height:54px;flex:0 0 54px;border-radius:13px;background:#f1f8f5;display:grid;place-items:center;overflow:hidden}.pos-cart-product-cell .cart-visual img{width:100%;height:100%;object-fit:cover}.pos-cart-product-cell .cart-visual.service{font-size:1.3rem}.pos-cart-main{min-width:0!important}.pos-cart-topline{display:flex!important;align-items:center;justify-content:space-between;gap:5px;margin:0!important}.pos-cart-name{display:block;font-size:.78rem!important;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#18221f}.pos-cart-delete{width:30px;height:30px;flex:0 0 30px;border:0;border-radius:9px;background:#fff0f0;color:#c62828;cursor:pointer;font-size:.8rem}.pos-cart-stock-badge{display:inline-flex!important;margin-top:5px!important;padding:4px 7px!important;font-size:.53rem!important;background:#eef8f4!important;color:#087443!important;border-radius:999px!important;max-width:100%;white-space:nowrap}.pos-cart-stock-badge.out{background:#fff0f0!important;color:#b42318!important}.pos-cart-last{font-size:.52rem!important;color:#8a9893!important;margin-top:3px!important}
 .pos-cart-qty-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-width:0};font-size:0.pos-qty{display:flex;align-items:center;justify-content:center;gap:8px}.pos-qty button{width:30px;height:30px;border:1px solid #cfe2db;background:#fff;border-radius:9px;color:#0f766e;font-size:1rem;font-weight:950;cursor:pointer}.pos-qty button:last-child{background:#0f766e;color:#fff;border-color:#0f766e}.pos-qty strong,.pos-qty span{min-width:22px;text-align:center;font-size:.82rem}.pos-weight-control{display:flex;align-items:center;border:1px solid #dce9e4;border-radius:9px;overflow:hidden;background:#f8fbfa;max-width:120px}.pos-weight-control input{width:68px;border:0;background:transparent;outline:0;text-align:center;padding:5px 3px;font-family:inherit;font-weight:900;font-size:.68rem;color:#18221f}.pos-weight-control span{background:#e8f6f1;color:#0f766e;padding:5px 6px;font-size:.55rem;font-weight:950}.pos-unit-label{font-size:.58rem;color:#7a8c85;font-weight:800}
-.pos-cart-price-cell,.pos-cart-total-cell{text-align:center;position:relative}.pos-cart-price-cell small,.pos-cart-total-cell small{display:block;color:#8a9893;font-size:.55rem;font-weight:800}.pos-cart-price-cell strong,.pos-cart-total-cell strong{display:block;color:#18221f;font-size:.82rem;margin-top:3px}.pos-cart-total-cell strong{color:#0f766e;font-size:.9rem}.pos-cart-price-cell span,.pos-cart-total-cell span{display:block;color:#7f8d88;font-size:.52rem;margin-top:2px}.pos-edit-price-mini{position:absolute;top:0;left:0;width:24px;height:24px;border:1px solid #dce9e4;background:#f7fbf9;border-radius:7px;color:#0f766e;font-size:.65rem;cursor:pointer}
+.pos-cart-price-cell,.pos-cart-total-cell{text-align:center;position:relative}.pos-cart-price-cell small,.pos-cart-total-cell small{display:block;color:#8a9893;font-size:.55rem;font-weight:800}.pos-cart-price-cell strong,.pos-cart-total-cell strong{display:block;color:#18221f;font-size:.82rem;margin-top:3px}.pos-cart-total-cell strong{color:#0f766e;font-size:.9rem}.pos-cart-price-cell span,.pos-cart-total-cell span{display:block;color:#7f8d88;font-size:.52rem;margin-top:2px}.pos-cart-qty-cell{font-size:0}.pos-edit-price-mini{position:static;display:inline-flex;align-items:center;justify-content:center;margin-top:5px;width:auto;min-width:56px;height:26px;padding:0 7px;border:1px solid #dce9e4;background:#f7fbf9;border-radius:7px;color:#0f766e;font-size:.65rem;cursor:pointer}
 .pos-cart-empty{padding:35px 15px;text-align:center;color:#7d8e88}.empty-cart-icon{width:52px;height:52px;border-radius:16px;background:#eef8f4;color:#0f766e;display:grid;place-items:center;margin:0 auto 9px;font-size:1.15rem}.pos-cart-empty strong{display:block;color:#3b4945;font-size:.82rem}.pos-cart-empty span{display:block;margin-top:3px;font-size:.61rem}
 .pos-add-service{border:1px dashed #b9d7cd!important;background:#fff!important;color:#0f766e!important;border-radius:12px!important;margin:10px 0!important;padding:10px!important;font-size:.68rem!important;font-weight:950!important}
 .pos-payment-box{border:1px solid #e2ece8;border-radius:16px;background:#fbfdfc;padding:10px!important;margin-top:10px}
@@ -3467,7 +3467,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.31 — تحسين شامل ودقيق للوضع الداكن
-const APP_VERSION='v1.8.25';
+const APP_VERSION='v1.8.26';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "18 سبتمبر 2026 — تحسين شامل ودقيق للوضع الداكن وتوحيد الألوان";
 
@@ -5345,11 +5345,23 @@ function getPOSItemUnitPrice(item,p,type){
 }
 function updatePOSItemPrice(index,value){
   const item=(window.posCart||[])[index]; if(!item)return;
-  if(value===null)return;
+  if(value===null || value===undefined || String(value).trim()==='')return;
   const price=Number(value);
   if(!Number.isFinite(price)||price<0)return showToast('أدخل سعرًا صحيحًا','warning');
   item.priceOverride=roundPOSMoney(price);
   renderPOSCart();
+}
+
+function openPOSPriceEditor(index){
+  const item=(window.posCart||[])[index];
+  if(!item)return;
+  const p=(window.saleProducts||[]).find(x=>String(x.id)===String(item.id));
+  const type=document.getElementById('posSaleType')?.value||'retail';
+  const current=getPOSItemUnitPrice(item,p,type);
+  const label=p && isKgProduct(p) ? 'سعر البيع للكيلو' : 'سعر البيع';
+  const value=window.prompt(label, String(current));
+  if(value===null)return;
+  updatePOSItemPrice(index,value);
 }
 function resetPOSItemPrice(index){
   const item=(window.posCart||[])[index]; if(!item)return;
@@ -5494,7 +5506,7 @@ function renderPOSCart(){
         <div class="pos-qty"><button onclick="changePOSQty(${index},-1)">−</button><strong>${item.qty||1}</strong><button onclick="changePOSQty(${index},1)">+</button></div>
         ${weightControl}
       </div>
-      <div class="pos-cart-price-cell"><small>سعر البيع ${isWeight?'للكيلو':''}</small><strong>${fmt(price)}</strong><span>ج.م / ${isWeight?'كجم':'وحدة'}</span><button class="pos-edit-price-mini" onclick="updatePOSItemPrice(${index},prompt('سعر البيع ' +(isWeight?'للكيلو':'للوحدة'), '${Number(price)}'))">✎ تعديل</button>${item.priceOverride!==null&&item.priceOverride!==undefined?`<button class="pos-edit-price-mini" onclick="resetPOSItemPrice(${index})">↩ الأساسي</button>`:''}</div>
+      <div class="pos-cart-price-cell"><small>سعر البيع ${isWeight?'للكيلو':''}</small><strong>${fmt(price)}</strong><span>ج.م / ${isWeight?'كجم':'وحدة'}</span><button type="button" class="pos-edit-price-mini" onclick="openPOSPriceEditor(${index})" title="تعديل سعر البيع">✎ تعديل</button>${item.priceOverride!==null&&item.priceOverride!==undefined?`<button class="pos-edit-price-mini" onclick="resetPOSItemPrice(${index})">↩ الأساسي</button>`:''}</div>
       <div class="pos-cart-total-cell"><small>الإجمالي</small><strong id="livePrice_${index}">${fmt(total)}</strong><span>ج.م</span></div>
     </div>`;
   }).join('');
