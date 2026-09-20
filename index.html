@@ -2572,6 +2572,24 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 @media(max-width:370px){.sc-actions{grid-template-columns:1.5fr 1fr 1fr 1fr 29px 29px 29px}.sc-grid b{font-size:.53rem}.sc-product span{font-size:.51rem}.sc-total{min-width:70px}.sc-item-name strong{font-size:.58rem}.sc-item-qty{font-size:.47rem}.sc-item-total{font-size:.52rem}}
 </style>
 
+<style id="matgary-weight-sale-detail-v1">
+/* ===== تفصيل عبوات الوزن في سجل المبيعات ===== */
+.sc-item-row{align-items:center}
+.sc-item-qty{white-space:normal;min-width:118px;text-align:right;line-height:1.25;padding:5px 7px}
+.sc-item-detail{display:flex;flex-direction:column;gap:2px}
+.sc-detail-total-weight{font-size:.62rem;color:#087c60;font-weight:950}
+.sc-item-detail small{font-size:.48rem;color:#667570;font-weight:800}
+.sc-detail-price{font-size:.47rem;color:#7b8985;font-weight:800;white-space:nowrap}
+.sc-detail-price b{color:#087c60;font-weight:950}
+.sc-detail-simple{display:block}
+@media(max-width:480px){
+  .sc-item-qty{min-width:105px;padding:4px 6px}
+  .sc-detail-total-weight{font-size:.57rem}
+  .sc-item-detail small{font-size:.45rem}
+  .sc-detail-price{font-size:.44rem}
+}
+</style>
+
 <style id="matgary-purchase-history-match-sales">
 .purchases-cards-v6{display:grid;gap:10px;margin-top:13px}
 .purchase-compact-card{background:var(--bg-card,#fff);border:1px solid #e0ebe7;border-radius:16px;padding:10px 11px;box-shadow:0 3px 12px rgba(20,70,55,.045);direction:rtl;overflow:hidden;transition:.15s}
@@ -5106,6 +5124,30 @@ function invoiceSaleQuantityLabel(s, p){
   return `${Number(s?.packages||s?.qty||1)} ${isFixedPackProduct(p)?'علبة':(s?.sellUnit||p?.unit||'علبة')}`;
 }
 
+
+// تفصيل واضح لسطر الصنف في سجل المبيعات؛ للعرض فقط ولا يغيّر أي قيمة محاسبية.
+function invoiceSaleDetailHtml(s, p){
+  const weightSale=isKgProduct(p)||s?.isWeightSale;
+  if(!weightSale){
+    const qty=invoiceSaleQuantityLabel(s,p);
+    return `<span class="sc-detail-simple">${salesEscape(qty)}</span>`;
+  }
+  const packs=Math.max(1,Number(s?.packages||1));
+  const weight=rawSaleWeight(s);
+  const totalKg=Number.isFinite(weight)?packs*weight:Number(s?.qty||0);
+  const totalLabel=weightLabel(totalKg);
+  const grams=Math.round(weight*1000);
+  const unitPrice=Number(s?.unitPrice||s?.price||0);
+  let packText=`${packs} × ${weightLabel(weight)}`;
+  if(Math.abs(weight-0.5)<0.000001) packText=`${packs} أنصاف كيلو`;
+  else if(Math.abs(weight-0.25)<0.000001) packText=`${packs} أرباع كيلو`;
+  const packPrice=unitPrice>0?roundPOSMoney(unitPrice*weight):0;
+  const priceLine=unitPrice>0
+    ? `<span class="sc-detail-price">سعر الكيلو: <b>${fmt(unitPrice)} ج.م</b>${packPrice>0?` • سعر العبوة: <b>${fmt(packPrice)} ج.م</b>`:''}</span>`
+    : '';
+  return `<span class="sc-item-detail"><b class="sc-detail-total-weight">${salesEscape(totalLabel)}</b><small>${salesEscape(packText)}${grams===500?'':' • وزن العبوة: '+salesEscape(weightLabel(weight))}</small>${priceLine}</span>`;
+}
+
 function setPOSSort(value){window.posSort=value||'default';renderSaleProductGrid();}
 function setPOSPaymentMethod(method,btn){
   const select=document.getElementById('posPaymentMethod');
@@ -6442,8 +6484,8 @@ function renderSalesTable(){
     const visibleLines=inv.lines;
     const itemRows=visibleLines.map(x=>{
       const p=productForSaleLine(x);
-      const q=invoiceSaleQuantityLabel(x,p);
-      return `<div class="sc-item-row"><div class="sc-item-name"><i class="fas fa-box-open"></i><strong>${salesEscape(x.productName||'صنف')}</strong></div><span class="sc-item-qty">${salesEscape(q)}</span><b class="sc-item-total">${fmt(x.total||0)}</b></div>`;
+      const detail=invoiceSaleDetailHtml(x,p);
+      return `<div class="sc-item-row"><div class="sc-item-name"><i class="fas fa-box-open"></i><strong>${salesEscape(x.productName||'صنف')}</strong></div><span class="sc-item-qty">${detail}</span><b class="sc-item-total">${fmt(x.total||0)}</b></div>`;
     }).join('');
     const moreItems='';
     const customer=s.customerName||'عميل عادي';
