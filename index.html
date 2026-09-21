@@ -13312,37 +13312,51 @@ setTimeout(()=>{
 })();
 </script>
 
-<script id="wa-text-organized-resolver-fix">
-/* إصلاح ربط زر واتساب بالفاتورة:
-   محرك سجل المبيعات الداخلي يحتفظ بـ findInvoice داخل نطاق مغلق،
-   لذلك لا نعتمد عليه من هذا الـ override. نعيد تكوين الفاتورة مباشرة
-   من Store.get('sales') باستخدام saleBatchId / id / invoiceNo. */
+<script id="wa-simple-final-safe-v2">
+/* ==========================================================
+   متجري — واتساب نصي بسيط وآمن V2
+   التعديل في آخر الملف فقط.
+   لا Canvas ولا html2canvas ولا لمس للبيانات أو تشغيل البرنامج.
+   ========================================================== */
 (function(){
   'use strict';
 
-  function decodeKey(v){
-    let s=String(v??'').trim();
-    try{
-      s=decodeURIComponent(s);
-    }catch(_){}
-    const box=document.createElement('textarea');
-    box.innerHTML=s;
-    return box.value;
+  function waMoney(v){
+    const n=Number(v||0);
+    return (Number.isFinite(n)?n:0).toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2})+' ج.م';
   }
 
-  function resolveInvoiceForWhatsApp(key){
-    const raw=decodeKey(key);
+  function waNormalizePhone(phone){
+    if(typeof normalizeWhatsAppPhone==='function'){
+      return normalizeWhatsAppPhone(phone);
+    }
+    let p=String(phone||'').replace(/[^\d+]/g,'');
+    if(p.startsWith('+20'))p=p.slice(1);
+    else if(p.startsWith('0020'))p=p.slice(2);
+    else if(/^0\d+/.test(p))p='20'+p.slice(1);
+    return p;
+  }
+
+  function waOpen(phone,text){
+    const p=waNormalizePhone(phone);
+    const url=p
+      ?'https://wa.me/'+p+'?text='+encodeURIComponent(text)
+      :'https://wa.me/?text='+encodeURIComponent(text);
+    try{window.open(url,'_blank');}
+    catch(e){window.location.href=url;}
+  }
+
+  function waResolveInvoice(key){
     const sales=Array.isArray(Store.get('sales'))?Store.get('sales'):[];
-    if(!sales.length)return null;
+    let raw=String(key??'');
+    try{raw=decodeURIComponent(raw);}catch(e){}
 
     let lines=[];
-    const k=raw;
-
-    if(k.startsWith('batch:')){
-      const batch=k.slice(6);
+    if(raw.startsWith('batch:')){
+      const batch=raw.slice(6);
       lines=sales.filter(s=>String(s.saleBatchId||'')===String(batch));
-    }else if(k.startsWith('sale:')){
-      const id=k.slice(5);
+    }else if(raw.startsWith('sale:')){
+      const id=raw.slice(5);
       const one=sales.find(s=>String(s.id||'')===String(id));
       if(one){
         lines=one.saleBatchId
@@ -13351,243 +13365,169 @@ setTimeout(()=>{
       }
     }
 
-    /* fallback للحالات التي يصل فيها المفتاح بدون البادئة */
+    /* fallbacks لأن بعض الأزرار القديمة تمرر المفتاح بدون بادئة */
+    if(!lines.length) lines=sales.filter(s=>String(s.saleBatchId||'')===String(raw));
+    if(!lines.length) lines=sales.filter(s=>String(s.invoiceNo||'')===String(raw));
+    if(!lines.length) lines=sales.filter(s=>String(s.invoiceSeq||'')===String(raw));
     if(!lines.length){
-      lines=sales.filter(s=>String(s.saleBatchId||'')===String(k));
-    }
-    if(!lines.length){
-      lines=sales.filter(s=>String(s.invoiceNo||'')===String(k));
-    }
-    if(!lines.length){
-      lines=sales.filter(s=>String(s.invoiceSeq||'')===String(k));
-    }
-    if(!lines.length){
-      const one=sales.find(s=>String(s.id||'')===String(k));
+      const one=sales.find(s=>String(s.id||'')===String(raw));
       if(one){
         lines=one.saleBatchId
           ?sales.filter(s=>String(s.saleBatchId||'')===String(one.saleBatchId))
           :[one];
       }
     }
-
     if(!lines.length)return null;
 
     const first=lines[0];
-    const total=lines.reduce((n,s)=>n+Number(s.total||0),0);
+    const total=lines.reduce((n,s)=>n+Math.max(0,Number(s.total||0)),0);
     const paid=Math.min(total,Math.max(0,Number(first.paid||0)));
     const remaining=Math.max(0,total-paid);
-    const customers=Store.get('customers')||[];
-    const customer=customers.find(c=>
-      first.customerId&&String(c.id)===String(first.customerId)
-    );
+    const customer=(Store.get('customers')||[]).find(c=>first.customerId&&String(c.id)===String(first.customerId));
 
     return {
-      __waResolved:true,
-      key:first.saleBatchId?'batch:'+first.saleBatchId:'sale:'+first.id,
-      id:first.id||'',
-      saleBatchId:first.saleBatchId||null,
+      lines,
       invoiceNo:first.invoiceNo||('INV-'+String(first.id||'').slice(-6)),
       invoiceSeq:first.invoiceSeq||null,
       date:first.date||'',
       time:first.time||'',
-      createdAt:first.createdAt||'',
-      customerId:first.customerId||null,
       customerName:first.customerName||customer?.name||'عميل عادي',
       customerPhone:first.customerPhone||customer?.phone||'',
       type:first.type||'retail',
       paymentMethod:first.paymentMethod||first.method||'cash',
-      method:first.paymentMethod||first.method||'cash',
       note:first.note||'',
       total,
-      subtotal:Math.max(0,total+Number(first.discountAmount||0)-Number(first.taxAmount||0)),
-      discount:Number(first.discountAmount||first.discount||0),
-      tax:Number(first.taxAmount||first.tax||0),
       paid,
       remaining,
-      change:Math.max(0,Number(first.change||0)),
-      lines
+      change:Math.max(0,Number(first.change||0))
     };
   }
 
-  function getProductForWA(s){
-    const products=Store.get('products')||[];
-    const found=products.find(p=>String(p.id)===String(s.productId));
-    if(found)return found;
-    const name=String(s.productName||'');
-    if(/موزاريلا|موتزاريلا|mozzarella/i.test(name))
-      return {name,unit:'كجم',sellByWeight:true};
-    return {name,unit:s.sellUnit||'علبة'};
+  function waProduct(s){
+    return (Store.get('products')||[]).find(p=>String(p.id)===String(s.productId))||{};
   }
 
-  function moneyWA(v){
-    const n=Number(v||0);
-    return (Number.isFinite(n)?n:0).toLocaleString('ar-EG',{
-      minimumFractionDigits:2,
-      maximumFractionDigits:2
-    })+' ج.م';
+  function waIsWeightSale(s,p){
+    const name=String(s.productName||p.name||'');
+
+    /*
+      وزن مكتوب في اسم الصنف قد يكون حجم عبوة ثابتة، مثل:
+      برجر المذاق 1 ك / كفتة المذاق 900 جم.
+      هذه ليست بيعًا بالوزن لمجرد وجود "كجم" أو "جم" في الاسم.
+      الموزاريلا استثناء لأنها تُباع بالوزن فعليًا في النظام.
+    */
+    const hasPackSize=/(?:\d+(?:[.,]\d+)?\s*)(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)/i.test(name);
+    const mozzarella=/موزاريلا|موتزاريلا|mozzarella/i.test(name);
+
+    if(mozzarella)return true;
+    if(hasPackSize)return false;
+
+    return p.sellByWeight===true || s.isWeightSale===true;
   }
 
-  function weightWA(s,p,inv){
+  function waWeightData(s,p,inv){
     const packs=Math.max(1,Number(s.packages||1));
-    const w0=typeof rawSaleWeight==='function'
+    const rawWeight=typeof rawSaleWeight==='function'
       ?Number(rawSaleWeight(s)||0)
       :Number(s.weight||0);
-    const w=w0>0?w0:(Number(s.qty)>0?Number(s.qty)/packs:1);
-    const totalKg=Number(s.qty)>0?Number(s.qty):packs*w;
-    let kgPrice=Number(s.unitPrice||0);
-
-    const mode=String(s.saleMode||'').toLowerCase();
-    const valueSale=mode==='value'||Number(s.valueAmount)>0;
+    const weight=(rawWeight>0?rawWeight:(Number(s.qty)>0?Number(s.qty)/packs:1));
+    const totalKg=Number(s.qty)>0?Number(s.qty):packs*weight;
     const total=Number(s.total||0);
+    let kgPrice=Number(s.unitPrice||0);
+    const saleMode=String(s.saleMode||'').toLowerCase();
+    const valueSale=saleMode==='value'||Number(s.valueAmount)>0;
 
+    /* حماية من السجلات القديمة التي تحفظ إجمالي السطر داخل unitPrice */
     if(valueSale)kgPrice=0;
-
-    /* بعض السجلات القديمة تحفظ إجمالي السطر في unitPrice؛ لا نعرضه كسعر كيلو. */
-    if(!valueSale && Number(s.qty)>0 && kgPrice>0 &&
-       Math.abs(kgPrice-total)<0.011){
-      kgPrice=total/Number(s.qty);
+    if(kgPrice>0 && total>0 && Math.abs(kgPrice-total)<0.011 && totalKg>0){
+      kgPrice=total/totalKg;
     }
 
     if(!(kgPrice>0)){
-      const base=Number(inv.type==='wholesale'?p.wholesale:p.retail)||0;
-      if(base>0)kgPrice=base;
+      kgPrice=Number(inv.type==='wholesale'?p.wholesale:p.retail||0);
     }
 
-    const label=n=>{
-      if(Math.abs(n-1)<.000001)return '1 كجم';
-      if(Math.abs(n-.5)<.000001)return 'نصف كيلو';
-      if(Math.abs(n-.25)<.000001)return 'ربع كيلو';
-      return `${Number(n.toFixed(3))} كجم`;
-    };
-
-    return {
-      qty:label(totalKg),
-      packs,
-      w,
-      kgPrice,
-      half:kgPrice*.5,
-      quarter:kgPrice*.25
-    };
+    return {packs,weight,totalKg,kgPrice};
   }
 
-  function makeMessage(inv){
-    const customerName=inv.customerName||'عميل عادي';
-    const phone=inv.customerPhone||'';
-    const invoiceNo=inv.invoiceSeq||inv.invoiceNo||'—';
+  function waMakeText(inv){
     const type=inv.type==='wholesale'?'جملة':'قطاعي';
-    const method=({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[
-      inv.paymentMethod||inv.method||'cash'
-    ]||'نقدي';
+    const method=({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[inv.paymentMethod]||'نقدي';
+    const no=inv.invoiceSeq||inv.invoiceNo||'—';
 
     let t='🧾 *متجري — فاتورة بيع*\n';
     t+='━━━━━━━━━━━━━━━━━━━━\n';
-    t+=`🔢 رقم الفاتورة: *${invoiceNo}*\n`;
-    t+=`📅 التاريخ: *${inv.date||'—'}*\n`;
+    t+=`🔢 رقم الفاتورة: *${no}*\n`;
+    if(inv.date)t+=`📅 التاريخ: *${inv.date}*\n`;
     if(inv.time)t+=`⏰ الوقت: *${inv.time}*\n`;
-    t+=`👤 العميل: *${customerName}*\n`;
-    if(phone)t+=`📞 الهاتف: *${phone}*\n`;
+    t+=`👤 العميل: *${inv.customerName}*\n`;
+    if(inv.customerPhone)t+=`📞 الهاتف: *${inv.customerPhone}*\n`;
     t+=`🛍️ نوع البيع: *${type}*\n`;
     t+=`💳 طريقة السداد: *${method}*\n`;
     t+='━━━━━━━━━━━━━━━━━━━━\n';
     t+='📦 *تفاصيل الأصناف*\n';
 
-    (inv.lines||[]).forEach((s,i)=>{
-      const p=getProductForWA(s);
+    inv.lines.forEach((s,i)=>{
+      const p=waProduct(s);
       const name=s.productName||p.name||'صنف';
-      const total=Number(s.total||0);
-      const weightSale=!!(
-        (typeof isKgProduct==='function'&&isKgProduct(p))
-        ||s.isWeightSale
-        ||p.sellByWeight===true
-      );
+      const lineTotal=Math.max(0,Number(s.total||0));
+      const weightSale=waIsWeightSale(s,p);
 
       t+=`\n*${i+1}) ${name}*\n`;
 
       if(weightSale){
-        const d=weightWA(s,p,inv);
-        t+=`   ⚖️ الكمية: *${d.qty}*\n`;
-
-        if(d.kgPrice>0){
-          t+=`   💰 سعر الكيلو: *${moneyWA(d.kgPrice)}*\n`;
-          const w=d.w;
-          if(Math.abs(w-.5)<.000001)
-            t+=`   🔸 سعر النصف: *${moneyWA(d.half)}*\n`;
-          else if(Math.abs(w-.25)<.000001)
-            t+=`   🔸 سعر الربع: *${moneyWA(d.quarter)}*\n`;
-        }
+        const d=waWeightData(s,p,inv);
+        const qtyText=Math.abs(d.totalKg-0.5)<.000001?'نصف كيلو'
+          :Math.abs(d.totalKg-0.25)<.000001?'ربع كيلو'
+          :(Number.isInteger(d.totalKg)?String(d.totalKg):d.totalKg.toFixed(3).replace(/0+$/,'').replace(/\.$/,''))+' كجم';
+        t+=`   ⚖️ الكمية: *${qtyText}*\n`;
+        t+=`   💰 سعر الكيلو: *${waMoney(d.kgPrice)}*\n`;
+        if(Math.abs(d.weight-.5)<.000001)
+          t+=`   🔸 سعر النصف: *${waMoney(d.kgPrice*.5)}*\n`;
+        else if(Math.abs(d.weight-.25)<.000001)
+          t+=`   🔸 سعر الربع: *${waMoney(d.kgPrice*.25)}*\n`;
       }else{
-        const qty=Math.max(1,Number(s.packages||s.qty||1));
-        const unit=s.sellUnit||p.sellUnit||p.unit||'وحدة';
-        const unitPrice=Number(s.price||0)||(qty?total/qty:0);
+        const qty=Math.max(1,Number(s.packages||1));
+        const unit=s.sellUnit||p.sellUnit||p.unit||'عبوة';
+        const unitPrice=Number(s.price||0)||(qty>0?lineTotal/qty:0);
         t+=`   📦 الكمية: *${qty} ${unit}*\n`;
-        t+=`   💰 سعر الوحدة: *${moneyWA(unitPrice)}*\n`;
+        t+=`   💰 سعر الوحدة: *${waMoney(unitPrice)}*\n`;
       }
 
-      t+=`   💵 إجمالي الصنف: *${moneyWA(total)}*\n`;
+      t+=`   💵 إجمالي الصنف: *${waMoney(lineTotal)}*\n`;
     });
 
     t+='\n━━━━━━━━━━━━━━━━━━━━\n';
-
-    const discount=Number(inv.discount||0);
-    const tax=Number(inv.tax||0);
-    const total=Number(inv.total||0);
-    const paid=Math.min(total,Math.max(0,Number(inv.paid||0)));
-    const remaining=Math.max(0,Number(inv.remaining??(total-paid)));
-    const change=Number(inv.change||0);
-
-    if(discount>0)t+=`🏷️ الخصم: ${moneyWA(discount)}\n`;
-    if(tax>0)t+=`🧾 الضريبة: ${moneyWA(tax)}\n`;
-    t+=`✅ *الإجمالي النهائي: ${moneyWA(total)}*\n`;
-    t+=`💵 المدفوع: ${moneyWA(paid)}\n`;
-    if((inv.paymentMethod||inv.method)==='cash'&&change>0)
-      t+=`💸 الباقي للعميل: *${moneyWA(change)}*\n`;
+    t+=`✅ *الإجمالي النهائي: ${waMoney(inv.total)}*\n`;
+    t+=`💵 المدفوع: ${waMoney(inv.paid)}\n`;
+    if(inv.paymentMethod==='cash'&&inv.change>0.005)
+      t+=`💸 الباقي للعميل: *${waMoney(inv.change)}*\n`;
     else
-      t+=`📌 المتبقي: *${moneyWA(remaining)}*\n`;
-
+      t+=`📌 المتبقي: *${waMoney(inv.remaining)}*\n`;
     if(inv.note)t+=`📝 ملاحظة: ${inv.note}\n`;
-
     t+='━━━━━━━━━━━━━━━━━━━━\n';
     t+='❤️ *شكرًا لتعاملكم معنا*\n';
     t+='🟢 *متجري .. أكثر من مجرد متجر*';
-
-    return {text:t,phone};
+    return t;
   }
 
-  function openWA(phone,text){
-    const p=typeof normalizeWhatsAppPhone==='function'
-      ?normalizeWhatsAppPhone(phone)
-      :String(phone||'').replace(/\D/g,'');
-    if(!p||p.length<11){
-      const url='https://wa.me/?text='+encodeURIComponent(text);
-      window.open(url,'_blank');
-      return;
-    }
-    window.open(
-      'https://wa.me/'+p+'?text='+encodeURIComponent(text),
-      '_blank'
-    );
-  }
-
-  function send(key,phoneOverride){
-    const inv=resolveInvoiceForWhatsApp(key);
+  function share(key,phone){
+    const inv=waResolveInvoice(key);
     if(!inv){
       showToast('❌ لم أتمكن من ربط زر واتساب بالفاتورة','error');
-      console.error('[WA] invoice key not resolved:',key);
+      console.error('[WA] unresolved invoice:',key);
       return;
     }
-    const result=makeMessage(inv);
-    openWA(phoneOverride||result.phone,result.text);
+    const text=waMakeText(inv);
+    waOpen(phone||inv.customerPhone,text);
   }
 
-  window.shareInvoicePro=function(key){
-    send(key,'');
-  };
+  /* مهم: نركب نفس أسماء الدوال التي تستعملها أزرار البرنامج الحالية. */
+  window.shareInvoicePro=function(key){ share(key,''); };
+  window.shareInvoiceImagePro=function(key,phone){ share(key,phone||''); };
 
-  window.shareInvoiceImagePro=function(key,phone){
-    send(key,phone||'');
-  };
-
-  window.__resolveWhatsAppInvoice=resolveInvoiceForWhatsApp;
+  window.__waResolveInvoiceV2=waResolveInvoice;
+  window.__waMakeTextV2=waMakeText;
 })();
 </script>
 
