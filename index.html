@@ -13,7 +13,6 @@
 <!-- لون شريط المتصفح العلوي في الموبايل -->
 <meta name="theme-color" content="#0B4DA2">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" async></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 
@@ -12829,5 +12828,489 @@ setTimeout(()=>{
   setTimeout(()=>{try{const inv=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null');if(inv)prepare(inv).catch(()=>{});}catch(e){}},1200);
 })();
 </script>
+
+<script id="wa-final-image-v9">
+/* ==========================================================
+   متجري — V9
+   محرك صورة فاتورة مستقل 100% عن html2canvas وHTML/CSS.
+   يرسم الفاتورة كاملة على Canvas ثم يخرج PNG حقيقي.
+   ========================================================== */
+(function(){
+  'use strict';
+
+  const TEMPLATE = (typeof WA_REFERENCE_TEMPLATE_V4 === 'string' && WA_REFERENCE_TEMPLATE_V4)
+    ? WA_REFERENCE_TEMPLATE_V4 : '';
+
+  const cache = new Map();
+  const preparing = new Map();
+
+  const KEY = inv => String(inv?.saleBatchId || inv?.invoiceSeq || inv?.invoiceNo || inv?.id || '');
+  const N = v => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const MONEY = v => N(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const FONT = (size, weight=700) => `${weight} ${size}px "Tajawal","Noto Sans Arabic",Tahoma,Arial,sans-serif`;
+
+  function loadImage(src){
+    return new Promise((resolve,reject)=>{
+      const img = new Image();
+      img.decoding = 'async';
+      img.onload = ()=>resolve(img);
+      img.onerror = ()=>reject(new Error('WA_V9_IMAGE_LOAD_FAILED'));
+      img.src = src;
+    });
+  }
+
+  function roundRect(c,x,y,w,h,r,fill,stroke,sw=1){
+    const rr=Math.min(r,w/2,h/2);
+    c.beginPath();
+    c.moveTo(x+rr,y);
+    c.arcTo(x+w,y,x+w,y+h,rr);
+    c.arcTo(x+w,y+h,x,y+h,rr);
+    c.arcTo(x,y+h,x,y,rr);
+    c.arcTo(x,y,x+w,y,rr);
+    c.closePath();
+    if(fill){c.fillStyle=fill;c.fill();}
+    if(stroke){c.strokeStyle=stroke;c.lineWidth=sw;c.stroke();}
+  }
+
+  function drawText(c,value,x,y,size,weight,color='#173b32',align='right',max=Infinity){
+    let s=String(value ?? '');
+    let fs=size;
+    c.save();
+    c.direction='rtl';
+    c.textAlign=align;
+    c.textBaseline='middle';
+    while(fs>10){
+      c.font=FONT(fs,weight);
+      if(c.measureText(s).width<=max) break;
+      fs--;
+    }
+    c.font=FONT(Math.max(10,fs),weight);
+    c.fillStyle=color;
+    c.fillText(s,x,y);
+    c.restore();
+  }
+
+  function drawCentered(c,value,x,y,size,weight,color,max){
+    drawText(c,value,x,y,size,weight,color,'center',max||Infinity);
+  }
+
+  function drawIconCircle(c,x,y,emoji,bg='#eaf5f0'){
+    c.save();
+    c.fillStyle=bg;
+    c.beginPath(); c.arc(x,y,22,0,Math.PI*2); c.fill();
+    c.font='22px Arial'; c.textAlign='center'; c.textBaseline='middle';
+    c.fillText(emoji,x,y+1);
+    c.restore();
+  }
+
+  function productData(s,p,inv){
+    const weightSale = !!((typeof isKgProduct==='function' && isKgProduct(p)) || s?.isWeightSale);
+    if(!weightSale){
+      const qty=Math.max(1,N(s?.packages||s?.qty||1));
+      let unit=N(s?.price||s?.unitPrice);
+      if(unit<=0) unit=N(inv?.type==='wholesale'?(p?.wholesale||0):(p?.retail||0));
+      return {weightSale:false,qty:`${qty} ${s?.sellUnit||p?.unit||'وحدة'}`,unit};
+    }
+
+    const packs=Math.max(1,N(s?.packages||1));
+    let weight=(typeof rawSaleWeight==='function')?N(rawSaleWeight(s)):N(s?.weight);
+    const qtyStored=N(s?.qty);
+    if(weight<=0) weight=qtyStored>0 ? qtyStored/packs : .5;
+    const totalKg=qtyStored>0?qtyStored:packs*weight;
+
+    let kg=N(s?.unitPrice);
+    const gross=N(s?.total);
+    const valueSale=String(s?.saleMode||'').toLowerCase()==='value'||N(s?.valueAmount)>0;
+    const looksLikeTotal=qtyStored>0 && kg>0 && Math.abs(kg-gross)<.011;
+    if(kg<=0 || valueSale || looksLikeTotal){
+      kg=N(inv?.type==='wholesale'?(p?.wholesale||0):(p?.retail||0));
+      if(kg<=0 && N(s?.price)>0 && weight>0) kg=N(s.price)/weight;
+      if(kg<=0 && totalKg>0 && gross>0) kg=gross/totalKg;
+    }
+    const pack=kg>0&&weight>0
+      ? (typeof roundPOSMoney==='function'?roundPOSMoney(kg*weight):kg*weight)
+      : 0;
+
+    let sub=`${packs} × ${(typeof weightLabel==='function'?weightLabel(weight):weight+' كجم')}`;
+    if(Math.abs(weight-.5)<1e-7) sub=`${packs} أنصاف كيلو`;
+    else if(Math.abs(weight-.25)<1e-7) sub=`${packs} أرباع كيلو`;
+
+    return {
+      weightSale:true,
+      qty:(typeof weightLabel==='function'?weightLabel(totalKg):totalKg+' كجم'),
+      sub, unit:kg, pack, weight
+    };
+  }
+
+  async function renderV9(inv,sales){
+    if(!TEMPLATE) throw new Error('WA_V9_TEMPLATE_MISSING');
+
+    const W=1024,H=1536;
+    const canvas=document.createElement('canvas');
+    canvas.width=W; canvas.height=H;
+    const c=canvas.getContext('2d',{alpha:false});
+    if(!c) throw new Error('WA_V9_CANVAS_FAILED');
+
+    c.imageSmoothingEnabled=true;
+    c.imageSmoothingQuality='high';
+
+    /* خلفية نظيفة */
+    c.fillStyle='#fbfcf8';
+    c.fillRect(0,0,W,H);
+
+    /* هيدر المتجر من القالب الأصلي فقط */
+    const template=await loadImage(TEMPLATE);
+    c.drawImage(template,0,0,W,315,0,0,W,315);
+
+    /* العنوان */
+    roundRect(c,258,302,508,112,28,'#075b45','#ffffff',4);
+    drawCentered(c,'فاتورة بيع',512,347,43,950,'#ffffff',450);
+    roundRect(c,365,376,294,54,15,'#e5b72c');
+    const type=inv?.type==='wholesale'?'جملة':'قطاعي';
+    drawCentered(c,type,512,403,28,950,'#173b32',270);
+
+    /* بيانات الفاتورة */
+    roundRect(c,28,445,968,122,22,'#ffffff','#d5e2dc',1);
+    c.save();
+    c.strokeStyle='#d5e2dc'; c.lineWidth=1;
+    c.beginPath();c.moveTo(380,460);c.lineTo(380,552);c.stroke();
+    c.beginPath();c.moveTo(640,460);c.lineTo(640,552);c.stroke();
+    c.restore();
+
+    const customerName=inv?.customerName||'عميل عادي';
+    const customer=(Store.get('customers')||[]).find(z=>inv?.customerId&&String(z.id)===String(inv.customerId));
+    const phone=customer?.phone||inv?.customerPhone||'';
+    const invoiceNo=typeof invoiceDisplayNumber==='function'?invoiceDisplayNumber(inv):(inv?.invoiceSeq||inv?.invoiceNo||'');
+    const date=typeof invoiceDisplayDate==='function'?invoiceDisplayDate(inv):(inv?.date||'');
+    const rawTime=typeof invoiceDisplayTime==='function'?invoiceDisplayTime(inv):(inv?.time||'');
+    const time=String(rawTime).replace(/\bAM\b/gi,'ص').replace(/\bPM\b/gi,'م');
+
+    drawIconCircle(c,934,486,'👤');
+    drawText(c,'العميل: '+customerName,900,481,18,900,'#173b32','right',270);
+    drawIconCircle(c,934,525,'📞','#edf7f3');
+    drawText(c,'رقم الهاتف: '+(phone||'—'),900,521,16,800,'#526761','right',270);
+    drawIconCircle(c,934,552,'📦','#edf7f3');
+    drawText(c,'نوع البيع: '+type,900,550,16,800,'#526761','right',270);
+
+    drawCentered(c,'رقم الفاتورة',510,476,16,900,'#6c7b76',190);
+    roundRect(c,430,490,160,46,12,'#eaf5f0','#cfe1d9',1);
+    drawCentered(c,invoiceNo||'—',510,514,28,950,'#122b24',145);
+
+    drawIconCircle(c,88,486,'📅');
+    drawText(c,'التاريخ: '+date,355,481,18,900,'#173b32','right',270);
+    drawIconCircle(c,88,527,'🕐','#edf7f3');
+    drawText(c,'الوقت: '+time,355,523,18,900,'#173b32','right',270);
+
+    /* عنوان القسم */
+    drawText(c,'تفاصيل الأصناف',985,594,22,950,'#0f766e','right',260);
+    c.save();c.strokeStyle='#cfe0d9';c.lineWidth=2;c.beginPath();c.moveTo(420,594);c.lineTo(38,594);c.stroke();c.restore();
+
+    /* الجدول */
+    const rows=(sales||[]).slice();
+    const maxRows=Math.max(1,rows.length);
+    const tableX=28, tableW=968, headY=615, headH=54;
+    const available=435;
+    const rowH=Math.max(72,Math.min(112,Math.floor(available/maxRows)));
+    const totalRowsH=rowH*Math.maxRows;
+    const tableBottom=headY+headH+totalRowsH;
+
+    roundRect(c,tableX,headY,tableW,headH+totalRowsH,20,'#ffffff','#cfded8',1);
+    c.save();
+    c.fillStyle='#0b6752';
+    c.beginPath();
+    c.roundRect(tableX,headY,tableW,headH,20);
+    c.fill();
+    c.fillStyle='#0b6752';c.fillRect(tableX,headY+25,tableW,29);
+    c.restore();
+
+    const cols={num:960,name:805,qty:590,price:365,total:105};
+    drawCentered(c,'م',cols.num,642,19,950,'#fff',45);
+    drawCentered(c,'الصنف',cols.name,642,19,950,'#fff',220);
+    drawCentered(c,'الكمية',cols.qty,642,19,950,'#fff',150);
+    drawCentered(c,'سعر الوحدة',cols.price,642,19,950,'#fff',220);
+    drawCentered(c,'الإجمالي',cols.total,642,19,950,'#fff',150);
+
+    const products=Store.get('products')||[];
+
+    for(let i=0;i<rows.length;i++){
+      const s=rows[i];
+      const p=products.find(z=>String(z.id)===String(s.productId)) ||
+              (typeof productForSaleLine==='function'?productForSaleLine(s):null);
+      const d=productData(s,p,inv);
+      const y=headY+headH+i*rowH;
+
+      if(i>0){
+        c.save();c.strokeStyle='#e1e9e5';c.lineWidth=1;
+        c.beginPath();c.moveTo(tableX,y);c.lineTo(tableX+tableW,y);c.stroke();c.restore();
+      }
+
+      if(i%2===1){c.save();c.fillStyle='#fbfdfb';c.fillRect(tableX,y,tableW,rowH);c.restore();}
+
+      roundRect(c,945,y+rowH/2-15,30,30,15,'#e8f4ef');
+      drawCentered(c,String(i+1),960,y+rowH/2,16,950,'#0d6b54',35);
+
+      const centerY=y+rowH/2;
+
+      /* صورة المنتج */
+      if(p&&typeof p.image==='string'&&/^data:image\//.test(p.image)){
+        try{
+          const pi=await loadImage(p.image);
+          const size=Math.min(64,rowH-18);
+          c.drawImage(pi,850,centerY-size/2,size,size);
+        }catch(_){}
+      }
+
+      const productX=836;
+      const imgOffset=0;
+      drawText(c,s.productName||p?.name||'صنف',productX,centerY-9,17,950,'#173b32','right',235);
+
+      if(typeof isMozzarellaProduct==='function'&&isMozzarellaProduct(p)){
+        const badge=String(p?.name||'').includes('نباتي')?'نباتي':'طبيعي';
+        roundRect(c,770,centerY+13,68,22,10,badge==='نباتي'?'#e9f7f0':'#eaf2ff');
+        drawCentered(c,badge,804,centerY+24,12,900,badge==='نباتي'?'#0b755b':'#1457a6',62);
+      }
+
+      drawCentered(c,d.qty,590,centerY-4,17,950,'#173b32',155);
+      if(d.sub) drawCentered(c,d.sub,590,centerY+20,12,800,'#667771',175);
+
+      if(d.weightSale){
+        drawCentered(c,'سعر الكيلو: '+MONEY(d.unit)+' ج.م',365,centerY-10,14,900,'#173b32',215);
+        const title=Math.abs(d.weight-.5)<1e-7?'سعر النصف':
+          Math.abs(d.weight-.25)<1e-7?'سعر الربع':'سعر العبوة';
+        drawCentered(c,title+': '+MONEY(d.pack)+' ج.م',365,centerY+16,13,800,'#60726b',215);
+      }else{
+        drawCentered(c,'سعر الوحدة: '+MONEY(d.unit)+' ج.م',365,centerY+2,14,900,'#173b32',220);
+      }
+
+      drawCentered(c,MONEY(s.total)+' ج.م',105,centerY,20,950,'#0d6d55',145);
+    }
+
+    /* لو مفيش أصناف: رسالة واضحة */
+    if(!rows.length){
+      drawCentered(c,'لا توجد أصناف في الفاتورة',512,headY+headH+70,20,800,'#84938d',400);
+    }
+
+    /* الملخص */
+    const sumY=tableBottom+16;
+    const sumH=268;
+    const leftX=28,leftW=650,rightX=692,rightW=304;
+
+    roundRect(c,leftX,sumY,leftW,sumH,20,'#ffffff','#cfded8',1);
+    roundRect(c,rightX,sumY,rightW,sumH,20,'#eaf5f0','#cfe2da',1);
+
+    const method=inv?.method||inv?.paymentMethod||'cash';
+    const pay=({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[method]||method||'نقدي';
+    const subtotal=N(inv?.subtotal??inv?.total);
+    const discount=N(inv?.discount);
+    const tax=N(inv?.tax);
+    const total=N(inv?.total);
+    const paid=N(inv?.paid);
+    const balance=N(method==='cash'?inv?.change:inv?.remaining);
+    const state=balance<=.005?'مدفوعة بالكامل':'متبقي '+MONEY(balance)+' ج.م';
+
+    let sy=sumY+35;
+    drawText(c,'الإجمالي قبل الخصم:',640,sy,18,800,'#2f403a','right',240);
+    drawText(c,MONEY(subtotal)+' ج.م',55,sy,20,950,'#162d27','left',175);
+
+    sy+=42;
+    roundRect(c,leftX+16,sy-18,leftW-32,40,10,'#f0f7f4');
+    drawText(c,'الخصم:',625,sy+1,18,800,'#2f403a','right',120);
+    drawText(c,MONEY(discount)+' ج.م',55,sy+1,20,950,'#162d27','left',175);
+
+    if(tax>0){
+      sy+=42;
+      drawText(c,'الضريبة:',625,sy+1,18,800,'#2f403a','right',120);
+      drawText(c,MONEY(tax)+' ج.م',55,sy+1,20,950,'#162d27','left',175);
+    }
+
+    sy+=42;
+    roundRect(c,leftX+16,sy-22,leftW-32,50,11,'#0d765b');
+    drawText(c,'الإجمالي النهائي:',625,sy+2,20,950,'#fff','right',230);
+    drawText(c,MONEY(total)+' ج.م',55,sy+2,24,950,'#fff','left',180);
+
+    sy+=48;
+    drawText(c,'المدفوع:',625,sy,18,800,'#2f403a','right',130);
+    drawText(c,MONEY(paid)+' ج.م',55,sy,20,950,'#162d27','left',175);
+
+    sy+=40;
+    drawText(c,method==='cash'?'الباقي:':'المتبقي:',625,sy,18,800,'#2f403a','right',140);
+    drawText(c,MONEY(balance)+' ج.م',55,sy,20,950,'#162d27','left',175);
+
+    drawIconCircle(c,920,sumY+48,'💵');
+    drawText(c,'طريقة السداد',960,sumY+34,15,800,'#71817b','right',170);
+    drawText(c,pay,960,sumY+76,29,950,'#0b654f','right',190);
+
+    c.save();c.strokeStyle='#d2e3dc';c.lineWidth=1;c.beginPath();c.moveTo(rightX+20,sumY+108);c.lineTo(rightX+rightW-20,sumY+108);c.stroke();c.restore();
+
+    drawIconCircle(c,920,sumY+155,balance<=.005?'✅':'⏳',balance<=.005?'#e5f6ed':'#fff4d9');
+    drawText(c,'حالة الفاتورة',960,sumY+141,15,800,'#71817b','right',170);
+    drawText(c,state,960,sumY+183,17,950,'#173b32','right',235);
+
+    /* شريط المزايا */
+    const benY=sumY+sumH+14;
+    roundRect(c,28,benY,650,78,16,'#ffffff','#d3e2dc',1);
+    const benefits=[
+      ['🚚','خدمة توصيل'],
+      ['🛡️','منتجات مضمونة'],
+      ['🌿','جودة عالية'],
+      ['🤝','شركاء النجاح']
+    ];
+    for(let i=0;i<4;i++){
+      const bx=28+i*162.5;
+      if(i>0){c.save();c.strokeStyle='#dbe7e2';c.beginPath();c.moveTo(bx,benY+10);c.lineTo(bx,benY+68);c.stroke();c.restore();}
+      drawCentered(c,benefits[i][0],bx+81,benY+25,22,700,'#0a614b',50);
+      drawCentered(c,benefits[i][1],bx+81,benY+56,13,900,'#0a614b',140);
+    }
+
+    /* شكر + توقيع */
+    roundRect(c,692,benY,304,126,18,'#ffffff','#d3e2dc',1);
+    drawCentered(c,'شكرًا ❤️',844,benY+28,25,950,'#0b6a53',240);
+    drawCentered(c,'لتعاملكم معنا',844,benY+59,21,900,'#0b6a53',250);
+    roundRect(c,715,benY+78,258,38,11,'#0d765b');
+    drawCentered(c,'معًا.. نقدم لكم الأفضل دائمًا',844,benY+97,13,900,'#ffffff',235);
+
+    /* الفوتر */
+    const footY=Math.min(1450,benY+142);
+    c.save();c.strokeStyle='#d7e5df';c.lineWidth=2;c.beginPath();c.moveTo(35,footY);c.lineTo(989,footY);c.stroke();c.restore();
+    drawText(c,'Sherif Fathy',45,footY+39,27,700,'#111d1a','left',210);
+    drawText(c,'متجري .. أكثر من مجرد متجر',965,footY+39,22,900,'#0b654f','right',320);
+    drawText(c,'جودة .. ثقة .. دائمًا معكم',965,footY+72,13,700,'#788780','right',260);
+
+    return await new Promise((resolve,reject)=>{
+      if(typeof canvas.toBlob==='function'){
+        canvas.toBlob(b=>b?resolve(b):reject(new Error('WA_V9_BLOB_FAILED')),'image/png',.96);
+      }else{
+        try{
+          const data=canvas.toDataURL('image/png');
+          const raw=atob(data.split(',')[1]);
+          const arr=new Uint8Array(raw.length);
+          for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+          resolve(new Blob([arr],{type:'image/png'}));
+        }catch(e){reject(new Error('WA_V9_BLOB_FAILED'));}
+      }
+    });
+  }
+
+  async function prepareV9(inv){
+    if(!inv)return null;
+    const k=KEY(inv);
+    if(!k)return null;
+    if(cache.has(k))return cache.get(k);
+    if(preparing.has(k))return preparing.get(k);
+
+    const p=(async()=>{
+      try{
+        const sales=typeof getInvoiceSalesForWhatsApp==='function'
+          ? getInvoiceSalesForWhatsApp(inv)
+          : (Store.get('sales')||[]).filter(s=>String(s.saleBatchId||'')===String(inv.saleBatchId||''));
+        if(!sales.length)throw new Error('WA_V9_NO_SALES');
+        const blob=await renderV9(inv,sales);
+        cache.set(k,blob);
+        while(cache.size>8)cache.delete(cache.keys().next().value);
+        return blob;
+      }finally{
+        preparing.delete(k);
+      }
+    })();
+
+    preparing.set(k,p);
+    return p;
+  }
+
+  async function shareV9(inv,phone){
+    if(!inv)return showToast('تعذر العثور على الفاتورة','warning');
+    if(window.__waV9Busy)return;
+    window.__waV9Busy=true;
+    try{
+      let blob=cache.get(KEY(inv));
+      if(!blob){
+        showToast('⏳ جاري تجهيز صورة الفاتورة...','info');
+        blob=await prepareV9(inv);
+      }
+      if(!blob)throw new Error('WA_V9_IMAGE_NOT_READY');
+
+      const file=new File([blob],`فاتورة_${inv.invoiceSeq||inv.invoiceNo||'بيع'}.png`,{type:'image/png'});
+
+      if(typeof navigator!=='undefined' && typeof navigator.share==='function'){
+        try{
+          await navigator.share({
+            files:[file],
+            title:`فاتورة متجري رقم ${inv.invoiceSeq||inv.invoiceNo||''}`,
+            text:'فاتورة متجري'
+          });
+          showToast('✅ اختر واتساب من شاشة المشاركة','success');
+          return;
+        }catch(e){
+          if(e?.name==='AbortError')return;
+        }
+      }
+
+      if(typeof ClipboardItem!=='undefined' && navigator.clipboard?.write){
+        try{
+          await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+          showToast('📋 الصورة اتنسخت — افتح واتساب واضغط لصق','success');
+          return;
+        }catch(_){}
+      }
+
+      /* آخر حل: تنزيل PNG حقيقي بدل إظهار فاتورة كنص */
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download=file.name;a.rel='noopener';
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),3000);
+      showToast('✅ تم تجهيز صورة الفاتورة PNG','success');
+    }catch(e){
+      console.error('WA V9:',e);
+      showToast('❌ تعذر تجهيز صورة الفاتورة: '+(e?.message||'UNKNOWN_ERROR'),'error');
+    }finally{
+      window.__waV9Busy=false;
+    }
+  }
+
+  window.renderWhatsAppInvoiceImage=renderV9;
+  window.prepareWhatsAppInvoiceImage=prepareV9;
+  window.shareInvoiceImagePro=shareV9;
+  window.shareInvoicePro=function(key){
+    const inv=typeof findInvoice==='function'?findInvoice(key):null;
+    return shareV9(inv);
+  };
+  window.sharePOSOnWhatsApp=function(){
+    let inv=null;
+    try{inv=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null');}catch(_){}
+    return shareV9(inv);
+  };
+
+  /* تجهيز مسبق: فتح تفاصيل الفاتورة + آخر فاتورة */
+  function wrapOpen(){
+    try{
+      const fn=window.openInvoicePro;
+      if(typeof fn==='function' && !fn.__waV9Wrapped){
+        const wrapped=function(key){
+          const inv=typeof findInvoice==='function'?findInvoice(key):null;
+          const result=fn.apply(this,arguments);
+          if(inv)setTimeout(()=>prepareV9(inv).catch(e=>console.warn('WA V9 prewarm',e)),80);
+          return result;
+        };
+        wrapped.__waV9Wrapped=true;
+        window.openInvoicePro=wrapped;
+      }
+    }catch(_){}
+  }
+  wrapOpen();
+  setInterval(wrapOpen,1500);
+
+  setTimeout(()=>{
+    try{
+      const inv=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null');
+      if(inv)prepareV9(inv).catch(e=>console.warn('WA V9 last invoice',e));
+    }catch(_){}
+  },700);
+})();
+</script>
+
 </body>
   </html>
