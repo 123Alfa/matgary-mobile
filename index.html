@@ -4823,7 +4823,7 @@ function renderProductsPage(container){
         <div class="form-group"><label>سعر الجملة</label><input type="number" id="pWholesale" placeholder="0.00" step="0.01" inputmode="decimal"></div>
         <div class="form-group"><label>سعر القطاعي</label><input type="number" id="pRetail" placeholder="0.00" step="0.01" inputmode="decimal" oninput="calcProductProfit()"></div>
         <div class="form-group"><label>الكمية الحالية</label><input type="number" id="pQty" placeholder="0" step="0.01" inputmode="decimal"></div>
-        <div class="form-group"><label>الوحدة</label><select id="pUnit"><option>كجم</option><option>علبة</option><option>قطعة</option><option>كرتونة</option></select></div>
+        <div class="form-group"><label>الوحدة</label><select id="pUnit"><option>كجم</option><option>عبوة</option><option>كيس</option><option>لفة</option><option>علبة</option><option>قطعة</option><option>كرتونة</option><option>باكت</option><option>برطمان</option></select></div>
         <div class="form-group"><label>حد التنبيه</label><input type="number" id="pMinStock" placeholder="5" value="5" step="1" inputmode="numeric"></div>
         <div class="form-group"><label>ربح القطاعي</label><input type="number" id="pExpectedProfit" class="profit-input" readonly></div><div class="form-group"><label>نسبة الربح</label><input type="text" id="pProfitPercent" class="profit-input" readonly></div>
       </div><button class="btn btn-primary btn-block" onclick="addProduct()"><i class="fas fa-save"></i> حفظ الصنف</button>
@@ -5080,7 +5080,7 @@ function editProduct(id){
       <div class="form-group"><label>الجملة</label><input type="number" id="epWholesale" value="${p.wholesale||0}" step="0.01"></div>
       <div class="form-group"><label>القطاعي</label><input type="number" id="epRetail" value="${p.retail||0}" step="0.01"></div>
       <div class="form-group"><label>الكمية</label><input type="number" id="epQty" value="${p.qty||0}" step="0.01"></div>
-      <div class="form-group"><label>الوحدة</label><select id="epUnit"><option ${p.unit==='كجم'?'selected':''}>كجم</option><option ${p.unit==='علبة'?'selected':''}>علبة</option><option ${p.unit==='قطعة'?'selected':''}>قطعة</option><option ${p.unit==='كرتونة'?'selected':''}>كرتونة</option></select></div>
+      <div class="form-group"><label>الوحدة</label><select id="epUnit"><option ${p.unit==='كجم'?'selected':''}>كجم</option><option ${p.unit==='عبوة'?'selected':''}>عبوة</option><option ${p.unit==='كيس'?'selected':''}>كيس</option><option ${p.unit==='لفة'?'selected':''}>لفة</option><option ${p.unit==='علبة'?'selected':''}>علبة</option><option ${p.unit==='قطعة'?'selected':''}>قطعة</option><option ${p.unit==='كرتونة'?'selected':''}>كرتونة</option><option ${p.unit==='باكت'?'selected':''}>باكت</option><option ${p.unit==='برطمان'?'selected':''}>برطمان</option></select></div>
       <div class="form-group"><label>الحد الأدنى</label><input type="number" id="epMinStock" value="${p.minStock||5}" step="1"></div>
       <div class="form-group"><label>المكسب الحالي</label><input type="text" class="profit-input" value="${fmt(profit)} (${pct}%)" readonly style="color:${profit>=0?'var(--success-light)':'var(--danger-light)'}!important"></div>
     </div>
@@ -6122,7 +6122,7 @@ function buildWhatsAppInvoiceHTML(inv,sales){
     if(!weightSale){
       const qty=Math.max(1,Number(s?.packages||s?.qty||1));
       const unit=fixedUnitPrice(s,p);
-      const unitLabel=fixedByName ? (s?.sellUnit||p?.unit||'عبوة') : (s?.sellUnit||p?.unit||'وحدة');
+      const unitLabel=fixedByName ? invoiceFixedUnitLabel(s,p) : (s?.sellUnit||p?.unit||'وحدة');
       return {weightSale:false,qtyLabel:`${qty} ${waEsc(unitLabel)}`,subQty:'',unitPrice:unit>0?waMoney(unit):'—',packPrice:'',unitTitle:'سعر الوحدة:'};
     }
 
@@ -10751,7 +10751,7 @@ function historyCard(inv){
                     ? `سعر الكيلو: ${fmt(reliableKgPrice)} • سعر الربع كيلو: ${fmt(packPriceForDisplay)}`
                     : `سعر الكيلو: ${fmt(reliableKgPrice)}`))
           : `سعر الوحدة: ${fmt(s.price||0)} ج.م`
-      const detailLabel=fixedPackDisplay ? `${Math.max(1,Number(s.packages||s.qty||1))} علبة${fixedPackSize?' • '+fixedPackSize:''}` : invoiceSaleDetailLabel(s,p);
+      const detailLabel=fixedPackDisplay ? `${Math.max(1,Number(s.packages||s.qty||1))} ${invoiceFixedUnitLabel(s,p)}${fixedPackSize?' • '+fixedPackSize:''}` : invoiceSaleDetailLabel(s,p);
       const returned=money(s.returnedQty)>0;
       return `<div class="invoice-line-pro ${returned?'invoice-line-returned':''}"><div><strong>${esc(s.productName||'صنف')} ${returned?'<em>↩️ مرتجع</em>':''}</strong><small>${esc(detailLabel)} • ${priceText}${returned?' • مرتجع '+fmt(s.returnedAmount||0):''}</small></div><b>${fmt(s.total)}</b></div>`;
     }).join('');
@@ -12898,7 +12898,7 @@ function waV15SaleData(s,p,inv){
   if(!weightSale){
     const qty=Math.max(1,Number(s?.packages||s?.qty||1));
     const unit=stored>0 ? stored : (base>0 ? base : 0);
-    const unitLabel=fixedByName ? 'عبوة' : (s?.sellUnit||p?.sellUnit||'وحدة');
+    const unitLabel=fixedByName ? invoiceFixedUnitLabel(s,p) : (s?.sellUnit||p?.sellUnit||'وحدة');
     const packSize=waV15FixedPackSize({name:saleName})||waV15FixedPackSize(p);
     return {
       weightSale:false,
@@ -13593,5 +13593,63 @@ setTimeout(()=>{
 })();
 </script>
 
+<script id="matgary-final-smart-invoice-units">
+(function(){
+  'use strict';
+  window.invoiceFixedUnitLabel=function(s,p){
+    const name=String(s?.productName||s?.name||p?.name||'').trim();
+    const raw=String(s?.sellUnit||p?.sellUnit||p?.unit||'').trim();
+    if(raw && raw!=='علبة') return raw;
+    if(/لانشون/i.test(name)) return 'لفة';
+    if(/(?:برجر|برغر|كفتة|كفته)/i.test(name) && /\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)/i.test(name)) return 'عبوة';
+    if(/\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)/i.test(name)) return 'عبوة';
+    return raw || 'وحدة';
+  };
+  const oldWeightSale=window.isWeightSaleLine;
+  window.isWeightSaleLine=function(s,p){
+    const unit=String(s?.sellUnit||p?.sellUnit||p?.unit||'').trim().toLowerCase();
+    if(/^(?:علبة|عبوة|قطعة|كرتونة|باكت|كيس|برطمان|لفة)$/.test(unit)) return false;
+    return typeof oldWeightSale==='function' ? oldWeightSale(s,p) : false;
+  };
+  window.saleUnitLabel=function(p,weight){
+    if(window.isKgProduct(p)) return weightLabel(weight);
+    return invoiceFixedUnitLabel(null,p);
+  };
+  window.saleQuantityLabel=function(p,qty,weight){
+    const q=Number(qty||1);
+    return window.isKgProduct(p) ? `${q} × ${weightLabel(weight)}` : `${q} ${invoiceFixedUnitLabel(null,p)}`;
+  };
+  window.invoiceSaleQuantityLabel=function(s,p){
+    const packs=Number(s?.packages||s?.qty||1);
+    const weight=rawSaleWeight(s);
+    if(window.isWeightSaleLine(s,p)) return window.saleQuantityLabel(p,packs,weight);
+    return `${packs} ${invoiceFixedUnitLabel(s,p)}`;
+  };
+  window.invoiceSaleDetailLabel=function(s,p){
+    if(!window.isWeightSaleLine(s,p)) return window.invoiceSaleQuantityLabel(s,p);
+    const packs=Math.max(1,Number(s?.packages||1));
+    const weight=rawSaleWeight(s);
+    const totalKg=Number.isFinite(weight)?packs*weight:Number(s?.qty||0);
+    const totalLabel=weightLabel(totalKg);
+    if(Math.abs(weight-0.5)<0.000001) return `${totalLabel} • ${packs} أنصاف كيلو`;
+    if(Math.abs(weight-0.25)<0.000001) return `${totalLabel} • ${packs} أرباع كيلو`;
+    return `${totalLabel} • ${packs} × ${weightLabel(weight)}`;
+  };
+  window.waProductDetail=function(s,p){
+    const weightSale=window.isWeightSaleLine(s,p);
+    if(!weightSale) return {totalQty:`${Number(s?.packages||s?.qty||1)} ${waEsc(invoiceFixedUnitLabel(s,p))}`,subQty:'',unitPrice:'',packPrice:''};
+    const packs=Math.max(1,Number(s?.packages||1));
+    const weight=rawSaleWeight(s);
+    const totalKg=Number.isFinite(weight)?packs*weight:Number(s?.qty||0);
+    const totalLabel=weightLabel(totalKg);
+    let subQty=`${packs} × ${weightLabel(weight)}`;
+    if(Math.abs(weight-0.5)<0.000001) subQty=`${packs} أنصاف كيلو`;
+    else if(Math.abs(weight-0.25)<0.000001) subQty=`${packs} أرباع كيلو`;
+    const unitPrice=Number(s?.unitPrice||s?.price||0);
+    const packPrice=unitPrice>0?roundPOSMoney(unitPrice*weight):0;
+    return {totalQty:totalLabel,subQty,unitPrice:unitPrice>0?waMoney(unitPrice):'—',packPrice:packPrice>0?waMoney(packPrice):'—'};
+  };
+})();
+</script>
 </body>
   </html>
