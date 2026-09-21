@@ -5356,7 +5356,7 @@ function saleQuantityLabel(p, qty, weight){
 // تنسيق موحد لكميات فواتير الأصناف المباعة بالوزن؛ لا يغيّر القيمة المحاسبية.
 function invoiceSaleQuantityLabel(s, p){
   const packs=Math.max(1,Number(s?.packages||1));
-  const weight=typeof window.matgaryDisplaySaleWeight==='function'?window.matgaryDisplaySaleWeight(s):rawSaleWeight(s);
+  const weight=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||1):Number(s?.weight||1);
   const n=String(s?.productName||p?.name||'').trim().toLowerCase();
 
   // قواعد وحدات الفاتورة:
@@ -5392,7 +5392,7 @@ function invoiceSaleQuantityLabel(s, p){
 // تسمية موحدة لعرض الوزن في تفاصيل الفاتورة: الإجمالي أولًا ثم عدد العبوات/الأنصاف.
 function invoiceSaleDetailLabel(s, p){
   const packs=Math.max(1,Number(s?.packages||1));
-  const weight=typeof window.matgaryDisplaySaleWeight==='function'?window.matgaryDisplaySaleWeight(s):rawSaleWeight(s);
+  const weight=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||1):Number(s?.weight||1);
   const n=String(s?.productName||p?.name||'').trim().toLowerCase();
 
   if(/موزاريلا|موتزاريلا|mozzarella/.test(n)){
@@ -5426,7 +5426,7 @@ function invoiceSaleDetailHtml(s, p){
     return `<span class="sc-detail-simple">${salesEscape(qty)}</span>`;
   }
   const packs=Math.max(1,Number(s?.packages||1));
-  const weight=typeof window.matgaryDisplaySaleWeight==='function'?window.matgaryDisplaySaleWeight(s):rawSaleWeight(s);
+  const weight=rawSaleWeight(s);
   const totalKg=Number.isFinite(weight)?packs*weight:Number(s?.qty||0);
   const totalLabel=weightLabel(totalKg);
   const grams=Math.round(weight*1000);
@@ -6122,7 +6122,7 @@ function waProductDetail(s,p){
     };
   }
   const packs=Math.max(1,Number(s?.packages||1));
-  const weight=typeof window.matgaryDisplaySaleWeight==='function'?window.matgaryDisplaySaleWeight(s):rawSaleWeight(s);
+  const weight=rawSaleWeight(s);
   const totalKg=Number.isFinite(weight)?packs*weight:Number(s?.qty||0);
   const totalLabel=weightLabel(totalKg);
   let subQty=`${packs} × ${weightLabel(weight)}`;
@@ -6139,20 +6139,6 @@ function waProductDetail(s,p){
 }
 
 function buildWhatsAppInvoiceHTML(inv,sales){
-  function waIcon(name){
-    const common='class="wa-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
-    const icons={
-      receipt:`<svg ${common}><path d="M6 3h12v18l-2.2-1.8L13.6 21 12 19.6 10.4 21l-2.2-1.8L6 21V3Z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>`,
-      calendar:`<svg ${common}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>`,
-      clock:`<svg ${common}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
-      shopping:`<svg ${common}><path d="M6 8h12l1 12H5L6 8Z"/><path d="M9 8a3 3 0 0 1 6 0M8 12h8"/></svg>`,
-      user:`<svg ${common}><circle cx="12" cy="8" r="3"/><path d="M6 20a6 6 0 0 1 12 0"/></svg>`,
-      phone:`<svg ${common}><path d="M7 3h3l1 5-2 1.5a14 14 0 0 0 5.5 5.5L16 13l5 1v3c0 1.1-.9 2-2 2C10.7 19 5 13.3 5 5c0-1.1.9-2 2-2Z"/></svg>`,
-      wallet:`<svg ${common}><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H19a1 1 0 0 1 1 1v15H6a2 2 0 0 1-2-2V6.5Z"/><path d="M4 7h14"/><path d="M15 13h5v4h-5a2 2 0 0 1 0-4Z"/></svg>`,
-      check:`<svg ${common}><path d="m5 12 4 4L19 6"/><circle cx="12" cy="12" r="9"/></svg>`
-    };
-    return icons[name]||icons.receipt;
-  }
   const typeLabel = inv.type==='wholesale' ? 'جملة' : 'قطاعي';
   const methodKey  = inv.method || inv.paymentMethod || 'cash';
 
@@ -6162,7 +6148,14 @@ function buildWhatsAppInvoiceHTML(inv,sales){
       calendar:'<rect x="3" y="4" width="18" height="17" rx="3"/><path d="M7 2v4M17 2v4M3 9h18M7 13h.01M11 13h.01M15 13h.01M7 17h.01M11 17h.01"/>',
       clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
       bag:'<path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
-      user:'<circle cx="12" cy="8" r="3"/><path d="M5 21a7 7 0 0 1 14 0"/>'
+      user:'<circle cx="12" cy="8" r="3"/><path d="M5 21a7 7 0 0 1 14 0"/>',
+      phone:'<path d="M6 3h3l2 5-2 2a14 14 0 0 0 5 5l2-2 5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2Z"/>',
+      wallet:'<path d="M4 7V5a2 2 0 0 1 2-2h13v4H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h15V9H8"/><path d="M15 13h6v4h-6a2 2 0 0 1 0-4Z"/>',
+      check:'<circle cx="12" cy="12" r="9"/><path d="m8 12 2.6 2.6L16 9"/>',
+      box:'<path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/>',
+      store:'<path d="M4 10h16v10H4z"/><path d="M3 10 5 4h14l2 6M8 14h3v6H8zM15 14h3M12 7v3"/>',
+      scale:'<path d="M12 4v15M7 20h10M5 7h14"/><path d="m5 7-3 6h6l-3-6ZM19 7l-3 6h6l-3-6Z"/>',
+      receipt:'<path d="M6 3h12v18l-2-2-2 2-2-2-2 2-2-2-2 2V3Z"/><path d="M9 8h6M9 12h6M9 16h4"/>'
     };
     return `<svg class="wa-inline-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths[kind]||paths.number}</svg>`;
   }
@@ -6197,26 +6190,27 @@ function buildWhatsAppInvoiceHTML(inv,sales){
         ? window.matgaryInvoiceUnit(p,s)
         : (s?.sellUnit||p?.unit||'عبوة');
       const selectedWeight=Number(s?.weight||0);
+      const isBramili=/براميلي|براميل/i.test(saleName);
       const sizeMatch=String(saleName).match(/(\d+(?:[.,]\d+)?)\s*(جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)/i);
       let packSize='';
       if(sizeMatch){
         const val=String(sizeMatch[1]).replace(',','.');
         packSize=/كجم|كيلو|كغ|kg|ك$/i.test(sizeMatch[2]) ? `${val} كجم` : `${val} جم`;
+      }else if(isBramili){
+        // جبنة براميلي بالفلفل في الفاتورة الحالية = عبوة 500 جم.
+        // لا نسمح لوحدة المنتج المخزنة "كجم" أن تظهر كأن العبوة 1 كجم.
+        packSize='500 جم';
+        unitLabel='عبوة';
       }else if(selectedWeight>0 && selectedWeight<1){
         packSize=`${Math.round(selectedWeight*1000)} جم`;
       }
-      if((fixedByName || (selectedWeight>0 && selectedWeight<1)) && unitLabel==='كجم') unitLabel='عبوة';
+      if((fixedByName || (selectedWeight>0 && selectedWeight<1) || isBramili) && unitLabel==='كجم') unitLabel='عبوة';
       const qtyLabel=`${qty} ${waEsc(unitLabel)}${packSize ? ` • ${waEsc(packSize)}` : ''}`;
       return {weightSale:false,qtyLabel,subQty:'',unitPrice:unit>0?waMoney(unit):'—',packPrice:'',unitTitle:'سعر الوحدة:'};
     }
 
     const packs=Math.max(1,Number(s?.packages||1));
-    const weight=Math.max(
-      0.001,
-      typeof window.matgaryDisplaySaleWeight==='function'
-        ?Number(window.matgaryDisplaySaleWeight(s)||1)
-        :Number(rawSaleWeight(s)||s?.weight||1)
-    );
+    const weight=Math.max(0.001,Number(rawSaleWeight(s)||s?.weight||1));
     const totalKg=Number(s?.qty)>0 ? Number(s.qty) : packs*weight;
     const totalLabel=weightLabel(totalKg);
     let subQty=`${packs} × ${weightLabel(weight)}`;
@@ -6298,7 +6292,7 @@ function buildWhatsAppInvoiceHTML(inv,sales){
 
   return `<div class="wa-invoice">
     <div class="wa-header">
-      <div class="wa-header-logo"><div class="wa-logo-box">🏪</div><div><div class="wa-brand-name">${waEsc(typeof getAppName==='function'?getAppName():'متجري')}</div><div class="wa-brand-tag">نظام إدارة المبيعات والمخزون</div></div></div>
+      <div class="wa-header-logo"><div class="wa-logo-box">${waSvgIcon("store")}</div><div><div class="wa-brand-name">${waEsc(typeof getAppName==='function'?getAppName():'متجري')}</div><div class="wa-brand-tag">نظام إدارة المبيعات والمخزون</div></div></div>
       <div class="wa-header-badge">فاتورة ${waEsc(typeLabel)}</div>
     </div>
     <div class="wa-info-strip">
@@ -6309,15 +6303,15 @@ function buildWhatsAppInvoiceHTML(inv,sales){
     </div>
     <div class="wa-customer-strip">
       <div class="wa-customer-icon">${waSvgIcon('user')}</div>
-      <div class="wa-customer-info"><small>${waIcon("user")}العميل</small><strong>${waEsc(customerName)}</strong></div>
-      ${phone?`<div class="wa-customer-phone">${waIcon("phone")}${waEsc(phone)}</div>`:''}
+      <div class="wa-customer-info"><small>${waSvgIcon("user")}العميل</small><strong>${waEsc(customerName)}</strong></div>
+      ${phone?`<div class="wa-customer-phone">${waSvgIcon("phone")}${waEsc(phone)}</div>`:''}
     </div>
-    <div class="wa-section-title"><span>${waIcon("receipt")}</span><span>تفاصيل الأصناف</span><span class="count-badge">${list.length} ${list.length===1?'صنف':'أصناف'}</span><span class="title-line"></span></div>
+    <div class="wa-section-title"><span>${waSvgIcon("receipt")}</span><span>تفاصيل الأصناف</span><span class="count-badge">${list.length} ${list.length===1?'صنف':'أصناف'}</span><span class="title-line"></span></div>
     <div class="wa-table-wrap">
       <table class="wa-table"><thead><tr><th style="width:64px">#</th><th>الصنف</th><th style="width:260px">التفاصيل</th><th style="width:170px">السعر</th><th style="width:160px">الإجمالي</th></tr></thead><tbody>${rows}</tbody></table>
     </div>
     ${noteHtml}
-    <div class="wa-summary-row"><div class="wa-summary">${summaryHtml}</div><div class="wa-payment-card"><small>${waIcon("wallet")}طريقة السداد</small><div class="method">${waEsc(payLabel)}</div><div class="status ${isFullyPaid?'paid':'due'}"><small>${waIcon("check")}حالة الفاتورة</small><strong>${waEsc(statusText)}</strong></div></div></div>
+    <div class="wa-summary-row"><div class="wa-summary">${summaryHtml}</div><div class="wa-payment-card"><small>${waSvgIcon("wallet")}طريقة السداد</small><div class="method">${waEsc(payLabel)}</div><div class="status ${isFullyPaid?'paid':'due'}"><small>${waSvgIcon("check")}حالة الفاتورة</small><strong>${waEsc(statusText)}</strong></div></div></div>
     <div class="wa-footer"><div class="wa-footer-brand">شكرًا لتعاملكم معنا 💚<small>نتمنى لكم تجربة طيبة دائمًا — نتشرف بخدمتكم مرة أخرى</small></div><div class="wa-footer-sign">Sherif Fathy</div><div class="wa-footer-note">هذه فاتورة إلكترونية صادرة من نظام متجري<br>لأي استفسار يرجى التواصل معنا في أي وقت</div></div>
   </div>`;
 }
@@ -10827,7 +10821,7 @@ function historyCard(inv){
       const calculatedKgPrice=(Number(s.qty)>0&&grossValue>0)?grossValue/Number(s.qty):0;
       const priceLooksLikeTotal=weightSale && Number(s.qty)>0 && storedUnitPrice>0 && Math.abs(storedUnitPrice-Number(s.total||0))<0.011;
       const reliableKgPrice=storedUnitPrice>0&&!hasValueSale&&!priceLooksLikeTotal?storedUnitPrice:calculatedKgPrice;
-      const packWeight=typeof window.matgaryDisplaySaleWeight==='function'?window.matgaryDisplaySaleWeight(s):rawSaleWeight(s);
+      const packWeight=rawSaleWeight(s);
       const packPriceForDisplay=(weightSale&&!hasValueSale&&!priceLooksLikeTotal&&reliableKgPrice>0&&Number.isFinite(packWeight))
         ? roundPOSMoney(reliableKgPrice*packWeight)
         : 0;
@@ -10970,24 +10964,60 @@ th,td{padding:9px 7px;border-bottom:1px solid #e6eeeb;text-align:right}
 @media print{button{display:none}}
 </style>
 
-<style id="matgary-wa-svg-icons-final">
-.wa-svg-icon{
-  width:22px;height:22px;flex:0 0 22px;
-  display:inline-block;vertical-align:-5px;
-  stroke:currentColor;
+<style id="matgary-wa-icons-polish-20260921">
+.wa-info-icon{
+  font-family:inherit!important;
+  font-size:inherit!important;
+  line-height:1;
+  display:inline-flex!important;
+  align-items:center;
+  vertical-align:middle;
+}
+.wa-inline-icon{
+  width:23px!important;
+  height:23px!important;
+  display:inline-block!important;
+  flex:0 0 23px;
+  vertical-align:-6px;
+  color:#0f766e;
+  overflow:visible;
+}
+.wa-logo-box .wa-inline-icon{
+  width:38px!important;
+  height:38px!important;
+  color:#fff;
 }
 .wa-info-item small,
 .wa-customer-info small,
 .wa-payment-card>small,
 .wa-payment-card .status small{
-  display:flex!important;align-items:center;gap:7px;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center;
+  gap:7px;
 }
-.wa-info-item small{justify-content:center}
 .wa-customer-info small{justify-content:flex-start!important}
-.wa-customer-phone{display:inline-flex!important;align-items:center;gap:7px}
-.wa-customer-icon{display:grid!important;place-items:center}
-.wa-customer-icon .wa-svg-icon{width:26px;height:26px}
-.wa-section-title>span:first-child .wa-svg-icon{width:26px;height:26px}
+.wa-customer-phone{
+  display:inline-flex!important;
+  align-items:center;
+  gap:7px;
+}
+.wa-customer-icon{
+  display:grid!important;
+  place-items:center!important;
+}
+.wa-customer-icon .wa-inline-icon{
+  width:28px!important;
+  height:28px!important;
+}
+.wa-section-title>span:first-child{
+  display:inline-flex;
+  align-items:center;
+}
+.wa-section-title>span:first-child .wa-inline-icon{
+  width:28px!important;
+  height:28px!important;
+}
 </style>
 
 </head>
@@ -14000,7 +14030,7 @@ setTimeout(()=>{
 
   window.invoiceSaleQuantityLabel=function(s,p){
     const packs=Math.max(1,Number(s?.packages||1));
-    const weight=typeof window.matgaryDisplaySaleWeight==='function'?window.matgaryDisplaySaleWeight(s):rawSaleWeight(s);
+    const weight=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||1):Number(s?.weight||1);
     const n=nameOf(p,s);
 
     if(/موزاريلا|موتزاريلا|mozzarella/.test(n)){
@@ -14045,7 +14075,7 @@ setTimeout(()=>{
     }
 
     const packs=Math.max(1,Number(s?.packages||1));
-    const weight=typeof window.matgaryDisplaySaleWeight==='function'?window.matgaryDisplaySaleWeight(s):rawSaleWeight(s);
+    const weight=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||1):Number(s?.weight||1);
     const totalKg=Number(s?.qty)>0?Number(s.qty):packs*weight;
     let kgPrice=Number(s?.unitPrice||0);
     const gross=Number(s?.total||0);
@@ -14670,38 +14700,6 @@ setTimeout(()=>{
 
   window.__matgaryWhatsAppTextFinal=true;
   window.__matgaryWhatsAppBuildText=buildWhatsAppText;
-})();
-</script>
-
-
-<script id="matgary-display-weight-fix-20260921">
-(function(){
-  'use strict';
-  window.matgaryDisplaySaleWeight=function(s){
-    const packs=Math.max(1,Number(s?.packages||1));
-    const qty=Number(s?.qty||0);
-    if(qty>0 && packs>0){
-      const w=qty/packs;
-      if(Number.isFinite(w) && w>0) return w;
-    }
-    const stored=Number(s?.weight||0);
-    return Number.isFinite(stored)&&stored>0 ? stored : 1;
-  };
-})();
-</script>
-
-
-<script id="matgary-wa-cashier-note-hide-final">
-(function(){
-  'use strict';
-  function strip(root){
-    (root||document).querySelectorAll('.wa-note,.invoice-note-pro,.receipt-note').forEach(el=>{
-      if(/بيع\s*من\s*الكاشير/i.test(String(el.textContent||''))) el.remove();
-    });
-  }
-  if(document.readyState==='loading')
-    document.addEventListener('DOMContentLoaded',()=>strip(),{once:true});
-  else strip();
 })();
 </script>
 
