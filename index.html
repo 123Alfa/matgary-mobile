@@ -6344,14 +6344,31 @@ function openPOSReceiptPreview(invoice){
 }
 
 function printPOSReceipt(){
-  const inv=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null'); if(!inv)return;
+  const inv=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null');
+  if(!inv){ if(typeof showToast==='function') showToast('لا توجد فاتورة للطباعة','warning'); return; }
   const sales=(Store.get('sales')||[]).filter(s=>s.saleBatchId===inv.saleBatchId);
-  const rows=sales.map((s,i)=>{const p=(Store.get('products')||[]).find(x=>String(x.id)===String(s.productId));const qty=isKgProduct(p)||s.isWeightSale?saleQuantityLabel(p||{unit:'كجم',sellByWeight:true},s.packages||1,s.weight||1):`${s.packages||s.qty||1} ${s.sellUnit||p?.unit||'علبة'}`;return `<tr><td>${i+1}. ${s.productName||''}</td><td>${qty}</td><td>${fmt(s.total||0)}</td></tr>`;}).join('');
-  const w=window.open('','_blank','width=760,height=900'); if(!w)return showToast('المتصفح منع نافذة الطباعة','warning');
-  const doc=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${inv.invoiceNo}</title><style>
-  @page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#222;margin:0;background:#fff}.page{max-width:760px;margin:0 auto;padding:18px}.brand{text-align:center;font-size:24px;font-weight:900;margin-bottom:4px}.sub{text-align:center;color:#666;font-size:12px;line-height:1.8}.line{border-top:1px dashed #888;margin:14px 0}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 5px;border-bottom:1px solid #ddd;text-align:right}.r{display:flex;justify-content:space-between;padding:8px 0}.grand{font-size:19px;font-weight:900;border-top:2px solid #222;margin-top:8px;padding-top:12px}.thanks{text-align:center;margin-top:20px;font-size:12px;color:#666}@media print{.page{padding:0}}
-  </style></head><body><div class="page"><div class="brand">متجري</div><div class="sub">فاتورة بيع رقم ${inv.invoiceSeq||inv.invoiceNo}<br>${invoiceDisplayDate(inv)}${invoiceDisplayTime(inv)?' • '+invoiceDisplayTime(inv):''}<br>العميل: ${inv.customerName}<br>نوع البيع: ${inv.type==='wholesale'?'جملة':'قطاعي'}</div><div class="line"></div><table><thead><tr><th>الصنف</th><th>الكمية</th><th>الإجمالي</th></tr></thead><tbody>${rows}</tbody></table><div class="line"></div><div class="r"><span>الإجمالي قبل الخصم</span><b>${fmt(inv.subtotal)}</b></div><div class="r"><span>الخصم</span><b>${fmt(inv.discount||0)}</b></div><div class="r"><span>الضريبة</span><b>${fmt(inv.tax)}</b></div><div class="r grand"><span>الإجمالي النهائي</span><b>${fmt(inv.total)}</b></div><div class="r"><span>المدفوع</span><b>${fmt(inv.paid)}</b></div><div class="r"><span>${inv.method==='cash'?'الباقي':'المتبقي'}</span><b>${fmt(inv.method==='cash'?inv.change:inv.remaining)}</b></div><div class="r"><span>السداد</span><b>${({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[inv.method]||inv.method||'نقدي'}</b></div><div class="thanks">شكرًا لتعاملكم معنا ❤️</div></div>
+  const rows=sales.map((s,i)=>{
+    const p=(Store.get('products')||[]).find(x=>String(x.id)===String(s.productId))||{};
+    const qty=(typeof isKgProduct==='function' && (isKgProduct(p)||s.isWeightSale))
+      ? (typeof saleQuantityLabel==='function'
+          ? saleQuantityLabel(p||{unit:'كجم',sellByWeight:true},s.packages||1,s.weight||1)
+          : `${s.packages||s.qty||1} كجم`)
+      : `${s.packages||s.qty||1} ${s.sellUnit||p.unit||'علبة'}`;
+    return `<tr><td>${s.productName||p.name||''}</td><td>${qty}</td><td>${fmt(s.total||0)}</td></tr>`;
+  }).join('');
 
+  const doc=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${inv.invoiceNo||inv.invoiceSeq||''}</title><style>
+  @page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#222;margin:0;background:#fff}.page{max-width:760px;margin:0 auto;padding:18px}.brand{text-align:center;font-size:24px;font-weight:900;margin-bottom:4px}.sub{text-align:center;color:#666;font-size:12px;line-height:1.8}.line{border-top:1px dashed #888;margin:14px 0}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 5px;border-bottom:1px solid #ddd;text-align:right}.r{display:flex;justify-content:space-between;padding:8px 0}.grand{font-size:19px;font-weight:900;border-top:2px solid #222;margin-top:8px;padding-top:12px}.thanks{text-align:center;margin-top:20px;font-size:12px;color:#666}@media print{.page{padding:0}}
+  </style></head><body><div class="page"><div class="brand">متجري</div><div class="sub">فاتورة بيع رقم ${inv.invoiceSeq||inv.invoiceNo||''}<br>${invoiceDisplayDate(inv)}${invoiceDisplayTime(inv)?' • '+invoiceDisplayTime(inv):''}<br>العميل: ${inv.customerName||'عميل عادي'}<br>نوع البيع: ${inv.type==='wholesale'?'جملة':'قطاعي'}</div><div class="line"></div><table><thead><tr><th>الصنف</th><th>الكمية</th><th>الإجمالي</th></tr></thead><tbody>${rows}</tbody></table><div class="line"></div><div class="r"><span>الإجمالي قبل الخصم</span><b>${fmt(inv.subtotal||0)}</b></div><div class="r"><span>الخصم</span><b>${fmt(inv.discount||0)}</b></div><div class="r"><span>الضريبة</span><b>${fmt(inv.tax||0)}</b></div><div class="r grand"><span>الإجمالي النهائي</span><b>${fmt(inv.total||0)}</b></div><div class="r"><span>المدفوع</span><b>${fmt(inv.paid||0)}</b></div><div class="r"><span>${inv.method==='cash'?'الباقي':'المتبقي'}</span><b>${fmt(inv.method==='cash'?inv.change:inv.remaining)}</b></div><div class="r"><span>السداد</span><b>${({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[inv.method]||inv.method||'نقدي'}</b></div><div class="thanks">شكرًا لتعاملكم معنا ❤️</div></div></body></html>`;
+
+  const w=window.open('','_blank','width=760,height=900');
+  if(!w){ if(typeof showToast==='function') showToast('المتصفح منع نافذة الطباعة','warning'); return; }
+  w.document.open();
+  w.document.write(doc);
+  w.document.close();
+  setTimeout(()=>{try{w.focus();w.print();}catch(e){}},300);
+}
+</script>
 
 <style id="stock-movement-style">
 /* سجل حركة الصنف — تصميم موبايل مرتب */
@@ -6367,7 +6384,7 @@ function printPOSReceipt(){
 .sm-movement-meta{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding-top:9px;border-top:1px dashed var(--border)}.sm-movement-meta>div{min-width:0}.sm-movement-meta strong{display:block;font-size:.66rem;line-height:1.5;overflow-wrap:anywhere}.sm-empty{text-align:center;padding:35px 15px;color:var(--text-muted)}.sm-empty i{font-size:2.5rem;display:block;margin-bottom:10px;opacity:.5}.sm-empty strong{display:block;font-size:.85rem;color:var(--text-light)}.sm-empty p{margin:5px 0 0;font-size:.68rem}
 @media(max-width:800px){.sm-summary{grid-template-columns:repeat(2,1fr)}.sm-filters{grid-template-columns:1fr 1fr}.sm-product-field{grid-column:1/-1}}
 @media(max-width:520px){.stock-movement-page{padding:0 2px 18px}.sm-hero{grid-template-columns:auto 1fr;gap:10px;padding:14px;border-radius:18px}.sm-hero-icon{width:46px;height:46px}.sm-hero-copy h2{font-size:1.08rem}.sm-hero-copy p{font-size:.68rem}.sm-back{grid-column:1/-1;width:100%;justify-content:center}.sm-summary{gap:7px}.sm-stat{padding:10px 8px;gap:7px}.sm-stat-icon{width:32px;height:32px;flex-basis:32px;border-radius:10px;font-size:.78rem}.sm-stat span,.sm-stat small{font-size:.58rem}.sm-stat strong{font-size:.9rem}.sm-filter-card,.sm-list-card{padding:12px!important}.sm-section-title strong{font-size:.8rem}.sm-filters{grid-template-columns:1fr}.sm-product-field{grid-column:auto}.sm-actions{flex-direction:column}.sm-actions .btn{width:100%}.sm-movement-card{padding:11px;border-radius:15px}.sm-movement-top{align-items:flex-start}.sm-movement-body{grid-template-columns:1fr 1fr;gap:7px}.sm-product{grid-column:1/-1}.sm-qty,.sm-balance{text-align:right}.sm-movement-meta{grid-template-columns:1fr}.sm-movement-date b{font-size:.61rem}.sm-movement-type strong{font-size:.72rem}.sm-movement-body>div{padding:8px}.sm-product strong,.sm-qty strong,.sm-balance strong{font-size:.7rem}}
-</style>>
+</style>
 
 <script id="wa-simple-text-final">
 /* =========================================================
@@ -10556,7 +10573,6 @@ async function replaceCloudDataWithLocal() {
 }
 
 
-</script>
 <script>
 /* Matgary Service Worker lifecycle — v1.8.22
    التحديث يعتمد على waiting SW + SKIP_WAITING + controllerchange،
