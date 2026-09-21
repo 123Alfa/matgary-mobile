@@ -706,9 +706,10 @@ tr:hover td{background:rgba(15,118,110,.045)}
   display:grid;grid-template-columns:repeat(4,1fr);
   background:#fff;border-bottom:1px solid #dfeae5;
 }
-.wa-info-item{padding:22px 24px;border-left:1px solid #edf2ef;text-align:center}
+.wa-info-item{padding:18px 18px;border-left:1px solid #edf2ef;text-align:center}
 .wa-info-item:last-child{border-left:0}
-.wa-info-item small{display:block;color:#7b8984;font-size:14px;font-weight:800;margin-bottom:6px}
+.wa-info-item small{display:flex;align-items:center;justify-content:center;gap:7px;color:#667771;font-size:15px;font-weight:900;margin-bottom:7px}
+.wa-info-icon{font-family:"Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:23px;line-height:1;display:inline-block;filter:saturate(1.08);transform:translateY(1px)}
 .wa-info-item strong{display:block;color:#173b32;font-size:21px;font-weight:950;line-height:1.25;overflow-wrap:anywhere}
 
 /* ===== العميل ===== */
@@ -6257,14 +6258,14 @@ function buildWhatsAppInvoiceHTML(inv,sales){
       <div class="wa-header-badge">فاتورة ${waEsc(typeLabel)}</div>
     </div>
     <div class="wa-info-strip">
-      <div class="wa-info-item"><small>رقم الفاتورة</small><strong>${waEsc(invoiceNo)}</strong></div>
-      <div class="wa-info-item"><small>التاريخ</small><strong>${waEsc(dateText)}</strong></div>
-      <div class="wa-info-item"><small>الوقت</small><strong>${waEsc(timeText)}</strong></div>
-      <div class="wa-info-item"><small>نوع البيع</small><strong>${waEsc(typeLabel)}</strong></div>
+      <div class="wa-info-item"><small><span class="wa-info-icon">🔢</span>رقم الفاتورة</small><strong>${waEsc(invoiceNo)}</strong></div>
+      <div class="wa-info-item"><small><span class="wa-info-icon">📅</span>التاريخ</small><strong>${waEsc(dateText)}</strong></div>
+      <div class="wa-info-item"><small><span class="wa-info-icon">⏰</span>الوقت</small><strong>${waEsc(timeText)}</strong></div>
+      <div class="wa-info-item"><small><span class="wa-info-icon">🛍️</span>نوع البيع</small><strong>${waEsc(typeLabel)}</strong></div>
     </div>
     <div class="wa-customer-strip">
       <div class="wa-customer-icon">👤</div>
-      <div class="wa-customer-info"><small>العميل</small><strong>${waEsc(customerName)}</strong></div>
+      <div class="wa-customer-info"><small>👤 العميل</small><strong>${waEsc(customerName)}</strong></div>
       ${phone?`<div class="wa-customer-phone">📞 ${waEsc(phone)}</div>`:''}
     </div>
     <div class="wa-section-title"><span>🧾</span><span>تفاصيل الأصناف</span><span class="count-badge">${list.length} ${list.length===1?'صنف':'أصناف'}</span><span class="title-line"></span></div>
@@ -6272,7 +6273,7 @@ function buildWhatsAppInvoiceHTML(inv,sales){
       <table class="wa-table"><thead><tr><th style="width:64px">#</th><th>الصنف</th><th style="width:260px">التفاصيل</th><th style="width:170px">السعر</th><th style="width:160px">الإجمالي</th></tr></thead><tbody>${rows}</tbody></table>
     </div>
     ${noteHtml}
-    <div class="wa-summary-row"><div class="wa-summary">${summaryHtml}</div><div class="wa-payment-card"><small>طريقة السداد</small><div class="method">${waEsc(payLabel)}</div><div class="status ${isFullyPaid?'paid':'due'}"><small>حالة الفاتورة</small><strong>${waEsc(statusText)}</strong></div></div></div>
+    <div class="wa-summary-row"><div class="wa-summary">${summaryHtml}</div><div class="wa-payment-card"><small>💳 طريقة السداد</small><div class="method">${waEsc(payLabel)}</div><div class="status ${isFullyPaid?'paid':'due'}"><small>📌 حالة الفاتورة</small><strong>${waEsc(statusText)}</strong></div></div></div>
     <div class="wa-footer"><div class="wa-footer-brand">شكرًا لتعاملكم معنا 💚<small>نتمنى لكم تجربة طيبة دائمًا — نتشرف بخدمتكم مرة أخرى</small></div><div class="wa-footer-sign">Sherif Fathy</div><div class="wa-footer-note">هذه فاتورة إلكترونية صادرة من نظام متجري<br>لأي استفسار يرجى التواصل معنا في أي وقت</div></div>
   </div>`;
 }
@@ -6286,7 +6287,9 @@ function invoiceTextPro(inv,sales){
 `;
   t+=`🔢 رقم الفاتورة: *${inv.invoiceSeq||inv.invoiceNo}*
 `;
-  t+=`📅 التاريخ: *${date}${inv.time?' — '+inv.time:''}*
+  t+=`📅 التاريخ: *${date}*
+`;
+  if(inv.time)t+=`⏰ الوقت: *${inv.time}*
 `;
   t+=`👤 العميل: *${inv.customerName||'عميل عادي'}*
 `;
@@ -6308,7 +6311,7 @@ function invoiceTextPro(inv,sales){
 `;
   t+=`${inv.method==='cash'?'💸 الباقي':'📌 المتبقي'}: ${fmt(inv.method==='cash'?inv.change:inv.remaining)}
 `;
-  t+=`💳 السداد: *${({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[inv.method]||inv.method||'نقدي'}*
+  t+=`💳 طريقة السداد: *${({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[inv.method]||inv.method||'نقدي'}*
 `;
   if(Number(inv.discount||0)>0)t+=`🏷️ الخصم: ${fmt(inv.discount)}
 `;
