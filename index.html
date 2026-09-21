@@ -5183,7 +5183,13 @@ function rawSaleWeight(s){
 function isFixedPackProduct(p){
   if(!p) return false;
   const name=String(p.name||'').trim().toLowerCase();
-  return /رومي|رومى|romy|كيري|kiri|قشطة|قشطه|cream/.test(name) && !/موزاريلا|موتزاريلا|mozzarella/.test(name);
+  if(/موزاريلا|موتزاريلا|mozzarella/.test(name)) return false;
+
+  /* أي صنف اسمه يحتوي وزن عبوة واضحًا (900 جم، 300 جم، 1 كجم...)
+     يُعامل كعبوة/وحدة وليس بيعًا بالوزن. */
+  if(/\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|كيلو|كغ|kg)\b/i.test(name)) return true;
+
+  return /رومي|رومى|romy|كيري|kiri|قشطة|قشطه|cream/.test(name);
 }
 function isMozzarellaProduct(p){
   if(!p) return false;
@@ -12686,12 +12692,26 @@ function waV15Wrap(ctx,text,x,y,size,weight,color,maxWidth,maxLines=2,lineGap=1.
   ctx.restore();
 }
 function waV15WeightSale(s,p){
-  if(s?.isWeightSale===true) return true;
+  /*
+   * مهم للفواتير القديمة: قد تكون isWeightSale محفوظة من النسخة السابقة
+   * بسبب أن وحدة الصنف كانت "كجم". لو كان اسم الصنف يحدد وزن عبوة
+   * (مثل كفتة المذاق 900 جم) نتجاهل هذه القيمة القديمة ونعتبره عبوة.
+   */
   if(typeof isFixedPackProduct==='function' && isFixedPackProduct(p)) return false;
+  if(typeof isMozzarellaProduct==='function' && isMozzarellaProduct(p)) return true;
   if(p?.sellByWeight===true) return true;
-  const unit=String(p?.unit||'').trim().toLowerCase();
-  if(['كجم','كيلو','كغ','kg','كيلوجرام'].includes(unit)) return true;
-  return typeof isMozzarellaProduct==='function' && isMozzarellaProduct(p);
+  if(s?.isWeightSale===true) return true;
+  return false;
+}
+function waV15FixedPackSize(p){
+  const name=String(p?.name||'');
+  const m=name.match(/(\\d+(?:[.,]\\d+)?)\\s*(كجم|كيلو|كغ|kg|جرام|غرام|جم)/i);
+  if(!m) return '';
+  let n=Number(String(m[1]).replace(',','.'));
+  if(!Number.isFinite(n)||n<=0) return '';
+  const u=String(m[2]).toLowerCase();
+  if(/كجم|كيلو|كغ|kg/.test(u)) return (Number.isInteger(n)?String(n):String(n))+' كجم';
+  return (Number.isInteger(n)?String(n):String(n))+' جم';
 }
 function waV15SaleData(s,p,inv){
   const weightSale=waV15WeightSale(s,p);
@@ -12700,7 +12720,16 @@ function waV15SaleData(s,p,inv){
   if(!weightSale){
     const qty=Math.max(1,Number(s?.packages||s?.qty||1));
     const unit=stored>0?stored:(base>0?base:0);
-    return {weightSale:false,qtyText:`${qty} ${s?.sellUnit||p?.unit||'علبة'}`,subText:'',unitPrice:unit,packPrice:0,weight:0};
+    const unitLabel=s?.sellUnit||p?.sellUnit||'علبة';
+    const packSize=waV15FixedPackSize(p);
+    return {
+      weightSale:false,
+      qtyText:`${qty} ${unitLabel}`,
+      subText:packSize,
+      unitPrice:unit,
+      packPrice:0,
+      weight:0
+    };
   }
   const packs=Math.max(1,Number(s?.packages||1));
   const weight=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||1):Number(s?.weight||1);
@@ -12734,10 +12763,11 @@ async function renderWhatsAppInvoiceImageV15(inv,sales){
   ctx.imageSmoothingQuality='high';
   ctx.drawImage(bg,0,0,W,H);
 
-  /* تحسين عبارة الشعار: كتابة العبارة بوضوح */
+  /* تصحيح عبارة الشعار العلوية بالكامل بدل الاعتماد على النص المطبوع في الخلفية.
+     الكلمة الصحيحة هي: "ثقة". */
   ctx.fillStyle='#f8f8f1';
-  ctx.fillRect(252,178,248,37);
-  waV15Text(ctx,'جودة .. ثقة .. دائماً معكم',498,196,17,700,'#173b32','right',245);
+  ctx.fillRect(238,174,285,48);
+  waV15Text(ctx,'جودة .. ثقة .. دائماً معكم',506,198,17,750,'#173b32','right',275);
 
   /* نوع البيع */
   waV15RoundRect(ctx,365,376,295,48,14,'#e7b92e');
