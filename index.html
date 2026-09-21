@@ -12295,7 +12295,7 @@ html[data-theme="dark"] [style*="background-color: #ffffff"]{
     const products=await collection('products');
     const bg=await loadImage(TEMPLATE);
 
-    const W=1024,H=1536;
+    const W=1024,H=1440;
     const canvas=document.createElement('canvas');
     canvas.width=W;canvas.height=H;
     const c=canvas.getContext('2d',{alpha:false});
@@ -12348,10 +12348,10 @@ html[data-theme="dark"] [style*="background-color: #ffffff"]{
 
     const C={num:960,name:817,qty:610,price:390,total:110};
     center(c,'م',C.num,642,18,950,'#fff',45);
-    center(c,'الصنف',C.name,642,18,950,'#fff',220);
-    center(c,'الكمية',C.qty,642,18,950,'#fff',155);
-    center(c,'سعر الوحدة',C.price,642,18,950,'#fff',230);
-    center(c,'الإجمالي',C.total,642,18,950,'#fff',150);
+    center(c,'الصنف',C.name,642,20,950,'#fff',220);
+    center(c,'الكمية',C.qty,642,20,950,'#fff',155);
+    center(c,'سعر الوحدة',C.price,642,20,950,'#fff',230);
+    center(c,'الإجمالي',C.total,642,20,950,'#fff',150);
 
     for(let i=0;i<rows.length;i++){
       const s=rows[i];
@@ -12380,7 +12380,7 @@ html[data-theme="dark"] [style*="background-color: #ffffff"]{
       }
 
       const name=String(s.productName||p.name||'صنف');
-      text(c,name,836,cy-10,17,950,'#173b32','right',225);
+      text(c,name,838,cy-12,19,950,'#173b32','right',205);
 
       if(/موزاريلا|موتزاريلا|mozzarella/i.test(name)){
         const badge=/نباتي/.test(name)?'نباتي':'طبيعي';
@@ -12415,18 +12415,18 @@ html[data-theme="dark"] [style*="background-color: #ffffff"]{
         if(!(unit>0))unit=n(inv.type==='wholesale'?(p.wholesale||0):(p.retail||0));
       }
 
-      center(c,qtyText,C.qty,cy-5,17,950,'#173b32',155);
-      if(sub)center(c,sub,C.qty,cy+20,12,800,'#667771',175);
+      center(c,qtyText,C.qty,cy-6,18,950,'#173b32',155);
+      if(sub)center(c,sub,C.qty,cy+21,13,800,'#667771',175);
 
       if(weighted){
-        center(c,'سعر الكيلو: '+money(unit)+' ج.م',C.price,cy-10,14,900,'#173b32',225);
+        center(c,'سعر الكيلو: '+money(unit)+' ج.م',C.price,cy-11,16,900,'#173b32',225);
         const title=Math.abs(w-.5)<.0001?'سعر النصف':Math.abs(w-.25)<.0001?'سعر الربع':'سعر العبوة';
-        center(c,title+': '+money(pack)+' ج.م',C.price,cy+16,13,800,'#60726b',225);
+        center(c,title+': '+money(pack)+' ج.م',C.price,cy+18,15,800,'#60726b',225);
       }else{
-        center(c,'سعر الوحدة: '+money(unit)+' ج.م',C.price,cy+2,14,900,'#173b32',230);
+        center(c,'سعر الوحدة: '+money(unit)+' ج.م',C.price,cy+2,16,900,'#173b32',230);
       }
 
-      center(c,money(s.total)+' ج.م',C.total,cy,20,950,'#0d6d55',150);
+      center(c,money(s.total)+' ج.م',C.total,cy,22,950,'#0d6d55',150);
     }
 
     if(!rows.length)center(c,'لا توجد أصناف في الفاتورة',512,headY+headH+60,20,800,'#84938d',400);
@@ -12498,11 +12498,11 @@ html[data-theme="dark"] [style*="background-color: #ffffff"]{
     center(c,'معًا.. نقدم لكم الأفضل دائمًا',844,benY+95,12,900,'#fff',240);
 
     /* توقيع وفوتر */
-    const footerY=Math.min(1450,benY+137);
+    const footerY=Math.min(1315,benY+125);
     c.save();c.strokeStyle='#d7e5df';c.lineWidth=2;c.beginPath();c.moveTo(35,footerY);c.lineTo(989,footerY);c.stroke();c.restore();
-    text(c,'Sherif Fathy',45,footerY+37,27,700,'#111d1a','left',210);
-    text(c,'متجري .. أكثر من مجرد متجر',965,footerY+34,22,900,'#0b654f','right',320);
-    text(c,'جودة .. ثقة .. دائمًا معكم',965,footerY+67,13,700,'#788780','right',260);
+    text(c,'Sherif Fathy',45,footerY+34,29,700,'#111d1a','left',210);
+    text(c,'متجري .. أكثر من مجرد متجر',965,footerY+32,24,900,'#0b654f','right',320);
+    text(c,'جودة .. ثقة .. دائمًا معكم',965,footerY+62,14,700,'#788780','right',260);
 
     return await new Promise((resolve,reject)=>{
       canvas.toBlob(b=>{
