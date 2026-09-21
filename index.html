@@ -6246,7 +6246,10 @@ function buildWhatsAppInvoiceHTML(inv,sales){
     ${methodKey==='cash'&&change>0.005?`<div class="wa-sum-line"><span>الباقي للعميل</span><b>${waMoney(change)} ج.م</b></div>`:''}
     <div class="wa-sum-line remaining ${isFullyPaid?'zero':''}"><span>${isFullyPaid?'المتبقي':'المتبقي على العميل'}</span><b>${waMoney(remaining)} ج.م</b></div>`;
 
-  const noteHtml=inv.note?`<div class="wa-note"><b>📝 ملاحظة:</b> ${waEsc(inv.note)}</div>`:'';
+  /* لا نعرض الملاحظة التقنية الخاصة بالكاشير داخل فاتورة واتساب. */
+  const cleanNote=String(inv.note||'').trim();
+  const cashierNote=/بيع\s*من\s*الكاشير/i.test(cleanNote) ? '' : cleanNote;
+  const noteHtml=cashierNote?`<div class="wa-note"><b>📝 ملاحظة:</b> ${waEsc(cashierNote)}</div>`:'';
 
   return `<div class="wa-invoice">
     <div class="wa-header">
@@ -6421,6 +6424,145 @@ function printPOSReceipt(){
 
 
 
+
+<script id="matgary-whatsapp-image-final-v17">
+(function(){
+  'use strict';
+
+  /* =========================================================
+     الإصلاح النهائي لصورة واتساب:
+     - يمنع استخدام صورة V15 القديمة المخزنة في الذاكرة.
+     - يستخدم HTML/CSS V16 فقط.
+     - يضيف إصدارًا إلى مفتاح الكاش.
+     - يحذف ملاحظة "بيع من الكاشير" من الصورة.
+     ========================================================= */
+
+  const IMAGE_VERSION='v17-html';
+
+  function cacheKey(inv){
+    return IMAGE_VERSION+'|'+String(inv?.saleBatchId||inv?.invoiceSeq||inv?.invoiceNo||inv?.id||'');
+  }
+
+  window.__waImageCacheVersion=IMAGE_VERSION;
+
+  /* امسح أي Blob قديم تم إنشاؤه بالـ Canvas السابق. */
+  try{
+    if(window.__waImageCache && typeof window.__waImageCache.clear==='function'){
+      window.__waImageCache.clear();
+    }
+  }catch(_){}
+
+  window.prepareWhatsAppInvoiceImage=async function(inv){
+    if(!inv) return null;
+    const key=cacheKey(inv);
+
+    if(!window.__waImageCacheV17) window.__waImageCacheV17=new Map();
+    if(window.__waImageCacheV17.has(key)) return window.__waImageCacheV17.get(key);
+
+    if(window.__waImagePreparingV17?.has(key)){
+      return window.__waImagePreparingV17.get(key);
+    }
+    if(!window.__waImagePreparingV17) window.__waImagePreparingV17=new Map();
+
+    const promise=(async()=>{
+      const sales=typeof getInvoiceSalesForWhatsApp==='function'
+        ? getInvoiceSalesForWhatsApp(inv)
+        : (Store.get('sales')||[]).filter(s=>String(s.saleBatchId||'')===String(inv.saleBatchId||''));
+
+      if(!sales.length) throw new Error('WA_NO_SALES');
+
+      if(typeof renderWhatsAppInvoiceImage!=='function'){
+        throw new Error('WA_V16_RENDERER_MISSING');
+      }
+
+      const blob=await renderWhatsAppInvoiceImage(inv,sales);
+      if(!(blob instanceof Blob) || blob.size<1000) throw new Error('WA_INVALID_IMAGE');
+
+      window.__waImageCacheV17.set(key,blob);
+      while(window.__waImageCacheV17.size>8){
+        window.__waImageCacheV17.delete(window.__waImageCacheV17.keys().next().value);
+      }
+      return blob;
+    })();
+
+    window.__waImagePreparingV17.set(key,promise);
+    try{
+      return await promise;
+    }finally{
+      window.__waImagePreparingV17.delete(key);
+    }
+  };
+
+  async function shareImage(inv,phone){
+    if(window.__waShareBusy) return;
+    if(!inv) return showToast('تعذر العثور على الفاتورة','warning');
+
+    window.__waShareBusy=true;
+    try{
+      const blob=await window.prepareWhatsAppInvoiceImage(inv);
+      if(!blob) throw new Error('WA_IMAGE_EMPTY');
+
+      const file=new File(
+        [blob],
+        `فاتورة_${inv.invoiceSeq||inv.invoiceNo||'بيع'}.png`,
+        {type:'image/png'}
+      );
+
+      if(typeof navigator!=='undefined' && typeof navigator.share==='function'){
+        try{
+          if(!navigator.canShare || navigator.canShare({files:[file]})){
+            await navigator.share({
+              files:[file],
+              title:`فاتورة متجري رقم ${inv.invoiceSeq||inv.invoiceNo||''}`
+            });
+            return;
+          }
+        }catch(e){
+          if(e?.name==='AbortError') return;
+        }
+      }
+
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=file.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),5000);
+      showToast('✅ تم تجهيز صورة الفاتورة PNG','success');
+    }catch(e){
+      console.error('WA V17 IMAGE:',e);
+      showToast('❌ تعذر تجهيز صورة الفاتورة: '+(e?.message||'خطأ غير معروف'),'error');
+    }finally{
+      window.__waShareBusy=false;
+    }
+  }
+
+  /* أزرار مشاركة صورة الفاتورة تستخدم المسار الجديد. */
+  window.shareInvoiceImagePro=shareImage;
+  window.shareInvoicePro=shareImage;
+
+  /* المشاركة من شاشة البيع الحالية. */
+  window.sharePOSOnWhatsApp=async function(){
+    let inv=null;
+    try{inv=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null');}catch(_){}
+    if(!inv) return showToast('احفظ الفاتورة أولًا ثم شاركها على واتساب','warning');
+    return shareImage(inv,inv.customerPhone||'');
+  };
+
+  /* إلغاء أي Blob قديم تم تسخينه قبل تحميل الإصلاح. */
+  setTimeout(()=>{
+    try{
+      if(window.__waImageCache && typeof window.__waImageCache.clear==='function'){
+        window.__waImageCache.clear();
+      }
+      if(window.__waImageCacheV17) window.__waImageCacheV17.clear();
+    }catch(_){}
+  },50);
+
+})();
+</script>
 </body></html>`;
   w.document.open(); w.document.write(doc); w.document.close(); w.focus(); setTimeout(()=>w.print(),300);
 }
@@ -10861,7 +11003,146 @@ function historyCard(inv){
     const inv=findInvoice(key);if(!inv)return;
     const rows=inv.lines.map(s=>{const q=Number(s.packages||s.qty||1),w=rawSaleWeight(s);const p=productForSaleLine(s);const weightSale=isWeightSaleLine(s,p);const qty=invoiceSaleDetailLabel(s,p);const kgPrice=Number(s.unitPrice||s.price||0);const packPrice=weightSale&&kgPrice>0&&Number.isFinite(w)?roundPOSMoney(kgPrice*w):0;const priceCell=weightSale?(Math.abs(w-0.5)<0.000001?`سعر الكيلو: ${fmt(kgPrice)}<br>سعر النصف كيلو: ${fmt(packPrice)}`:Math.abs(w-0.25)<0.000001?`سعر الكيلو: ${fmt(kgPrice)}<br>سعر الربع كيلو: ${fmt(packPrice)}`:`سعر الكيلو: ${fmt(kgPrice)}`):fmt(s.price||0);return `<tr><td>${esc(s.productName||'صنف')}</td><td>${esc(qty)}</td><td>${priceCell}</td><td>${fmt(s.total)}</td></tr>`}).join('');
     const w=window.open('','_blank','width=900,height=800');if(!w){showToast('اسمح بفتح نافذة الطباعة','warning');return;}
-    const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>فاتورة رقم '+esc(invoiceDisplayNumber(inv))+'</title><style>@page{size:A4;margin:12mm}body{margin:0;font-family:Arial,Tahoma,sans-serif;color:#173b32;background:#fff}.page{width:100%;max-width:190mm;margin:auto;padding:6mm;box-sizing:border-box}.brand{text-align:center;font-size:28px;font-weight:900;color:#0f766e;margin-bottom:4px}.sub{text-align:center;color:#66756f;font-size:12px;line-height:1.8}.line{border-top:1px solid #dce8e3;margin:14px 0}table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}th{background:#eef7f3;color:#0f766e}th,td{padding:9px 7px;border-bottom:1px solid #e6eeeb;text-align:right}.r{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}.grand{font-size:19px;font-weight:900;border-top:2px solid #0f766e;margin-top:8px;padding-top:10px}.thanks{text-align:center;margin-top:25px;color:#71827b;font-size:12px}.meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.meta div{border:1px solid #dfeae5;border-radius:10px;padding:8px}.meta small{display:block;color:#778780;font-size:10px}.meta b{display:block;margin-top:3px;font-size:12px}@media print{button{display:none}}</style></head><body><div class="page"><div class="brand">متجري</div><div class="sub">فاتورة بيع رقم '+esc(invoiceDisplayNumber(inv))+'<br>'+esc(inv.date)+' '+esc(inv.time)+'</div><div class="line"></div><div class="meta"><div><small>العميل</small><b>'+esc(inv.customerName)+'</b></div><div><small>نوع البيع</small><b>'+(inv.type==='wholesale'?'جملة':'قطاعي')+'</b></div><div><small>السداد</small><b>'+paymentLabel(inv.paymentMethod)+'</b></div></div><div class="line"></div><table><thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody>'+rows+'</tbody></table><div class="line"></div><div class="r"><span>الإجمالي</span><b>'+fmt(inv.total)+'</b></div><div class="r"><span>المدفوع</span><b>'+fmt(inv.paid)+'</b></div><div class="r grand"><span>المتبقي</span><b>'+fmt(inv.remaining)+'</b></div>'+(inv.note?'<div class="line"></div><div class="r"><span>ملاحظات</span><b>'+esc(inv.note)+'</b></div>':'')+'<div class="thanks">شكرًا لتعاملكم معنا ❤️</div></div></body></html>';
+    const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>فاتورة رقم '+esc(invoiceDisplayNumber(inv))+'</title><style>@page{size:A4;margin:12mm}body{margin:0;font-family:Arial,Tahoma,sans-serif;color:#173b32;background:#fff}.page{width:100%;max-width:190mm;margin:auto;padding:6mm;box-sizing:border-box}.brand{text-align:center;font-size:28px;font-weight:900;color:#0f766e;margin-bottom:4px}.sub{text-align:center;color:#66756f;font-size:12px;line-height:1.8}.line{border-top:1px solid #dce8e3;margin:14px 0}table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}th{background:#eef7f3;color:#0f766e}th,td{padding:9px 7px;border-bottom:1px solid #e6eeeb;text-align:right}.r{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}.grand{font-size:19px;font-weight:900;border-top:2px solid #0f766e;margin-top:8px;padding-top:10px}.thanks{text-align:center;margin-top:25px;color:#71827b;font-size:12px}.meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.meta div{border:1px solid #dfeae5;border-radius:10px;padding:8px}.meta small{display:block;color:#778780;font-size:10px}.meta b{display:block;margin-top:3px;font-size:12px}@media print{button{display:none}}</style></head><body><div class="page"><div class="brand">متجري</div><div class="sub">فاتورة بيع رقم '+esc(invoiceDisplayNumber(inv))+'<br>'+esc(inv.date)+' '+esc(inv.time)+'</div><div class="line"></div><div class="meta"><div><small>العميل</small><b>'+esc(inv.customerName)+'</b></div><div><small>نوع البيع</small><b>'+(inv.type==='wholesale'?'جملة':'قطاعي')+'</b></div><div><small>السداد</small><b>'+paymentLabel(inv.paymentMethod)+'</b></div></div><div class="line"></div><table><thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody>'+rows+'</tbody></table><div class="line"></div><div class="r"><span>الإجمالي</span><b>'+fmt(inv.total)+'</b></div><div class="r"><span>المدفوع</span><b>'+fmt(inv.paid)+'</b></div><div class="r grand"><span>المتبقي</span><b>'+fmt(inv.remaining)+'</b></div>'+(inv.note?'<div class="line"></div><div class="r"><span>ملاحظات</span><b>'+esc(inv.note)+'</b></div>':'')+'<div class="thanks">شكرًا لتعاملكم معنا ❤️</div></div>
+<script id="matgary-whatsapp-image-final-v17">
+(function(){
+  'use strict';
+
+  /* =========================================================
+     الإصلاح النهائي لصورة واتساب:
+     - يمنع استخدام صورة V15 القديمة المخزنة في الذاكرة.
+     - يستخدم HTML/CSS V16 فقط.
+     - يضيف إصدارًا إلى مفتاح الكاش.
+     - يحذف ملاحظة "بيع من الكاشير" من الصورة.
+     ========================================================= */
+
+  const IMAGE_VERSION='v17-html';
+
+  function cacheKey(inv){
+    return IMAGE_VERSION+'|'+String(inv?.saleBatchId||inv?.invoiceSeq||inv?.invoiceNo||inv?.id||'');
+  }
+
+  window.__waImageCacheVersion=IMAGE_VERSION;
+
+  /* امسح أي Blob قديم تم إنشاؤه بالـ Canvas السابق. */
+  try{
+    if(window.__waImageCache && typeof window.__waImageCache.clear==='function'){
+      window.__waImageCache.clear();
+    }
+  }catch(_){}
+
+  window.prepareWhatsAppInvoiceImage=async function(inv){
+    if(!inv) return null;
+    const key=cacheKey(inv);
+
+    if(!window.__waImageCacheV17) window.__waImageCacheV17=new Map();
+    if(window.__waImageCacheV17.has(key)) return window.__waImageCacheV17.get(key);
+
+    if(window.__waImagePreparingV17?.has(key)){
+      return window.__waImagePreparingV17.get(key);
+    }
+    if(!window.__waImagePreparingV17) window.__waImagePreparingV17=new Map();
+
+    const promise=(async()=>{
+      const sales=typeof getInvoiceSalesForWhatsApp==='function'
+        ? getInvoiceSalesForWhatsApp(inv)
+        : (Store.get('sales')||[]).filter(s=>String(s.saleBatchId||'')===String(inv.saleBatchId||''));
+
+      if(!sales.length) throw new Error('WA_NO_SALES');
+
+      if(typeof renderWhatsAppInvoiceImage!=='function'){
+        throw new Error('WA_V16_RENDERER_MISSING');
+      }
+
+      const blob=await renderWhatsAppInvoiceImage(inv,sales);
+      if(!(blob instanceof Blob) || blob.size<1000) throw new Error('WA_INVALID_IMAGE');
+
+      window.__waImageCacheV17.set(key,blob);
+      while(window.__waImageCacheV17.size>8){
+        window.__waImageCacheV17.delete(window.__waImageCacheV17.keys().next().value);
+      }
+      return blob;
+    })();
+
+    window.__waImagePreparingV17.set(key,promise);
+    try{
+      return await promise;
+    }finally{
+      window.__waImagePreparingV17.delete(key);
+    }
+  };
+
+  async function shareImage(inv,phone){
+    if(window.__waShareBusy) return;
+    if(!inv) return showToast('تعذر العثور على الفاتورة','warning');
+
+    window.__waShareBusy=true;
+    try{
+      const blob=await window.prepareWhatsAppInvoiceImage(inv);
+      if(!blob) throw new Error('WA_IMAGE_EMPTY');
+
+      const file=new File(
+        [blob],
+        `فاتورة_${inv.invoiceSeq||inv.invoiceNo||'بيع'}.png`,
+        {type:'image/png'}
+      );
+
+      if(typeof navigator!=='undefined' && typeof navigator.share==='function'){
+        try{
+          if(!navigator.canShare || navigator.canShare({files:[file]})){
+            await navigator.share({
+              files:[file],
+              title:`فاتورة متجري رقم ${inv.invoiceSeq||inv.invoiceNo||''}`
+            });
+            return;
+          }
+        }catch(e){
+          if(e?.name==='AbortError') return;
+        }
+      }
+
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=file.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),5000);
+      showToast('✅ تم تجهيز صورة الفاتورة PNG','success');
+    }catch(e){
+      console.error('WA V17 IMAGE:',e);
+      showToast('❌ تعذر تجهيز صورة الفاتورة: '+(e?.message||'خطأ غير معروف'),'error');
+    }finally{
+      window.__waShareBusy=false;
+    }
+  }
+
+  /* أزرار مشاركة صورة الفاتورة تستخدم المسار الجديد. */
+  window.shareInvoiceImagePro=shareImage;
+  window.shareInvoicePro=shareImage;
+
+  /* المشاركة من شاشة البيع الحالية. */
+  window.sharePOSOnWhatsApp=async function(){
+    let inv=null;
+    try{inv=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null');}catch(_){}
+    if(!inv) return showToast('احفظ الفاتورة أولًا ثم شاركها على واتساب','warning');
+    return shareImage(inv,inv.customerPhone||'');
+  };
+
+  /* إلغاء أي Blob قديم تم تسخينه قبل تحميل الإصلاح. */
+  setTimeout(()=>{
+    try{
+      if(window.__waImageCache && typeof window.__waImageCache.clear==='function'){
+        window.__waImageCache.clear();
+      }
+      if(window.__waImageCacheV17) window.__waImageCacheV17.clear();
+    }catch(_){}
+  },50);
+
+})();
+</script>
+</body></html>';
     w.document.open();w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),350);
   };
 
@@ -14036,6 +14317,145 @@ setTimeout(()=>{
       window.shareInvoiceImagePro=wrapped;
     }
   }
+})();
+</script>
+
+<script id="matgary-whatsapp-image-final-v17">
+(function(){
+  'use strict';
+
+  /* =========================================================
+     الإصلاح النهائي لصورة واتساب:
+     - يمنع استخدام صورة V15 القديمة المخزنة في الذاكرة.
+     - يستخدم HTML/CSS V16 فقط.
+     - يضيف إصدارًا إلى مفتاح الكاش.
+     - يحذف ملاحظة "بيع من الكاشير" من الصورة.
+     ========================================================= */
+
+  const IMAGE_VERSION='v17-html';
+
+  function cacheKey(inv){
+    return IMAGE_VERSION+'|'+String(inv?.saleBatchId||inv?.invoiceSeq||inv?.invoiceNo||inv?.id||'');
+  }
+
+  window.__waImageCacheVersion=IMAGE_VERSION;
+
+  /* امسح أي Blob قديم تم إنشاؤه بالـ Canvas السابق. */
+  try{
+    if(window.__waImageCache && typeof window.__waImageCache.clear==='function'){
+      window.__waImageCache.clear();
+    }
+  }catch(_){}
+
+  window.prepareWhatsAppInvoiceImage=async function(inv){
+    if(!inv) return null;
+    const key=cacheKey(inv);
+
+    if(!window.__waImageCacheV17) window.__waImageCacheV17=new Map();
+    if(window.__waImageCacheV17.has(key)) return window.__waImageCacheV17.get(key);
+
+    if(window.__waImagePreparingV17?.has(key)){
+      return window.__waImagePreparingV17.get(key);
+    }
+    if(!window.__waImagePreparingV17) window.__waImagePreparingV17=new Map();
+
+    const promise=(async()=>{
+      const sales=typeof getInvoiceSalesForWhatsApp==='function'
+        ? getInvoiceSalesForWhatsApp(inv)
+        : (Store.get('sales')||[]).filter(s=>String(s.saleBatchId||'')===String(inv.saleBatchId||''));
+
+      if(!sales.length) throw new Error('WA_NO_SALES');
+
+      if(typeof renderWhatsAppInvoiceImage!=='function'){
+        throw new Error('WA_V16_RENDERER_MISSING');
+      }
+
+      const blob=await renderWhatsAppInvoiceImage(inv,sales);
+      if(!(blob instanceof Blob) || blob.size<1000) throw new Error('WA_INVALID_IMAGE');
+
+      window.__waImageCacheV17.set(key,blob);
+      while(window.__waImageCacheV17.size>8){
+        window.__waImageCacheV17.delete(window.__waImageCacheV17.keys().next().value);
+      }
+      return blob;
+    })();
+
+    window.__waImagePreparingV17.set(key,promise);
+    try{
+      return await promise;
+    }finally{
+      window.__waImagePreparingV17.delete(key);
+    }
+  };
+
+  async function shareImage(inv,phone){
+    if(window.__waShareBusy) return;
+    if(!inv) return showToast('تعذر العثور على الفاتورة','warning');
+
+    window.__waShareBusy=true;
+    try{
+      const blob=await window.prepareWhatsAppInvoiceImage(inv);
+      if(!blob) throw new Error('WA_IMAGE_EMPTY');
+
+      const file=new File(
+        [blob],
+        `فاتورة_${inv.invoiceSeq||inv.invoiceNo||'بيع'}.png`,
+        {type:'image/png'}
+      );
+
+      if(typeof navigator!=='undefined' && typeof navigator.share==='function'){
+        try{
+          if(!navigator.canShare || navigator.canShare({files:[file]})){
+            await navigator.share({
+              files:[file],
+              title:`فاتورة متجري رقم ${inv.invoiceSeq||inv.invoiceNo||''}`
+            });
+            return;
+          }
+        }catch(e){
+          if(e?.name==='AbortError') return;
+        }
+      }
+
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=file.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),5000);
+      showToast('✅ تم تجهيز صورة الفاتورة PNG','success');
+    }catch(e){
+      console.error('WA V17 IMAGE:',e);
+      showToast('❌ تعذر تجهيز صورة الفاتورة: '+(e?.message||'خطأ غير معروف'),'error');
+    }finally{
+      window.__waShareBusy=false;
+    }
+  }
+
+  /* أزرار مشاركة صورة الفاتورة تستخدم المسار الجديد. */
+  window.shareInvoiceImagePro=shareImage;
+  window.shareInvoicePro=shareImage;
+
+  /* المشاركة من شاشة البيع الحالية. */
+  window.sharePOSOnWhatsApp=async function(){
+    let inv=null;
+    try{inv=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null');}catch(_){}
+    if(!inv) return showToast('احفظ الفاتورة أولًا ثم شاركها على واتساب','warning');
+    return shareImage(inv,inv.customerPhone||'');
+  };
+
+  /* إلغاء أي Blob قديم تم تسخينه قبل تحميل الإصلاح. */
+  setTimeout(()=>{
+    try{
+      if(window.__waImageCache && typeof window.__waImageCache.clear==='function'){
+        window.__waImageCache.clear();
+      }
+      if(window.__waImageCacheV17) window.__waImageCacheV17.clear();
+    }catch(_){}
+  },50);
+
 })();
 </script>
 </body>
