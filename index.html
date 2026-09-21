@@ -5685,6 +5685,45 @@ function togglePOSCustomCustomer(){
 }
 
 let __waShareBusy=false;
+/*
+ * مشاركة صورة الفاتورة على أندرويد تحتاج أن يتم استدعاء navigator.share()
+ * من نفس ضغطة المستخدم. لذلك لا ننتظر html2canvas داخل ضغطة واتساب.
+ * نجهز الصورة مسبقًا ونحتفظ بالـ Blob في الذاكرة، ثم زر واتساب يشاركها فورًا.
+ */
+const __waImageCache=new Map();
+const __waImagePreparing=new Map();
+
+function __waInvoiceCacheKey(inv){
+  return String(inv?.saleBatchId||inv?.invoiceSeq||inv?.invoiceNo||inv?.id||'');
+}
+
+async function prepareWhatsAppInvoiceImage(inv){
+  if(!inv)return null;
+  const key=__waInvoiceCacheKey(inv);
+  if(!key)return null;
+  if(__waImageCache.has(key))return __waImageCache.get(key);
+  if(__waImagePreparing.has(key))return __waImagePreparing.get(key);
+
+  const promise=(async()=>{
+    try{
+      const sales=getInvoiceSalesForWhatsApp(inv);
+      if(!sales.length)throw new Error('WA_NO_SALES');
+      const blob=await renderWhatsAppInvoiceImage(inv,sales);
+      __waImageCache.set(key,blob);
+      /* الاحتفاظ بعدد محدود من الصور حتى لا يستهلك البرنامج ذاكرة الهاتف */
+      while(__waImageCache.size>8){
+        const first=__waImageCache.keys().next().value;
+        __waImageCache.delete(first);
+      }
+      return blob;
+    }finally{
+      __waImagePreparing.delete(key);
+    }
+  })();
+
+  __waImagePreparing.set(key,promise);
+  return promise;
+}
 
 function getInvoiceSalesForWhatsApp(inv){
   if(!inv)return [];
@@ -5728,21 +5767,60 @@ async function renderWhatsAppInvoiceImage(inv,sales){
 async function shareInvoiceImagePro(inv,phone){
   if(__waShareBusy)return;
   if(!inv)return showToast('تعذر العثور على الفاتورة','warning');
-  const sales=getInvoiceSalesForWhatsApp(inv);if(!sales.length)return showToast('تعذر العثور على أصناف الفاتورة','warning');
+
+  const key=__waInvoiceCacheKey(inv);
+  let blob=__waImageCache.get(key);
+
+  /*
+   * مهم: لو الصورة لم تجهز بعد، لا ننتظرها داخل ضغطة واتساب؛
+   * الانتظار يفقد صلاحية المشاركة في أندرويد. نبدأ التجهيز ونطلب ضغطة
+   * ثانية بعد اكتمالها.
+   */
+  if(!blob){
+    if(__waImagePreparing.has(key)){
+      showToast('⏳ الصورة لسه بتتجهز، اضغط واتساب مرة تانية بعد لحظات','info');
+      return;
+    }
+    prepareWhatsAppInvoiceImage(inv).then(()=>{
+      showToast('✅ صورة الفاتورة جاهزة — اضغط واتساب مرة أخرى','success');
+    }).catch(e=>console.error('WhatsApp image prepare error:',e));
+    showToast('⏳ جاري تجهيز صورة الفاتورة... اضغط واتساب مرة أخرى بعد لحظات','info');
+    return;
+  }
+
   __waShareBusy=true;
   try{
-    showToast('🖼️ تجهيز صورة الفاتورة...','info');
-    const blob=await renderWhatsAppInvoiceImage(inv,sales);
     const file=new File([blob],`فاتورة_${inv.invoiceSeq||inv.invoiceNo||'بيع'}.png`,{type:'image/png'});
-    const canShare=typeof navigator!=='undefined'&&typeof navigator.share==='function'&&(!navigator.canShare||navigator.canShare({files:[file]}));
-    if(!canShare)throw new Error('WEB_SHARE_FILES_UNSUPPORTED');
-    await navigator.share({files:[file],title:`فاتورة متجري رقم ${inv.invoiceSeq||inv.invoiceNo||''}`,text:'فاتورة بيع من متجري'});
-    showToast('✅ تم فتح مشاركة الصورة — اختر واتساب','success');
+    if(typeof navigator==='undefined'||typeof navigator.share!=='function'){
+      throw new Error('WEB_SHARE_UNAVAILABLE');
+    }
+
+    /*
+     * لا نستخدم canShare كشرط مانع؛ بعض إصدارات Chrome/Samsung WebView
+     * تعطي false رغم أن navigator.share({files}) يعمل فعليًا.
+     */
+    try{
+      await navigator.share({
+        files:[file],
+        title:`فاتورة متجري رقم ${inv.invoiceSeq||inv.invoiceNo||''}`
+      });
+    }catch(e){
+      if(e&&e.name==='AbortError')return;
+      /* محاولة ثانية بدون title لبعض إصدارات Android */
+      await navigator.share({files:[file]});
+    }
+
+    showToast('✅ تم فتح المشاركة — اختر واتساب','success');
   }catch(e){
     if(e&&e.name==='AbortError')return;
     console.error('WhatsApp invoice image error:',e);
-    showToast('❌ تعذر مشاركة الصورة. تأكد من السماح بمشاركة الملفات ثم حاول مرة أخرى.','error');
-  }finally{__waShareBusy=false;}
+    const msg=e?.message==='WEB_SHARE_UNAVAILABLE'
+      ?'❌ جهازك لا يدعم مشاركة الملفات من داخل المتصفح.'
+      :'❌ تعذر فتح مشاركة الصورة. جرّب الضغط على واتساب مرة أخرى.';
+    showToast(msg,'error');
+  }finally{
+    __waShareBusy=false;
+  }
 }
 
 async function sharePOSOnWhatsApp(){
@@ -5904,6 +5982,8 @@ function openPOSReceiptPreview(invoice){
   }).join('');
   const typeLabel=inv.type==='wholesale'?'جملة':'قطاعي';
   const payLabel=({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[inv.method]||inv.method||'نقدي';
+  /* بدء تجهيز صورة الواتساب مبكرًا حتى تكون المشاركة من ضغطة واحدة */
+  prepareWhatsAppInvoiceImage(inv).catch(e=>console.warn('WhatsApp preview prepare failed:',e));
   openModal(`<div class="modal-header"><h2><i class="fas fa-file-invoice" style="color:var(--primary);margin-left:8px"></i> فاتورة بيع رقم ${inv.invoiceSeq||inv.invoiceNo}</h2><button class="modal-close" onclick="closeModal()">&times;</button></div>
     <div class="pos-receipt-preview receipt-pro-new">
       <div class="receipt-brand">متجري</div>
@@ -6139,6 +6219,8 @@ function checkoutPOS(){
   // اكتملت تغييرات البيانات داخل العملية المحمية.
   const invoice={invoiceNo,invoiceSeq,saleBatchId,date:invoiceDate,time:saleTime,customerName,type,method,subtotal,discount:safeDiscount,taxRate,tax, total,paid,remaining,change:method==='cash'?roundPOSMoney(paid-total):0,note};
   localStorage.setItem('bm_lastPOSInvoice',JSON.stringify(invoice));
+  /* تجهيز صورة واتساب في الخلفية قبل أن يضغط المستخدم زر واتساب */
+  prepareWhatsAppInvoiceImage(invoice).catch(e=>console.warn('WhatsApp pre-render failed:',e));
   const invChip=document.getElementById('posInvoiceNo'); if(invChip)invChip.textContent=String(invoiceSeq);
   showToast(method==='credit'?`📋 تم حفظ الفاتورة ${invoiceNo} — المتبقي ${fmt(remaining)}`:`✅ تم حفظ الفاتورة ${invoiceNo} — الباقي ${fmt(invoice.change)}`,'success');
   window.posCart=[];
@@ -10322,6 +10404,8 @@ function historyCard(inv){
       return `<div class="invoice-line-pro ${returned?'invoice-line-returned':''}"><div><strong>${esc(s.productName||'صنف')} ${returned?'<em>↩️ مرتجع</em>':''}</strong><small>${esc(detailLabel)} • ${priceText}${returned?' • مرتجع '+fmt(s.returnedAmount||0):''}</small></div><b>${fmt(s.total)}</b></div>`;
     }).join('');
     const status=inv.returnStatus==='partial'?`<span class="invoice-detail-status returned">مرتجع جزئي ↩️</span>`:inv.returnStatus==='full'?`<span class="invoice-detail-status returned">مرتجع بالكامل ↩️</span>`:inv.remaining>0?`<span class="invoice-detail-status due">متبقي ${fmt(inv.remaining)}</span>`:`<span class="invoice-detail-status paid">مدفوعة بالكامل ✓</span>`;
+    /* تجهيز صورة الواتساب في الخلفية قبل الضغط على زر واتساب */
+    prepareWhatsAppInvoiceImage(inv).catch(e=>console.warn('Old invoice WhatsApp prepare failed:',e));
     openModal(`<div class="invoice-modal-pro invoice-detail-modern">
       <div class="modal-header invoice-detail-head">
         <div>
