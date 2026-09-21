@@ -5342,6 +5342,19 @@ function isKgProduct(p){
   const unit=String(p.unit||'').trim().toLowerCase();
   return ['كجم','كيلو','كغ','kg','كيلوجرام'].includes(unit);
 }
+
+// ===== الحكم النهائي لنوع بيع الصنف =====
+function isEffectiveWeightSale(s, p){
+  const saleName=String(s?.productName||s?.name||p?.name||'').trim().toLowerCase();
+  if(/موزاريلا|موتزاريلا|mozzarella/.test(saleName)) return true;
+  if(/\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg|كيلوجرام)\b/i.test(saleName)) return false;
+  const unit=String(s?.sellUnit||p?.sellUnit||p?.unit||'').trim().toLowerCase();
+  if(/^(?:علبة|عبوة|قطعة|كرتونة|باكت|كيس|برطمان)$/.test(unit)) return false;
+  if(p?.sellByWeight===true) return true;
+  if(s?.isWeightSale===true) return true;
+  return typeof isKgProduct==='function' ? isKgProduct(p) : false;
+}
+
 function saleUnitLabel(p, weight){
   if(isKgProduct(p)) return weightLabel(weight);
   return String(p?.unit||'علبة');
@@ -5355,13 +5368,13 @@ function saleQuantityLabel(p, qty, weight){
 function invoiceSaleQuantityLabel(s, p){
   const packs=Number(s?.packages||1);
   const weight=rawSaleWeight(s);
-  if(isKgProduct(p)||s?.isWeightSale) return saleQuantityLabel(p||{unit:'كجم',sellByWeight:true},packs,weight);
+  if(isEffectiveWeightSale(s,p)) return saleQuantityLabel(p||{unit:'كجم',sellByWeight:true},packs,weight);
   return `${Number(s?.packages||s?.qty||1)} ${isFixedPackProduct(p)?'علبة':(s?.sellUnit||p?.unit||'علبة')}`;
 }
 
 // تسمية موحدة لعرض الوزن في تفاصيل الفاتورة: الإجمالي أولًا ثم عدد العبوات/الأنصاف.
 function invoiceSaleDetailLabel(s, p){
-  const weightSale=isKgProduct(p)||s?.isWeightSale;
+  const weightSale=isEffectiveWeightSale(s,p);
   if(!weightSale) return invoiceSaleQuantityLabel(s,p);
   const packs=Math.max(1,Number(s?.packages||1));
   const weight=rawSaleWeight(s);
@@ -5374,7 +5387,7 @@ function invoiceSaleDetailLabel(s, p){
 
 // تفصيل واضح لسطر الصنف في سجل المبيعات؛ للعرض فقط ولا يغيّر أي قيمة محاسبية.
 function invoiceSaleDetailHtml(s, p){
-  const weightSale=isKgProduct(p)||s?.isWeightSale;
+  const weightSale=isEffectiveWeightSale(s,p);
   if(!weightSale){
     const qty=invoiceSaleQuantityLabel(s,p);
     return `<span class="sc-detail-simple">${salesEscape(qty)}</span>`;
@@ -6066,7 +6079,7 @@ function waMoney(v){
 }
 
 function waProductDetail(s,p){
-  const weightSale=isKgProduct(p)||s?.isWeightSale;
+  const weightSale=isEffectiveWeightSale(s,p);
   if(!weightSale){
     return {
       totalQty: `${Number(s?.packages||s?.qty||1)} ${waEsc(s?.sellUnit||p?.unit||'علبة')}`,
@@ -6249,7 +6262,7 @@ function invoiceTextPro(inv,sales){
 `;
   (sales||[]).forEach((s,i)=>{
     const p=(Store.get('products')||[]).find(x=>String(x.id)===String(s.productId));
-    const qty=isKgProduct(p)||s.isWeightSale ? saleQuantityLabel(p||{unit:'كجم',sellByWeight:true},s.packages||1,s.weight||1) : `${s.packages||s.qty||1} ${s.sellUnit||p?.unit||'علبة'}`;
+    const qty=isEffectiveWeightSale(s,p) ? saleQuantityLabel(p||{unit:'كجم',sellByWeight:true},s.packages||1,s.weight||1) : `${s.packages||s.qty||1} ${s.sellUnit||p?.unit||'علبة'}`;
     t+=`${i+1}. ${s.productName||'صنف'} — ${qty} = ${fmt(s.total)}
 `;
   });
@@ -6312,7 +6325,7 @@ function openPOSReceiptPreview(invoice){
   const sales=(Store.get('sales')||[]).filter(s=>s.saleBatchId===inv.saleBatchId);
   const rows=sales.map((s,i)=>{
     const p=(Store.get('products')||[]).find(x=>String(x.id)===String(s.productId));
-    const qty=isKgProduct(p)||s.isWeightSale ? saleQuantityLabel(p||{unit:'كجم',sellByWeight:true},s.packages||1,s.weight||1) : `${s.packages||s.qty||1} ${s.sellUnit||p?.unit||'علبة'}`;
+    const qty=isEffectiveWeightSale(s,p) ? saleQuantityLabel(p||{unit:'كجم',sellByWeight:true},s.packages||1,s.weight||1) : `${s.packages||s.qty||1} ${s.sellUnit||p?.unit||'علبة'}`;
     return `<tr><td>${i+1}. ${s.productName||''}</td><td>${qty}</td><td>${fmt(s.total||0)}</td></tr>`;
   }).join('');
   const typeLabel=inv.type==='wholesale'?'جملة':'قطاعي';
@@ -6327,7 +6340,7 @@ function openPOSReceiptPreview(invoice){
         <div><small>العميل</small><strong>${inv.customerName||'عميل عادي'}</strong></div>
         <div><small>نوع البيع</small><strong>${typeLabel}</strong></div>
       </div>
-      <table><thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>الإجمالي</th></tr></thead><tbody>${sales.map((s,i)=>{const p=(Store.get('products')||[]).find(x=>String(x.id)===String(s.productId));const qty=isKgProduct(p)||s.isWeightSale?saleQuantityLabel(p||{unit:'كجم',sellByWeight:true},s.packages||1,s.weight||1):`${s.packages||s.qty||1} ${s.sellUnit||p?.unit||'علبة'}`;return `<tr><td>${i+1}</td><td>${s.productName||''}</td><td>${qty}</td><td>${fmt(s.total||0)}</td></tr>`;}).join('')}</tbody></table>
+      <table><thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>الإجمالي</th></tr></thead><tbody>${sales.map((s,i)=>{const p=(Store.get('products')||[]).find(x=>String(x.id)===String(s.productId));const qty=isEffectiveWeightSale(s,p)?saleQuantityLabel(p||{unit:'كجم',sellByWeight:true},s.packages||1,s.weight||1):`${s.packages||s.qty||1} ${s.sellUnit||p?.unit||'علبة'}`;return `<tr><td>${i+1}</td><td>${s.productName||''}</td><td>${qty}</td><td>${fmt(s.total||0)}</td></tr>`;}).join('')}</tbody></table>
       <div class="receipt-summary-pro">
         <div><span>الإجمالي قبل الخصم</span><strong>${fmt(inv.subtotal)}</strong></div>
         <div class="discount-row"><span>الخصم</span><strong>${fmt(inv.discount||0)}</strong></div>
@@ -6346,7 +6359,7 @@ function openPOSReceiptPreview(invoice){
 function printPOSReceipt(){
   const inv=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null'); if(!inv)return;
   const sales=(Store.get('sales')||[]).filter(s=>s.saleBatchId===inv.saleBatchId);
-  const rows=sales.map((s,i)=>{const p=(Store.get('products')||[]).find(x=>String(x.id)===String(s.productId));const qty=isKgProduct(p)||s.isWeightSale?saleQuantityLabel(p||{unit:'كجم',sellByWeight:true},s.packages||1,s.weight||1):`${s.packages||s.qty||1} ${s.sellUnit||p?.unit||'علبة'}`;return `<tr><td>${i+1}. ${s.productName||''}</td><td>${qty}</td><td>${fmt(s.total||0)}</td></tr>`;}).join('');
+  const rows=sales.map((s,i)=>{const p=(Store.get('products')||[]).find(x=>String(x.id)===String(s.productId));const qty=isEffectiveWeightSale(s,p)?saleQuantityLabel(p||{unit:'كجم',sellByWeight:true},s.packages||1,s.weight||1):`${s.packages||s.qty||1} ${s.sellUnit||p?.unit||'علبة'}`;return `<tr><td>${i+1}. ${s.productName||''}</td><td>${qty}</td><td>${fmt(s.total||0)}</td></tr>`;}).join('');
   const w=window.open('','_blank','width=760,height=900'); if(!w)return showToast('المتصفح منع نافذة الطباعة','warning');
   const doc=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${inv.invoiceNo}</title><style>
   @page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#222;margin:0;background:#fff}.page{max-width:760px;margin:0 auto;padding:18px}.brand{text-align:center;font-size:24px;font-weight:900;margin-bottom:4px}.sub{text-align:center;color:#666;font-size:12px;line-height:1.8}.line{border-top:1px dashed #888;margin:14px 0}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 5px;border-bottom:1px solid #ddd;text-align:right}.r{display:flex;justify-content:space-between;padding:8px 0}.grand{font-size:19px;font-weight:900;border-top:2px solid #222;margin-top:8px;padding-top:12px}.thanks{text-align:center;margin-top:20px;font-size:12px;color:#666}@media print{.page{padding:0}}
@@ -6545,7 +6558,7 @@ function checkoutPOS(){
     const profit=roundPOSMoney((netPerPack-(costKg*weight))*packs);
     const newQty=Math.max(0,Number(p.qty||0)-qtyKg);
     Store.update('products',p.id,{qty:newQty});
-    Store.add('sales',{saleBatchId,invoiceNo,invoiceSeq,date:invoiceDate,time:saleTime,productId:p.id,productName:p.name,customerId:customerId||null,customerName,type,qty:qtyKg,packages:packs,weight,unitPrice:price,price:effectivePackPrice,cost:costKg*weight,discount:price?((itemDiscount/gross)*100):0,discountAmount:itemDiscount,taxRate,taxAmount:itemTax,discountedPrice:effectivePackPrice,total:itemTotal,profit,paymentMethod:method,paid,remaining,initialPaid:money(paid),collectionHistory:[],isWeightSale:isKgProduct(p),sellUnit:isKgProduct(p)?'كجم':String(p.unit||'علبة'),saleMode:isKgProduct(p)?(item.saleMode==='value'?'value':'weight'):null,valueAmount:isKgProduct(p)&&item.saleMode==='value'?Number(item.valueAmount||0):null,note:note||`بيع من الكاشير — ${saleQuantityLabel(p,packs,weight)}${method==='credit'?' — آجل':''}`});
+    Store.add('sales',{saleBatchId,invoiceNo,invoiceSeq,date:invoiceDate,time:saleTime,productId:p.id,productName:p.name,customerId:customerId||null,customerName,type,qty:qtyKg,packages:packs,weight,unitPrice:price,price:effectivePackPrice,cost:costKg*weight,discount:price?((itemDiscount/gross)*100):0,discountAmount:itemDiscount,taxRate,taxAmount:itemTax,discountedPrice:effectivePackPrice,total:itemTotal,profit,paymentMethod:method,paid,remaining,initialPaid:money(paid),collectionHistory:[],isWeightSale:isKgProduct(p),sellUnit:isEffectiveWeightSale({productName:p.name},p)?'كجم':String(p.unit||'علبة'),saleMode:isEffectiveWeightSale({productName:p.name},p)?(item.saleMode==='value'?'value':'weight'):null,valueAmount:isEffectiveWeightSale({productName:p.name},p)&&item.saleMode==='value'?Number(item.valueAmount||0):null,note:note||''});
   });
   if(customerId){const customers=Store.get('customers');const i=customers.findIndex(c=>c.id===customerId);if(i>=0){customers[i].points=(customers[i].points||0)+Math.floor(total/10);customers[i].totalSpent=(customers[i].totalSpent||0)+total;Store.set('customers',customers);}}
   if(method==='credit'&&remaining>0){
@@ -10619,7 +10632,7 @@ function ensureLegacyInvoiceSequences(){
     t+=`━━━━━━━━━━━━━━\n`;
     inv.lines.forEach((s,i)=>{
       const p=productForSaleLine(s);
-      const qty=isKgProduct(p)||s.isWeightSale ? saleQuantityLabel(p,s.packages||1,s.weight||1) : `${s.packages||s.qty||1} ${isFixedPackProduct(p)?'علبة':(s.sellUnit||p?.unit||'علبة')}`;
+      const qty=isEffectiveWeightSale(s,p) ? saleQuantityLabel(p,s.packages||1,s.weight||1) : `${s.packages||s.qty||1} ${isFixedPackProduct(p)?'علبة':(s.sellUnit||p?.unit||'علبة')}`;
       const cashierLabel=`بيع من الكاشير — ${qty}`;
       const returned=money(s.returnedQty)>0;
       t+=`${i+1}. *${s.productName||'صنف'}*${returned?' ↩️ مرتجع':''}\n`;
@@ -10713,7 +10726,7 @@ function historyCard(inv){
     const phone=customer?.phone||'';
     const rows=inv.lines.map(s=>{
       const q=Number(s.packages||s.qty||0),w=rawSaleWeight(s),p=productForSaleLine(s);
-      const weightSale=isKgProduct(p)||s.isWeightSale;
+      const weightSale=isEffectiveWeightSale(s,p);
       const qty=invoiceSaleQuantityLabel(s,p);
       const storedUnitPrice=Number(s.unitPrice||0);
       const saleMode=String(s.saleMode||'').toLowerCase();
@@ -10793,7 +10806,7 @@ function historyCard(inv){
 
   window.printInvoicePro=function(key){
     const inv=findInvoice(key);if(!inv)return;
-    const rows=inv.lines.map(s=>{const q=Number(s.packages||s.qty||1),w=rawSaleWeight(s);const p=productForSaleLine(s);const weightSale=isKgProduct(p)||s.isWeightSale;const qty=invoiceSaleDetailLabel(s,p);const kgPrice=Number(s.unitPrice||s.price||0);const packPrice=weightSale&&kgPrice>0&&Number.isFinite(w)?roundPOSMoney(kgPrice*w):0;const priceCell=weightSale?(Math.abs(w-0.5)<0.000001?`سعر الكيلو: ${fmt(kgPrice)}<br>سعر النصف كيلو: ${fmt(packPrice)}`:Math.abs(w-0.25)<0.000001?`سعر الكيلو: ${fmt(kgPrice)}<br>سعر الربع كيلو: ${fmt(packPrice)}`:`سعر الكيلو: ${fmt(kgPrice)}`):fmt(s.price||0);return `<tr><td>${esc(s.productName||'صنف')}</td><td>${esc(qty)}</td><td>${priceCell}</td><td>${fmt(s.total)}</td></tr>`}).join('');
+    const rows=inv.lines.map(s=>{const q=Number(s.packages||s.qty||1),w=rawSaleWeight(s);const p=productForSaleLine(s);const weightSale=isEffectiveWeightSale(s,p);const qty=invoiceSaleDetailLabel(s,p);const kgPrice=Number(s.unitPrice||s.price||0);const packPrice=weightSale&&kgPrice>0&&Number.isFinite(w)?roundPOSMoney(kgPrice*w):0;const priceCell=weightSale?(Math.abs(w-0.5)<0.000001?`سعر الكيلو: ${fmt(kgPrice)}<br>سعر النصف كيلو: ${fmt(packPrice)}`:Math.abs(w-0.25)<0.000001?`سعر الكيلو: ${fmt(kgPrice)}<br>سعر الربع كيلو: ${fmt(packPrice)}`:`سعر الكيلو: ${fmt(kgPrice)}`):fmt(s.price||0);return `<tr><td>${esc(s.productName||'صنف')}</td><td>${esc(qty)}</td><td>${priceCell}</td><td>${fmt(s.total)}</td></tr>`}).join('');
     const w=window.open('','_blank','width=900,height=800');if(!w){showToast('اسمح بفتح نافذة الطباعة','warning');return;}
     const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>فاتورة رقم '+esc(invoiceDisplayNumber(inv))+'</title><style>@page{size:A4;margin:12mm}body{margin:0;font-family:Arial,Tahoma,sans-serif;color:#173b32;background:#fff}.page{width:100%;max-width:190mm;margin:auto;padding:6mm;box-sizing:border-box}.brand{text-align:center;font-size:28px;font-weight:900;color:#0f766e;margin-bottom:4px}.sub{text-align:center;color:#66756f;font-size:12px;line-height:1.8}.line{border-top:1px solid #dce8e3;margin:14px 0}table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}th{background:#eef7f3;color:#0f766e}th,td{padding:9px 7px;border-bottom:1px solid #e6eeeb;text-align:right}.r{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}.grand{font-size:19px;font-weight:900;border-top:2px solid #0f766e;margin-top:8px;padding-top:10px}.thanks{text-align:center;margin-top:25px;color:#71827b;font-size:12px}.meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.meta div{border:1px solid #dfeae5;border-radius:10px;padding:8px}.meta small{display:block;color:#778780;font-size:10px}.meta b{display:block;margin-top:3px;font-size:12px}@media print{button{display:none}}</style></head><body><div class="page"><div class="brand">متجري</div><div class="sub">فاتورة بيع رقم '+esc(invoiceDisplayNumber(inv))+'<br>'+esc(inv.date)+' '+esc(inv.time)+'</div><div class="line"></div><div class="meta"><div><small>العميل</small><b>'+esc(inv.customerName)+'</b></div><div><small>نوع البيع</small><b>'+(inv.type==='wholesale'?'جملة':'قطاعي')+'</b></div><div><small>السداد</small><b>'+paymentLabel(inv.paymentMethod)+'</b></div></div><div class="line"></div><table><thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody>'+rows+'</tbody></table><div class="line"></div><div class="r"><span>الإجمالي</span><b>'+fmt(inv.total)+'</b></div><div class="r"><span>المدفوع</span><b>'+fmt(inv.paid)+'</b></div><div class="r grand"><span>المتبقي</span><b>'+fmt(inv.remaining)+'</b></div>'+(inv.note?'<div class="line"></div><div class="r"><span>ملاحظات</span><b>'+esc(inv.note)+'</b></div>':'')+'<div class="thanks">شكرًا لتعاملكم معنا ❤️</div></div></body></html>';
     w.document.open();w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),350);
@@ -10801,7 +10814,7 @@ function historyCard(inv){
 
   window.editInvoicePro=function(key){
     const inv=findInvoice(key);if(!inv)return;
-    const rows=inv.lines.map((s,i)=>{ const p=productForSaleLine(s), ws=isKgProduct(p)||s.isWeightSale; const wv=ws?rawSaleWeight(s):1; const qv=ws?(s.packages!=null?Number(s.packages):Math.max(0,Number(s.qty||0)/(wv||1))):money(s.qty); const up=ws?(Number(s.unitPrice)>0?Number(s.unitPrice):(Number(s.qty)>0?Number(s.total||0)/Number(s.qty):0)):money(s.price); const soldLabel=ws?`${qv} × ${weightLabel(wv)}`:formatProductQty(p,s.qty); return `<div class="edit-invoice-line"><div class="edit-invoice-name"><strong>${esc(s.productName||'صنف')}</strong><small>المباع: ${soldLabel}</small></div><input data-edit-line="${i}" data-field="qty" type="number" min="0" step="1" value="${qv}" placeholder="الكمية"><input data-edit-line="${i}" data-field="price" type="number" min="0" step="0.01" value="${money(up)}" placeholder="${ws?'سعر الكيلو':'السعر'}"><input data-edit-line="${i}" data-field="discount" type="number" min="0" max="100" step="0.1" value="${money(s.discount)}" placeholder="خصم %"></div>`; }).join('');
+    const rows=inv.lines.map((s,i)=>{ const p=productForSaleLine(s), ws=isEffectiveWeightSale(s,p); const wv=ws?rawSaleWeight(s):1; const qv=ws?(s.packages!=null?Number(s.packages):Math.max(0,Number(s.qty||0)/(wv||1))):money(s.qty); const up=ws?(Number(s.unitPrice)>0?Number(s.unitPrice):(Number(s.qty)>0?Number(s.total||0)/Number(s.qty):0)):money(s.price); const soldLabel=ws?`${qv} × ${weightLabel(wv)}`:formatProductQty(p,s.qty); return `<div class="edit-invoice-line"><div class="edit-invoice-name"><strong>${esc(s.productName||'صنف')}</strong><small>المباع: ${soldLabel}</small></div><input data-edit-line="${i}" data-field="qty" type="number" min="0" step="1" value="${qv}" placeholder="الكمية"><input data-edit-line="${i}" data-field="price" type="number" min="0" step="0.01" value="${money(up)}" placeholder="${ws?'سعر الكيلو':'السعر'}"><input data-edit-line="${i}" data-field="discount" type="number" min="0" max="100" step="0.1" value="${money(s.discount)}" placeholder="خصم %"></div>`; }).join('');
     openModal(`<div class="modal-header"><h2><i class="fas fa-pen" style="color:var(--primary);margin-left:8px"></i> تعديل الفاتورة رقم ${esc(invoiceDisplayNumber(inv))}</h2><button class="modal-close" onclick="closeModal()">&times;</button></div><div class="form-group" style="margin-bottom:12px"><label><i class="fas fa-calendar-day" style="color:var(--primary);margin-left:6px"></i> تاريخ الفاتورة</label><input id="editInvoiceDate" type="date" value="${esc(inv.date||'')}" class="sales-date-filter"></div><div class="edit-invoice-head"><span>الصنف</span><span>الكمية</span><span>السعر</span><span>الخصم %</span></div><div id="editInvoiceLines">${rows}</div><div class="form-group" style="margin-top:10px"><label>ملاحظات</label><input id="editInvoiceNote" value="${esc(inv.note)}"></div><button class="btn btn-primary btn-block" onclick="saveInvoiceEditPro('${esc(inv.key)}')"><i class="fas fa-save"></i> حفظ تعديل الفاتورة</button>`);
   };
 
@@ -13532,142 +13545,9 @@ setTimeout(()=>{
 </script>
 
 
-<script id="wa-simple-final-safe-v3">
-/* ==========================================================
-   متجري — واتساب نصي V3
-   1) حذف ملاحظة "بيع من الكاشير" نهائيًا من رسالة واتساب.
-   2) تثبيت برجر/كفتة المذاق كأصناف عبوات ثابتة، حتى لو كان
-      سجل الصنف القديم يحتوي isWeightSale أو وحدة كجم.
-   3) الموزاريلا فقط تبقى بيعًا بالوزن.
-   4) لا Canvas ولا html2canvas ولا تعديل على بيانات البرنامج.
-   ========================================================== */
-(function(){
-  'use strict';
-
-  function money(v){
-    const n=Number(v||0);
-    return (Number.isFinite(n)?n:0).toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2})+' ج.م';
-  }
-  function phone(v){
-    if(typeof normalizeWhatsAppPhone==='function') return normalizeWhatsAppPhone(v);
-    let p=String(v||'').replace(/[^\d+]/g,'');
-    if(p.startsWith('+20')) p=p.slice(1);
-    else if(p.startsWith('0020')) p=p.slice(2);
-    else if(/^0\d+/.test(p)) p='20'+p.slice(1);
-    return p;
-  }
-  function openWA(p,t){
-    const n=phone(p);
-    const u=n?'https://wa.me/'+n+'?text='+encodeURIComponent(t):'https://wa.me/?text='+encodeURIComponent(t);
-    try{window.open(u,'_blank')}catch(e){window.location.href=u}
-  }
-  function product(s){
-    return (Store.get('products')||[]).find(x=>String(x.id)===String(s.productId))||{};
-  }
-  function resolve(key){
-    const sales=Array.isArray(Store.get('sales'))?Store.get('sales'):[];
-    let raw=String(key??''); try{raw=decodeURIComponent(raw)}catch(e){}
-    let lines=[];
-    if(raw.startsWith('batch:')) lines=sales.filter(s=>String(s.saleBatchId||'')===raw.slice(6));
-    else if(raw.startsWith('sale:')){
-      const one=sales.find(s=>String(s.id||'')===raw.slice(5));
-      if(one) lines=one.saleBatchId?sales.filter(s=>String(s.saleBatchId||'')===String(one.saleBatchId)): [one];
-    }
-    if(!lines.length) lines=sales.filter(s=>String(s.saleBatchId||'')===raw);
-    if(!lines.length) lines=sales.filter(s=>String(s.invoiceNo||'')===raw);
-    if(!lines.length) lines=sales.filter(s=>String(s.invoiceSeq||'')===raw);
-    if(!lines.length){
-      const one=sales.find(s=>String(s.id||'')===raw);
-      if(one) lines=one.saleBatchId?sales.filter(s=>String(s.saleBatchId||'')===String(one.saleBatchId)): [one];
-    }
-    if(!lines.length) return null;
-    const first=lines[0];
-    const total=lines.reduce((n,s)=>n+Math.max(0,Number(s.total||0)),0);
-    const paid=Math.min(total,Math.max(0,Number(first.paid||0)));
-    const customer=(Store.get('customers')||[]).find(c=>first.customerId&&String(c.id)===String(first.customerId));
-    return {
-      lines,
-      invoiceNo:first.invoiceNo||('INV-'+String(first.id||'').slice(-6)),
-      invoiceSeq:first.invoiceSeq||null,
-      date:first.date||'',time:first.time||'',
-      customerName:first.customerName||customer?.name||'عميل عادي',
-      customerPhone:first.customerPhone||customer?.phone||'',
-      type:first.type||'retail',paymentMethod:first.paymentMethod||first.method||'cash',
-      total,paid,remaining:Math.max(0,total-paid),change:Math.max(0,Number(first.change||0))
-    };
-  }
-  function isMozzarella(name){return /موزاريلا|موتزاريلا|mozzarella/i.test(String(name||''));}
-  function isFixedPack(name){
-    const n=String(name||'');
-    return /برجر\s+المذاق|كفتة\s+المذاق/i.test(n) || /(?:\d+(?:[.,]\d+)?\s*)(?:جم|جرام|غرام|كجم|كيلو|kg)/i.test(n);
-  }
-  function qtyLabel(s,p,fixed){
-    const packs=Math.max(1,Number(s.packages||1));
-    if(!fixed) return null;
-    const size=(String(s.productName||p.name||'').match(/(?:\d+(?:[.,]\d+)?\s*)(?:جم|جرام|غرام|كجم|كيلو|kg)/i)||[])[0]||'';
-    return packs+' عبوة'+(size?' ('+size+')':'');
-  }
-  function weightData(s,p,inv){
-    const packs=Math.max(1,Number(s.packages||1));
-    const raw=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||0):Number(s.weight||0);
-    const weight=raw>0?raw:(Number(s.qty)>0?Number(s.qty)/packs:1);
-    const totalKg=Number(s.qty)>0?Number(s.qty):packs*weight;
-    let kg=Number(s.unitPrice||0);
-    if(!(kg>0)) kg=Number(inv.type==='wholesale'?p.wholesale:p.retail||0);
-    return {packs,weight,totalKg,kg};
-  }
-  function make(inv){
-    const type=inv.type==='wholesale'?'جملة':'قطاعي';
-    const method=({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[inv.paymentMethod]||'نقدي';
-    const no=inv.invoiceSeq||inv.invoiceNo||'—';
-    let t='🧾 *متجري — فاتورة بيع*\n━━━━━━━━━━━━━━━━━━━━\n';
-    t+=`🔢 رقم الفاتورة: *${no}*\n`;
-    if(inv.date)t+=`📅 التاريخ: *${inv.date}*\n`;
-    if(inv.time)t+=`⏰ الوقت: *${inv.time}*\n`;
-    t+=`👤 العميل: *${inv.customerName}*\n`;
-    if(inv.customerPhone)t+=`📞 الهاتف: *${inv.customerPhone}*\n`;
-    t+=`🛍️ نوع البيع: *${type}*\n💳 طريقة السداد: *${method}*\n━━━━━━━━━━━━━━━━━━━━\n📦 *تفاصيل الأصناف*\n`;
-    inv.lines.forEach((s,i)=>{
-      const p=product(s), name=s.productName||p.name||'صنف', total=Math.max(0,Number(s.total||0));
-      const fixed=!isMozzarella(name) && isFixedPack(name);
-      t+=`\n*${i+1}) ${name}*\n`;
-      if(fixed){
-        const qty=Math.max(1,Number(s.packages||1));
-        const label=qtyLabel(s,p,true);
-        const unitPrice=Number(s.price||0) || (qty?total/qty:0);
-        t+=`   📦 الكمية: *${label||qty+' عبوة'}*\n`;
-        t+=`   💰 سعر الوحدة: *${money(unitPrice)}*\n`;
-      }else if(isMozzarella(name)){
-        const d=weightData(s,p,inv);
-        const q=Math.abs(d.totalKg-.5)<1e-6?'نصف كيلو':Math.abs(d.totalKg-.25)<1e-6?'ربع كيلو':(Number.isInteger(d.totalKg)?String(d.totalKg):d.totalKg.toFixed(3).replace(/0+$/,'').replace(/\.$/,''))+' كجم';
-        t+=`   ⚖️ الكمية: *${q}*\n   💰 سعر الكيلو: *${money(d.kg)}*\n`;
-        if(Math.abs(d.weight-.5)<1e-6)t+=`   🔸 سعر النصف: *${money(d.kg*.5)}*\n`;
-        else if(Math.abs(d.weight-.25)<1e-6)t+=`   🔸 سعر الربع: *${money(d.kg*.25)}*\n`;
-      }else{
-        const qty=Math.max(1,Number(s.packages||1));
-        const unitPrice=Number(s.price||0)||(qty?total/qty:0);
-        t+=`   📦 الكمية: *${qty}*\n   💰 سعر الوحدة: *${money(unitPrice)}*\n`;
-      }
-      t+=`   💵 إجمالي الصنف: *${money(total)}*\n`;
-    });
-    t+='\n━━━━━━━━━━━━━━━━━━━━\n';
-    t+=`✅ *الإجمالي النهائي: ${money(inv.total)}*\n💵 المدفوع: ${money(inv.paid)}\n`;
-    if(inv.paymentMethod==='cash'&&inv.change>0.005)t+=`💸 الباقي للعميل: *${money(inv.change)}*\n`;
-    else t+=`📌 المتبقي: *${money(inv.remaining)}*\n`;
-    /* ملاحظة الكاشير ممنوعة نهائيًا في نسخة واتساب */
-    t+='━━━━━━━━━━━━━━━━━━━━\n❤️ *شكرًا لتعاملكم معنا*\n🟢 *متجري .. أكثر من مجرد متجر*';
-    return t;
-  }
-  function share(key,ph){
-    const inv=resolve(key);
-    if(!inv){showToast('❌ تعذر العثور على الفاتورة','error');return;}
-    openWA(ph||inv.customerPhone,make(inv));
-  }
-  window.shareInvoicePro=function(key){share(key,'')};
-  window.shareInvoiceImagePro=function(key,ph){share(key,ph||'')};
-  window.__waMakeTextV3=make;
-})();
+<script id="effective-sale-type-final">
+(function(){ window.isEffectiveWeightSale = isEffectiveWeightSale; })();
 </script>
 
 </body>
-</html>
+  </html>
