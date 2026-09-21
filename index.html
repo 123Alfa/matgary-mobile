@@ -13310,6 +13310,117 @@ setTimeout(()=>{
     }catch(_){}
   },700);
 })();
+
+</script>
+
+<script id="wa-final-resolver-v10">
+/* إصلاح نهائي: زر واتساب كان يستقبل مفتاح الفاتورة من شاشة المبيعات،
+   بينما محرك V9 موجود في نطاق JavaScript مختلف، لذلك findInvoice لم يكن متاحًا له.
+   هذا الجسر يحوّل المفتاح مباشرة إلى بيانات الفاتورة من Store. */
+(function(){
+  'use strict';
+
+  function num(v){
+    const n=Number(v);
+    return Number.isFinite(n)?n:0;
+  }
+
+  function resolveInvoice(key){
+    if(key && typeof key==='object' && (key.saleBatchId||key.invoiceNo||key.invoiceSeq)){
+      return key;
+    }
+
+    const raw=String(key??'').trim();
+    if(!raw) return null;
+
+    let sales=[];
+    try{
+      sales=(typeof Store!=='undefined' && typeof Store.get==='function')
+        ? (Store.get('sales')||[])
+        : [];
+    }catch(_){ sales=[]; }
+
+    if(!Array.isArray(sales)||!sales.length) return null;
+
+    let lines=[];
+    if(raw.indexOf('batch:')===0){
+      const batch=raw.slice(6);
+      lines=sales.filter(s=>String(s.saleBatchId||'')===batch);
+    }
+
+    if(!lines.length){
+      lines=sales.filter(s=>{
+        return String(s.invoiceNo||'')===raw ||
+               String(s.invoiceSeq||'')===raw ||
+               String(s.id||'')===raw ||
+               ('batch:'+String(s.saleBatchId||''))===raw;
+      });
+    }
+
+    if(!lines.length) return null;
+
+    const first=lines[0];
+    const total=lines.reduce((a,s)=>a+num(s.total),0);
+    const paid=Math.min(total,Math.max(0,num(first.paid)));
+    const method=first.paymentMethod||first.method||'cash';
+    const remaining=Math.max(0,total-paid);
+
+    return {
+      key: raw,
+      saleBatchId: first.saleBatchId||null,
+      invoiceNo: first.invoiceNo||('INV-'+String(first.id||'')),
+      invoiceSeq:first.invoiceSeq||null,
+      date:first.date||'',
+      time:first.time||'',
+      customerId:first.customerId||null,
+      customerName:first.customerName||'عميل عادي',
+      type:first.type||'retail',
+      paymentMethod:method,
+      method:method,
+      note:first.note||'',
+      subtotal:total,
+      discount:0,
+      tax:lines.reduce((a,s)=>a+num(s.taxAmount),0),
+      taxRate:first.taxRate||0,
+      total,
+      paid,
+      remaining,
+      change:method==='cash'?Math.max(0,paid-total):0,
+      lines
+    };
+  }
+
+  /* نستبدل الدالة التي يستدعيها زر واتساب في شاشة تفاصيل الفاتورة. */
+  window.shareInvoicePro=function(key){
+    const inv=resolveInvoice(key);
+    if(!inv){
+      showToast('تعذر العثور على الفاتورة — أعد فتح تفاصيل الفاتورة','warning');
+      return;
+    }
+    return window.shareInvoiceImagePro(inv);
+  };
+
+  /* نفس الإصلاح لو تم استدعاء الزر من أي مكان آخر. */
+  window.shareInvoiceImageProFromKey=function(key){
+    const inv=resolveInvoice(key);
+    return inv ? window.shareInvoiceImagePro(inv) : null;
+  };
+
+  /* تجهيز تلقائي لآخر فاتورة محفوظة، بدون الاعتماد على findInvoice. */
+  setTimeout(function(){
+    try{
+      const last=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null');
+      const inv=resolveInvoice(last);
+      if(inv && typeof window.prepareWhatsAppInvoiceImage==='function'){
+        window.prepareWhatsAppInvoiceImage(inv).catch(function(e){
+          console.warn('WA V10 prewarm:',e);
+        });
+      }
+    }catch(e){
+      console.warn('WA V10:',e);
+    }
+  },500);
+})();
 </script>
 
 </body>
