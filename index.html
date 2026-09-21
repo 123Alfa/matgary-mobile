@@ -5974,7 +5974,13 @@ function buildWhatsAppInvoiceHTML(inv,sales){
     return base>0?base:0;
   }
   function lineData(s,p){
-    const weightSale=!!(isKgProduct(p)||s?.isWeightSale);
+    const saleName=String(s?.productName||s?.name||p?.name||'').trim();
+    const name=(saleName||String(p?.name||'')).toLowerCase();
+    const fixedByName=/(?:^|\s)\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|كيلو|كغ|kg|ك)(?:\s|$)/i.test(name)
+      && !/موزاريلا|موتزاريلا|mozzarella/i.test(name);
+    const mozzarella=/موزاريلا|موتزاريلا|mozzarella/i.test(name);
+    const fixedUnit=/^(?:علبة|عبوة|قطعة|كرتونة|باكت|كيس|برطمان)$/i.test(String(s?.sellUnit||p?.sellUnit||p?.unit||'').trim());
+    const weightSale=!fixedByName && !fixedUnit && (mozzarella || !!s?.isWeightSale || (typeof isKgProduct==='function' && isKgProduct(p)));
     if(!weightSale){
       const qty=Math.max(1,Number(s?.packages||s?.qty||1));
       const unit=fixedUnitPrice(s,p);
@@ -5989,6 +5995,7 @@ function buildWhatsAppInvoiceHTML(inv,sales){
     else if(Math.abs(weight-0.25)<0.000001)subQty=`${packs} أرباع كيلو`;
 
     const storedUnitPrice=Number(s?.unitPrice||0);
+    const storedPrice=Number(s?.price||0);
     const grossTotal=Number(s?.total||0);
     const saleMode=String(s?.saleMode||'').toLowerCase();
     const valueSale=saleMode==='value'||Number(s?.valueAmount)>0;
@@ -5997,7 +6004,7 @@ function buildWhatsAppInvoiceHTML(inv,sales){
     if(!(kgPrice>0)||valueSale||looksLikeTotal){
       const fallback=Number(inv.type==='wholesale'?(p?.wholesale||0):(p?.retail||0));
       if(fallback>0)kgPrice=fallback;
-      else if(Number(s?.price)>0&&weight>0)kgPrice=Number(s.price)/weight;
+      else if(storedPrice>0&&weight>0)kgPrice=storedPrice/weight;
       else if(totalKg>0&&grossTotal>0)kgPrice=grossTotal/totalKg;
     }
     kgPrice=Number.isFinite(kgPrice)?kgPrice:0;
@@ -12697,58 +12704,50 @@ function waV15WeightSale(s,p){
   const productName=String(p?.name||'').trim();
   const name=(saleName||productName).toLowerCase();
 
-  /* القاعدة الأساسية:
-     - الموزاريلا تُباع بالوزن.
-     - العبوات ذات وزن مكتوب في اسمها (1 ك، 900 جم، 300 جم...) تُباع كسعر وحدة.
-     - أي صنف آخر لا يُعتبر موزونًا تلقائيًا حتى لا يتحول سعر العبوة إلى سعر كيلو.
-     - يمكن للصنف الموزون الآخر أن يصرّح صراحةً sellByWeight=true. */
-  if(/موزاريلا|موتزاريلا|mozzarella/i.test(name)) return true;
+  /* الموزاريلا فقط من الأصناف الحالية تُعامل افتراضيًا كبيع وزن. */
+  if(/موزاريلا|موتزاريلا|mozzarella/.test(name)) return true;
 
-  const fixedPackByName=/\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)(?:\s|$)/i.test(name);
+  /* أي وزن مكتوب في اسم العبوة = عبوة ثابتة، حتى لو كانت بيانات البيع القديمة تقول isWeightSale=true.
+     ندعم أيضًا الاختصار الشائع "1 ك". */
+  const fixedPackByName=/\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)\b/i.test(name);
   if(fixedPackByName) return false;
 
   if(typeof isFixedPackProduct==='function' && isFixedPackProduct(p)) return false;
 
+  /* لو الوحدة نفسها وحدة بيع ثابتة فلا نعتبرها وزنًا. */
   const unit=String(p?.unit||p?.sellUnit||s?.sellUnit||'').trim().toLowerCase();
   if(/^(?:علبة|عبوة|قطعة|كرتونة|باكت|كيس|برطمان)$/.test(unit)) return false;
 
   if(p?.sellByWeight===true) return true;
+  if(s?.isWeightSale===true) return true;
 
-  /* لا نعتمد على isKgProduct هنا؛ هذه الدالة القديمة كانت سبب ظهور
-     "سعر الكيلو" لبعض العبوات المجمدة الثابتة. */
-  return false;
+  return typeof isKgProduct==='function' && isKgProduct(p);
 }
-
 function waV15FixedPackSize(p){
   const name=String(p?.name||'');
-  const m=name.match(/(\d+(?:[.,]\d+)?)\s*(كجم|كيلو|كغ|kg|جرام|غرام|جم|ك)(?:\s|$)/i);
+  /* رقم الوزن داخل اسم العبوة: 900 جم / 300 جم / 1 كجم */
+  const m=name.match(/(\d+(?:[.,]\d+)?)\s*(كجم|كيلو|كغ|kg|جرام|غرام|جم)/i);
   if(!m) return '';
-  const n=Number(String(m[1]).replace(',','.'));
+  let n=Number(String(m[1]).replace(',','.'));
   if(!Number.isFinite(n)||n<=0) return '';
   const u=String(m[2]).toLowerCase();
-  if(/كجم|كيلو|كغ|kg/.test(u)) return `${Number.isInteger(n)?n:n} كجم`;
-  if(u==='ك') return `${Number.isInteger(n)?n:n} ك`;
-  return `${Number.isInteger(n)?n:n} جم`;
+  if(/كجم|كيلو|كغ|kg/.test(u)) return (Number.isInteger(n)?String(n):String(n))+' كجم';
+  return (Number.isInteger(n)?String(n):String(n))+' جم';
 }
-
 function waV15SaleData(s,p,inv){
   const saleName=String(s?.productName||s?.name||p?.name||'').trim();
-  const isMozzarella=/موزاريلا|موتزاريلا|mozzarella/i.test(saleName);
+  const fixedByName=/\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)\b/i.test(saleName)
+    && !/موزاريلا|موتزاريلا|mozzarella/i.test(saleName);
 
-  /* أي وزن ثابت مكتوب في اسم العبوة = سعر وحدة، ما عدا الموزاريلا. */
-  const fixedByName=!isMozzarella &&
-    /\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)(?:\s|$)/i.test(saleName);
-
-  const weightSale=isMozzarella || (!fixedByName && waV15WeightSale(s,p));
-  const stored=Number(s?.price||s?.unitPrice||0);
+  const weightSale=fixedByName ? false : waV15WeightSale(s,p);
+  const stored=Number(s?.price||0);
   const base=Number(inv?.type==='wholesale'?(p?.wholesale||0):(p?.retail||0));
 
   if(!weightSale){
     const qty=Math.max(1,Number(s?.packages||s?.qty||1));
     const unit=stored>0 ? stored : (base>0 ? base : 0);
-    const unitLabel=s?.sellUnit||p?.sellUnit||'عبوة';
+    const unitLabel=fixedByName ? 'عبوة' : (s?.sellUnit||p?.sellUnit||'وحدة');
     const packSize=waV15FixedPackSize({name:saleName})||waV15FixedPackSize(p);
-
     return {
       weightSale:false,
       qtyText:`${qty} ${unitLabel}`,
@@ -12791,6 +12790,7 @@ function waV15SaleData(s,p,inv){
     weight
   };
 }
+
 async function renderWhatsAppInvoiceImageV15(inv,sales){
   const W=1024,H=1536;
   const bg=await waV15Img(WA_V15_BG);
@@ -12805,10 +12805,9 @@ async function renderWhatsAppInvoiceImageV15(inv,sales){
   ctx.drawImage(bg,0,0,W,H);
 
   /* تصحيح السطر العلوي بالكامل حتى لا تظهر الكلمة المطبوعة القديمة بشكل خاطئ. */
-  /* تصحيح الشعار العلوي: تغطية النص القديم فقط ثم إعادة كتابته بوضوح. */
   ctx.fillStyle='#f8f8f1';
-  ctx.fillRect(178,169,315,48);
-  waV15Text(ctx,'جودة .. ثقة .. دائمًا معكم',500,193,18,850,'#173b32','right',330);
+  ctx.fillRect(130,158,440,70);
+  waV15Text(ctx,'جودة .. ثقة .. دائمًا معكم',505,195,19,850,'#173b32','right',390);
 
   /* نوع البيع */
   waV15RoundRect(ctx,365,376,295,48,14,'#e7b92e');
@@ -13030,6 +13029,72 @@ setTimeout(()=>{
   }catch(e){}
 },1200);
 
+})();
+</script>
+<script id="wa-html-final-v16">
+(function(){
+'use strict';
+/* متجري — V16: فاتورة HTML عادية → PNG. هذا يتغلب على رسم النص العربي يدويًا على Canvas. */
+function wa16EnsureCanvas(){
+  if(typeof window.html2canvas==='function') return Promise.resolve(window.html2canvas);
+  if(window.__wa16CanvasPromise) return window.__wa16CanvasPromise;
+  window.__wa16CanvasPromise=new Promise((resolve,reject)=>{
+    const old=document.querySelector('script[data-wa16-html2canvas]');
+    if(old){ old.addEventListener('load',()=>resolve(window.html2canvas),{once:true}); old.addEventListener('error',()=>reject(new Error('HTML2CANVAS_LOAD_FAILED')),{once:true}); return; }
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+    s.async=true; s.dataset.wa16Html2canvas='1';
+    s.onload=()=>resolve(window.html2canvas); s.onerror=()=>reject(new Error('HTML2CANVAS_LOAD_FAILED'));
+    document.head.appendChild(s);
+  });
+  return window.__wa16CanvasPromise;
+}
+async function wa16Render(inv,sales){
+  const h2c=await wa16EnsureCanvas();
+  if(typeof h2c!=='function') throw new Error('HTML2CANVAS_UNAVAILABLE');
+  const stage=document.createElement('div');
+  stage.className='whatsapp-invoice-stage';
+  stage.style.position='fixed'; stage.style.left='-11000px'; stage.style.top='0';
+  stage.style.width='1024px'; stage.style.height='1536px'; stage.style.opacity='1';
+  stage.style.pointerEvents='none'; stage.style.zIndex='-1';
+  stage.innerHTML=buildWhatsAppInvoiceHTML(inv,sales);
+  document.body.appendChild(stage);
+  try{
+    const target=stage.querySelector('.wa-invoice');
+    if(!target) throw new Error('WA_TARGET_MISSING');
+    if(document.fonts?.ready){try{await document.fonts.ready;}catch(e){}}
+    const imgs=[...target.querySelectorAll('img')];
+    await Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.addEventListener('load',r,{once:true});img.addEventListener('error',r,{once:true});setTimeout(r,1800)})));
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    const canvas=await h2c(target,{scale:2,backgroundColor:'#fbfcf8',useCORS:true,allowTaint:false,logging:false,width:1024,height:1536,windowWidth:1024,windowHeight:1536,imageTimeout:1800,removeContainer:false});
+    return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('IMAGE_BLOB_FAILED')),'image/png',0.96));
+  }finally{stage.remove();}
+}
+window.renderWhatsAppInvoiceImage=wa16Render;
+window.shareInvoiceImagePro=async function(inv,phone){
+  if(window.__waShareBusy)return;
+  if(!inv)return showToast('تعذر العثور على الفاتورة','warning');
+  const key=typeof __waInvoiceCacheKey==='function'?__waInvoiceCacheKey(inv):String(inv.invoiceSeq||inv.invoiceNo||inv.id||'');
+  try{
+    window.__waShareBusy=true;
+    let blob=typeof __waImageCache!=='undefined'?__waImageCache.get(key):null;
+    if(!blob){
+      showToast('⏳ جاري تجهيز صورة الفاتورة...','info');
+      blob=await prepareWhatsAppInvoiceImage(inv);
+    }
+    if(!blob)throw new Error('WA_IMAGE_EMPTY');
+    const file=new File([blob],`فاتورة_${inv.invoiceSeq||inv.invoiceNo||'بيع'}.png`,{type:'image/png'});
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file],title:`فاتورة متجري رقم ${inv.invoiceSeq||inv.invoiceNo||''}`}); showToast('✅ تم فتح المشاركة — اختر واتساب','success'); return; }
+      catch(e){ if(e?.name==='AbortError')return; }
+    }
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+    if(phone){ try{window.open('https://wa.me/'+String(phone).replace(/\\D/g,''),'_blank');}catch(e){} }
+    showToast('✅ تم حفظ صورة الفاتورة — أرسلها من واتساب','success');
+  }catch(e){ console.error('WA V16:',e); showToast('❌ تعذر تجهيز صورة الفاتورة: '+(e?.message||'خطأ غير معروف'),'error'); }
+  finally{window.__waShareBusy=false;}
+};
 })();
 </script>
 </body>
