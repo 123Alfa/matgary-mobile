@@ -3501,6 +3501,11 @@ html[data-theme="dark"] .sales-summary-card .value{
 }
 </style>
 
+
+<style id="wa-v14-finish">
+/* V14: فصل بصري إضافي بين اسم الصنف والكمية في معاينة الفاتورة */
+.wa-product{max-width:205px;overflow:hidden}
+</style>
 </head>
 <body>
 <div id="loading-screen">
@@ -12380,7 +12385,8 @@ html[data-theme="dark"] [style*="background-color: #ffffff"]{
       }
 
       const name=String(s.productName||p.name||'صنف');
-      text(c,name,838,cy-12,19,950,'#173b32','right',205);
+      /* مساحة اسم الصنف مستقلة تمامًا عن عمود الكمية والصورة */
+      text(c,name,838,cy-12,18,950,'#173b32','right',165);
 
       if(/موزاريلا|موتزاريلا|mozzarella/i.test(name)){
         const badge=/نباتي/.test(name)?'نباتي':'طبيعي';
@@ -12415,8 +12421,9 @@ html[data-theme="dark"] [style*="background-color: #ffffff"]{
         if(!(unit>0))unit=n(inv.type==='wholesale'?(p.wholesale||0):(p.retail||0));
       }
 
-      center(c,qtyText,C.qty,cy-6,18,950,'#173b32',155);
-      if(sub)center(c,sub,C.qty,cy+21,13,800,'#667771',175);
+      /* تضييق صندوق الكمية حتى لا يلامس اسم الصنف حتى مع الأسماء الطويلة */
+      center(c,qtyText,C.qty,cy-6,18,950,'#173b32',125);
+      if(sub)center(c,sub,C.qty,cy+21,13,800,'#667771',135);
 
       if(weighted){
         center(c,'سعر الكيلو: '+money(unit)+' ج.م',C.price,cy-11,16,900,'#173b32',225);
