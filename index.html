@@ -10826,10 +10826,12 @@ function historyCard(inv){
         ? roundPOSMoney(reliableKgPrice*packWeight)
         : 0;
       const saleNameForDisplay=String(s.productName||p?.name||'').trim();
-      const fixedPackDisplay=/\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)/i.test(saleNameForDisplay)
+      const isBramili=/براميلي|براميل/i.test(saleNameForDisplay);
+      const fixedPackDisplay=(isBramili || /\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)/i.test(saleNameForDisplay))
         && !/موزاريلا|موتزاريلا|mozzarella/i.test(saleNameForDisplay);
       const fixedPackUnitPrice=Number(s.price||s.unitPrice||s.total||0);
       const fixedPackSize=(function(name){
+        if(/براميلي|براميل/i.test(String(name||''))) return '500 جم';
         const m=String(name||'').match(/(\d+(?:[.,]\d+)?)\s*(جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)/i);
         if(!m)return '';
         const n=String(m[1]).replace(',','.');
@@ -10848,7 +10850,7 @@ function historyCard(inv){
                     ? `سعر الكيلو: ${fmt(reliableKgPrice)} • سعر الربع كيلو: ${fmt(packPriceForDisplay)}`
                     : `سعر الكيلو: ${fmt(reliableKgPrice)}`))
           : `سعر الوحدة: ${fmt(s.price||0)}`
-      const detailUnit=typeof productSaleUnitLabel==='function'?productSaleUnitLabel(p,s):(s.sellUnit||p?.unit||'عبوة');
+      const detailUnit=isBramili ? 'عبوة' : (typeof productSaleUnitLabel==='function'?productSaleUnitLabel(p,s):(s.sellUnit||p?.unit||'عبوة'));
       const detailLabel=fixedPackDisplay ? `${Math.max(1,Number(s.packages||s.qty||1))} ${detailUnit}${fixedPackSize?' • '+fixedPackSize:''}` : invoiceSaleDetailLabel(s,p);
       const returned=money(s.returnedQty)>0;
       return `<div class="invoice-line-pro ${returned?'invoice-line-returned':''}"><div><strong>${esc(s.productName||'صنف')} ${returned?'<em>↩️ مرتجع</em>':''}</strong><small>${esc(detailLabel)} • ${priceText}${returned?' • مرتجع '+fmt(s.returnedAmount||0):''}</small></div><b>${fmt(s.total)}</b></div>`;
@@ -13750,8 +13752,12 @@ setTimeout(()=>{
           ?window.matgaryInvoiceUnit(p,s)
           :(s.sellUnit||p.sellUnit||p.unit||'عبوة');
         const unitPrice=Number(s.price||0)||(qty>0?lineTotal/qty:0);
+        const isBramili=/براميلي|براميل/i.test(String(name));
+        const selectedWeight=Number(s?.weight||0);
+        const packSize=isBramili ? '500 جم' : (fixedPackSize(name) || (selectedWeight>0 && selectedWeight<1 ? `${Math.round(selectedWeight*1000)} جم` : ''));
+        const qtyLabel=isBramili ? packSize : `${qty} ${unit}${packSize?' • '+packSize:''}`;
 
-        t+=`   📦 الكمية: *${qty} ${unit}*\n`;
+        t+=`   ⚖️ الكمية: *${qtyLabel}*\n`;
         t+=`   💰 سعر الوحدة: *${waMoney(unitPrice)}*\n`;
       }
 
@@ -13763,8 +13769,8 @@ setTimeout(()=>{
       t+=`💰 الإجمالي قبل الخصم: ${waMoney(inv.subtotal)}\n`;
     if(Number(inv.discount||0)>0)t+=`🏷️ الخصم: ${waMoney(inv.discount)}\n`;
     if(Number(inv.tax||0)>0)t+=`🧾 الضريبة: ${waMoney(inv.tax)}\n`;
-    t+=`✅ *الإجمالي النهائي: ${waMoney(inv.total)}*\n`;
-    t+=`💵 المدفوع: ${waMoney(inv.paid)}\n`;
+    t+=`🧮 *الإجمالي النهائي: ${waMoney(inv.total)}*\n`;
+    t+=`💵 *المدفوع:* ${waMoney(inv.paid)}\n`;
     if(inv.paymentMethod==='cash'&&Number(inv.change)>0.005)
       t+=`💸 الباقي للعميل: *${waMoney(inv.change)}*\n`;
     else
@@ -13772,7 +13778,8 @@ setTimeout(()=>{
     if(inv.note)t+=`📝 ملاحظة: ${inv.note}\n`;
     t+='━━━━━━━━━━━━━━━━━━━━\n';
     t+='❤️ *شكرًا لتعاملكم معنا*\n';
-    t+='🟢 *متجري .. أكثر من مجرد متجر*';
+    t+='📋 *فاتورة إلكترونية من متجري*\n';
+    t+='🟢 *متجري — أكثر من مجرد متجر*';
     return t;
   }
 
@@ -14527,15 +14534,17 @@ setTimeout(()=>{
         const qty=Math.max(1,Number(s.packages||s.qty||1));
         let unit=unitFor(s,p);
         const selectedWeight=Number(s?.weight||0);
-        const size=fixedPackSize(name) || (selectedWeight>0 && selectedWeight<1 ? `${Math.round(selectedWeight*1000)} جم` : '');
+        const isBramili=/براميلي|براميل/i.test(String(name));
+        const size=isBramili ? '500 جم' : (fixedPackSize(name) || (selectedWeight>0 && selectedWeight<1 ? `${Math.round(selectedWeight*1000)} جم` : ''));
         if(selectedWeight>0 && selectedWeight<1 && unit==='كجم') unit='عبوة';
         const unitPrice=Number(s.price||0)||(qty?total/qty:0);
+        const qtyLabel=isBramili ? size : `${qty} ${unit}${size?' • '+size:''}`;
 
-        t+=`   📦 الكمية: *${qty} ${unit}${size?' • '+size:''}*\n`;
-        t+=`   سعر الوحدة: *${money(unitPrice)}*\n`;
+        t+=`   ⚖️ *الكمية:* ${qtyLabel}\n`;
+        t+=`   💰 *سعر الوحدة:* ${money(unitPrice)}\n`;
       }
 
-      t+=`   إجمالي الصنف: *${money(total)}*\n`;
+      t+=`   💵 *إجمالي الصنف:* ${money(total)}\n`;
     });
 
     t+='\n━━━━━━━━━━━━━━━━━━━━\n';
@@ -14556,8 +14565,8 @@ setTimeout(()=>{
     if(discount>0)t+=`الخصم: ${money(discount)}\n`;
     if(tax>0)t+=`الضريبة: ${money(tax)}\n`;
 
-    t+=`✅ *الإجمالي النهائي: ${money(total)}*\n`;
-    t+=`💵 المدفوع: ${money(paid)}\n`;
+    t+=`🧮 *الإجمالي النهائي: ${money(total)}*\n`;
+    t+=`💵 *المدفوع:* ${money(paid)}\n`;
 
     if((inv.paymentMethod||inv.method)==='cash'&&change>0.005)
       t+=`💸 الباقي للعميل: *${money(change)}*\n`;
@@ -14566,6 +14575,7 @@ setTimeout(()=>{
 
     t+='━━━━━━━━━━━━━━━━━━━━\n';
     t+='❤️ *شكرًا لتعاملكم معنا*\n';
+    t+='📋 *فاتورة إلكترونية من متجري*\n';
     t+='🟢 *متجري — أكثر من مجرد متجر*';
 
     return t;
