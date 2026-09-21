@@ -3577,7 +3577,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.31 — تحسين شامل ودقيق للوضع الداكن
-const APP_VERSION='v1.8.26';
+const APP_VERSION='v1.8.27';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "18 سبتمبر 2026 — تحسين شامل ودقيق للوضع الداكن وتوحيد الألوان";
 
@@ -6226,6 +6226,179 @@ function printPOSReceipt(){
 @media(max-width:800px){.sm-summary{grid-template-columns:repeat(2,1fr)}.sm-filters{grid-template-columns:1fr 1fr}.sm-product-field{grid-column:1/-1}}
 @media(max-width:520px){.stock-movement-page{padding:0 2px 18px}.sm-hero{grid-template-columns:auto 1fr;gap:10px;padding:14px;border-radius:18px}.sm-hero-icon{width:46px;height:46px}.sm-hero-copy h2{font-size:1.08rem}.sm-hero-copy p{font-size:.68rem}.sm-back{grid-column:1/-1;width:100%;justify-content:center}.sm-summary{gap:7px}.sm-stat{padding:10px 8px;gap:7px}.sm-stat-icon{width:32px;height:32px;flex-basis:32px;border-radius:10px;font-size:.78rem}.sm-stat span,.sm-stat small{font-size:.58rem}.sm-stat strong{font-size:.9rem}.sm-filter-card,.sm-list-card{padding:12px!important}.sm-section-title strong{font-size:.8rem}.sm-filters{grid-template-columns:1fr}.sm-product-field{grid-column:auto}.sm-actions{flex-direction:column}.sm-actions .btn{width:100%}.sm-movement-card{padding:11px;border-radius:15px}.sm-movement-top{align-items:flex-start}.sm-movement-body{grid-template-columns:1fr 1fr;gap:7px}.sm-product{grid-column:1/-1}.sm-qty,.sm-balance{text-align:right}.sm-movement-meta{grid-template-columns:1fr}.sm-movement-date b{font-size:.61rem}.sm-movement-type strong{font-size:.72rem}.sm-movement-body>div{padding:8px}.sm-product strong,.sm-qty strong,.sm-balance strong{font-size:.7rem}}
 </style>>
+
+<script>
+/* ============================================================
+   واتساب V20 — تصحيح حاسم لتصنيف العبوة مقابل البيع بالوزن
+   الهدف: أي صنف اسمه يحتوي وزن عبوة (900 جم / 300 جم / 1 كجم)
+   يعرض «سعر الوحدة» وليس «سعر الكيلو»، حتى لو كانت بيانات البيع
+   القديمة تحتوي isWeightSale=true أو sellByWeight=true بالخطأ.
+   الموزاريلا فقط تظل بيع وزن في صورة الفاتورة.
+   ============================================================ */
+(function(){
+  'use strict';
+  const V='V20';
+  const fixedPackRe=/(\d+(?:[.,]\d+)?)\s*(جم|جرام|غرام|كجم|كيلو|كغ|kg)\b/i;
+  const mozzRe=/موزاريلا|موتزاريلا|mozzarella/i;
+
+  function productNameForSale(s,p){
+    return String(s?.productName||s?.name||p?.name||'').trim();
+  }
+  function isFixedPack(s,p){
+    const name=productNameForSale(s,p);
+    return !mozzRe.test(name) && fixedPackRe.test(name);
+  }
+  function isWeight(s,p){
+    const name=productNameForSale(s,p);
+    if(mozzRe.test(name)) return true;
+    if(isFixedPack(s,p)) return false;
+    return !!(p?.sellByWeight===true || s?.isWeightSale===true ||
+      (typeof isKgProduct==='function' && isKgProduct(p)));
+  }
+  function packSize(p,s){
+    const name=productNameForSale(s,p);
+    const m=name.match(fixedPackRe);
+    if(!m) return '';
+    const n=Number(String(m[1]).replace(',','.'));
+    if(!Number.isFinite(n)) return '';
+    const u=m[2].toLowerCase();
+    return /كجم|كيلو|كغ|kg/.test(u) ? `${n} كجم` : `${n} جم`;
+  }
+  function money(n){
+    const v=Number(n||0);
+    return Number.isFinite(v) ? v.toFixed(2) : '0.00';
+  }
+
+  /* استبدال دالة بيانات السطر نفسها، وهي التي ترسم الأعمدة داخل الصورة. */
+  window.waV15SaleData = function(s,p,inv){
+    const name=productNameForSale(s,p);
+    const fixed=isFixedPack(s,p);
+    const weighted=isWeight(s,p);
+    const stored=Number(s?.price||0);
+    const base=Number(inv?.type==='wholesale' ? (p?.wholesale||0) : (p?.retail||0));
+
+    if(fixed || !weighted){
+      const qty=Math.max(1,Number(s?.packages||s?.qty||1));
+      const unit=stored>0 ? stored : (base>0 ? base : 0);
+      return {
+        weightSale:false,
+        qtyText:`${qty} عبوة`,
+        subText:packSize(p,s),
+        unitPrice:unit,
+        packPrice:0,
+        weight:0
+      };
+    }
+
+    const packs=Math.max(1,Number(s?.packages||1));
+    const weight=typeof rawSaleWeight==='function' ? Number(rawSaleWeight(s)||1) : Number(s?.weight||1);
+    const totalKg=Number(s?.qty)>0 ? Number(s.qty) : packs*weight;
+    let kgPrice=Number(s?.unitPrice||0);
+    const gross=Number(s?.total||0);
+    const valueSale=String(s?.saleMode||'').toLowerCase()==='value' || Number(s?.valueAmount)>0;
+    if(!(kgPrice>0) || valueSale || (Number(s?.qty)>0 && Math.abs(kgPrice-gross)<0.011)){
+      if(base>0) kgPrice=base;
+      else if(stored>0 && weight>0) kgPrice=stored/weight;
+      else if(totalKg>0 && gross>0) kgPrice=gross/totalKg;
+    }
+    const sub=Math.abs(weight-.5)<1e-6 ? `${packs} أنصاف كيلو` :
+      Math.abs(weight-.25)<1e-6 ? `${packs} أرباع كيلو` : `${packs} × ${weight} كجم`;
+    return {
+      weightSale:true,
+      qtyText:typeof weightLabel==='function' ? weightLabel(totalKg) : `${totalKg.toFixed(2)} كجم`,
+      subText:sub,
+      unitPrice:kgPrice,
+      packPrice:Math.round(kgPrice*weight*100)/100,
+      weight
+    };
+  };
+
+  /* مهم: renderWhatsAppInvoiceImageV15 تستدعي الاسم المحلي waV15SaleData،
+     لذلك نعيد تعريف الدالة المحلية أيضًا عبر bind عالمي قبل إعادة الرسم. */
+  if(typeof waV15SaleData==='function'){
+    waV15SaleData = window.waV15SaleData;
+  }
+
+  /* امسح الصور القديمة حتى لا تظهر نتيجة V18/V19 القديمة. */
+  try{ __waImageCache.clear(); }catch(e){}
+  try{ __waImagePreparing.clear(); }catch(e){}
+
+  /* نسخة إعداد جديدة بمفتاح V20، حتى لا يعاد استخدام Blob قديم. */
+  window.prepareWhatsAppInvoiceImage=async function(inv){
+    if(!inv) return null;
+    const baseKey=typeof __waInvoiceCacheKey==='function' ? __waInvoiceCacheKey(inv) : String(inv?.invoiceSeq||inv?.invoiceNo||inv?.id||'');
+    const key=V+'|'+baseKey;
+    if(!baseKey) return null;
+    if(__waImageCache.has(key)) return __waImageCache.get(key);
+    if(__waImagePreparing.has(key)) return __waImagePreparing.get(key);
+    const promise=(async()=>{
+      try{
+        const sales=getInvoiceSalesForWhatsApp(inv);
+        if(!sales.length) throw new Error('WA_NO_SALES');
+        const blob=await renderWhatsAppInvoiceImageV15(inv,sales);
+        __waImageCache.set(key,blob);
+        return blob;
+      }catch(e){
+        console.error('[WA V20]',e);
+        throw e;
+      }finally{
+        __waImagePreparing.delete(key);
+      }
+    })();
+    __waImagePreparing.set(key,promise);
+    return promise;
+  };
+
+  window.renderWhatsAppInvoiceImage=renderWhatsAppInvoiceImageV15;
+
+  window.shareInvoiceImagePro=async function(inv,phone){
+    if(window.__waShareBusy) return;
+    if(!inv) return showToast('تعذر العثور على الفاتورة','warning');
+    const baseKey=typeof __waInvoiceCacheKey==='function' ? __waInvoiceCacheKey(inv) : String(inv?.invoiceSeq||inv?.invoiceNo||inv?.id||'');
+    const key=V+'|'+baseKey;
+    try{
+      window.__waShareBusy=true;
+      let blob=__waImageCache.get(key);
+      if(!blob){
+        showToast('⏳ جاري تجهيز صورة الفاتورة الجديدة...','info');
+        blob=await window.prepareWhatsAppInvoiceImage(inv);
+      }
+      if(!blob) throw new Error('WA_IMAGE_EMPTY');
+      const file=new File([blob],`فاتورة_${inv.invoiceSeq||inv.invoiceNo||'بيع'}.png`,{type:'image/png'});
+      if(typeof navigator!=='undefined' && typeof navigator.share==='function'){
+        try{
+          await navigator.share({files:[file],title:`فاتورة متجري رقم ${inv.invoiceSeq||inv.invoiceNo||''}`});
+          showToast('✅ اختر واتساب من شاشة المشاركة','success');
+          return;
+        }catch(e){ if(e?.name==='AbortError') return; }
+      }
+      if(typeof ClipboardItem!=='undefined' && navigator.clipboard?.write){
+        try{
+          await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+          showToast('📋 الصورة اتنسخت — افتح واتساب واضغط لصق','success');
+          return;
+        }catch(e){}
+      }
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);a.download=`فاتورة_${inv.invoiceSeq||inv.invoiceNo||'بيع'}.png`;a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+      showToast('✅ تم حفظ صورة الفاتورة','success');
+    }catch(e){
+      console.error('[WA V20 share]',e);
+      showToast('❌ تعذر تجهيز الصورة: '+(e?.message||'خطأ غير معروف'),'error');
+    }finally{ window.__waShareBusy=false; }
+  };
+
+  /* تجهيز آخر فاتورة بمفتاح V20 بعد تشغيل الصفحة. */
+  setTimeout(()=>{
+    try{
+      const raw=localStorage.getItem('bm_lastPOSInvoice');
+      if(raw) window.prepareWhatsAppInvoiceImage(JSON.parse(raw)).catch(()=>{});
+    }catch(e){}
+  },1800);
+})();
+</script>
+
 </body></html>`;
   w.document.open(); w.document.write(doc); w.document.close(); w.focus(); setTimeout(()=>w.print(),300);
 }
@@ -10253,7 +10426,7 @@ async function replaceCloudDataWithLocal() {
 
   window.addEventListener('load',async function(){
     try{
-      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.24',{updateViaCache:'none'});
+      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.27',{updateViaCache:'none'});
       window.matgarySWRegistration=swRegistration;
       console.log('[SW] registered:',swRegistration.scope);
 
