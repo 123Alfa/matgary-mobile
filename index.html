@@ -12697,50 +12697,58 @@ function waV15WeightSale(s,p){
   const productName=String(p?.name||'').trim();
   const name=(saleName||productName).toLowerCase();
 
-  /* الموزاريلا فقط من الأصناف الحالية تُعامل افتراضيًا كبيع وزن. */
-  if(/موزاريلا|موتزاريلا|mozzarella/.test(name)) return true;
+  /* القاعدة الأساسية:
+     - الموزاريلا تُباع بالوزن.
+     - العبوات ذات وزن مكتوب في اسمها (1 ك، 900 جم، 300 جم...) تُباع كسعر وحدة.
+     - أي صنف آخر لا يُعتبر موزونًا تلقائيًا حتى لا يتحول سعر العبوة إلى سعر كيلو.
+     - يمكن للصنف الموزون الآخر أن يصرّح صراحةً sellByWeight=true. */
+  if(/موزاريلا|موتزاريلا|mozzarella/i.test(name)) return true;
 
-  /* أي وزن مكتوب في اسم العبوة = عبوة ثابتة، حتى لو كانت بيانات البيع القديمة تقول isWeightSale=true.
-     ندعم أيضًا الاختصار الشائع "1 ك". */
-  const fixedPackByName=/\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)\b/i.test(name);
+  const fixedPackByName=/\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)(?:\s|$)/i.test(name);
   if(fixedPackByName) return false;
 
   if(typeof isFixedPackProduct==='function' && isFixedPackProduct(p)) return false;
 
-  /* لو الوحدة نفسها وحدة بيع ثابتة فلا نعتبرها وزنًا. */
   const unit=String(p?.unit||p?.sellUnit||s?.sellUnit||'').trim().toLowerCase();
   if(/^(?:علبة|عبوة|قطعة|كرتونة|باكت|كيس|برطمان)$/.test(unit)) return false;
 
   if(p?.sellByWeight===true) return true;
-  if(s?.isWeightSale===true) return true;
 
-  return typeof isKgProduct==='function' && isKgProduct(p);
+  /* لا نعتمد على isKgProduct هنا؛ هذه الدالة القديمة كانت سبب ظهور
+     "سعر الكيلو" لبعض العبوات المجمدة الثابتة. */
+  return false;
 }
+
 function waV15FixedPackSize(p){
   const name=String(p?.name||'');
-  /* رقم الوزن داخل اسم العبوة: 900 جم / 300 جم / 1 كجم */
-  const m=name.match(/(\d+(?:[.,]\d+)?)\s*(كجم|كيلو|كغ|kg|جرام|غرام|جم)/i);
+  const m=name.match(/(\d+(?:[.,]\d+)?)\s*(كجم|كيلو|كغ|kg|جرام|غرام|جم|ك)(?:\s|$)/i);
   if(!m) return '';
-  let n=Number(String(m[1]).replace(',','.'));
+  const n=Number(String(m[1]).replace(',','.'));
   if(!Number.isFinite(n)||n<=0) return '';
   const u=String(m[2]).toLowerCase();
-  if(/كجم|كيلو|كغ|kg/.test(u)) return (Number.isInteger(n)?String(n):String(n))+' كجم';
-  return (Number.isInteger(n)?String(n):String(n))+' جم';
+  if(/كجم|كيلو|كغ|kg/.test(u)) return `${Number.isInteger(n)?n:n} كجم`;
+  if(u==='ك') return `${Number.isInteger(n)?n:n} ك`;
+  return `${Number.isInteger(n)?n:n} جم`;
 }
+
 function waV15SaleData(s,p,inv){
   const saleName=String(s?.productName||s?.name||p?.name||'').trim();
-  const fixedByName=/\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)\b/i.test(saleName)
-    && !/موزاريلا|موتزاريلا|mozzarella/i.test(saleName);
+  const isMozzarella=/موزاريلا|موتزاريلا|mozzarella/i.test(saleName);
 
-  const weightSale=fixedByName ? false : waV15WeightSale(s,p);
-  const stored=Number(s?.price||0);
+  /* أي وزن ثابت مكتوب في اسم العبوة = سعر وحدة، ما عدا الموزاريلا. */
+  const fixedByName=!isMozzarella &&
+    /\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)(?:\s|$)/i.test(saleName);
+
+  const weightSale=isMozzarella || (!fixedByName && waV15WeightSale(s,p));
+  const stored=Number(s?.price||s?.unitPrice||0);
   const base=Number(inv?.type==='wholesale'?(p?.wholesale||0):(p?.retail||0));
 
   if(!weightSale){
     const qty=Math.max(1,Number(s?.packages||s?.qty||1));
     const unit=stored>0 ? stored : (base>0 ? base : 0);
-    const unitLabel=fixedByName ? 'عبوة' : (s?.sellUnit||p?.sellUnit||'وحدة');
+    const unitLabel=s?.sellUnit||p?.sellUnit||'عبوة';
     const packSize=waV15FixedPackSize({name:saleName})||waV15FixedPackSize(p);
+
     return {
       weightSale:false,
       qtyText:`${qty} ${unitLabel}`,
@@ -12783,7 +12791,6 @@ function waV15SaleData(s,p,inv){
     weight
   };
 }
-
 async function renderWhatsAppInvoiceImageV15(inv,sales){
   const W=1024,H=1536;
   const bg=await waV15Img(WA_V15_BG);
@@ -12798,9 +12805,10 @@ async function renderWhatsAppInvoiceImageV15(inv,sales){
   ctx.drawImage(bg,0,0,W,H);
 
   /* تصحيح السطر العلوي بالكامل حتى لا تظهر الكلمة المطبوعة القديمة بشكل خاطئ. */
+  /* تصحيح الشعار العلوي: تغطية النص القديم فقط ثم إعادة كتابته بوضوح. */
   ctx.fillStyle='#f8f8f1';
-  ctx.fillRect(130,158,440,70);
-  waV15Text(ctx,'جودة .. ثقة .. دائمًا معكم',505,195,19,850,'#173b32','right',390);
+  ctx.fillRect(178,169,315,48);
+  waV15Text(ctx,'جودة .. ثقة .. دائمًا معكم',500,193,18,850,'#173b32','right',330);
 
   /* نوع البيع */
   waV15RoundRect(ctx,365,376,295,48,14,'#e7b92e');
