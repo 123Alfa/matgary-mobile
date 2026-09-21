@@ -6371,481 +6371,6 @@ function printPOSReceipt(){
 
 
 
-
-<script id="wa-simple-image-final-safe">
-/* =========================================================
-   متجري — واتساب: صورة فاتورة بسيطة ومنظمة
-   هذا البلوك مستقل عن كل محركات واتساب السابقة.
-   لا يغير المبيعات أو المخزون أو شاشة التشغيل.
-   ========================================================= */
-(function(){
-  'use strict';
-
-  function money(v){
-    const n=Number(v||0);
-    return Number.isFinite(n)
-      ? n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})
-      : '0.00';
-  }
-
-  function esc(v){
-    return String(v??'').replace(/[&<>"']/g,c=>({
-      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
-    }[c]));
-  }
-
-  function weightText(v){
-    const n=Number(v||0);
-    if(Math.abs(n-1)<1e-6) return '1 كجم';
-    if(Math.abs(n-.5)<1e-6) return 'نصف كيلو';
-    if(Math.abs(n-.25)<1e-6) return 'ربع كيلو';
-    return (Number.isInteger(n)?String(n):n.toFixed(3).replace(/0+$/,'').replace(/\.$/,''))
-      +' كجم';
-  }
-
-  function phoneForWhatsApp(v){
-    let p=String(v||'').replace(/[^\d+]/g,'');
-    if(p.startsWith('+')) p=p.slice(1);
-    if(p.startsWith('002')) p=p.slice(2);
-    if(/^01\d{9}$/.test(p)) p='20'+p.slice(1);
-    return p;
-  }
-
-  function getSales(inv){
-    if(typeof getInvoiceSalesForWhatsApp==='function'){
-      try{
-        const a=getInvoiceSalesForWhatsApp(inv);
-        if(Array.isArray(a) && a.length) return a;
-      }catch(e){}
-    }
-    const batch=String(inv?.saleBatchId||'');
-    return (Store.get('sales')||[]).filter(s=>String(s.saleBatchId||'')===batch);
-  }
-
-  function lineData(inv,s,p){
-    const name=String(s?.productName||p?.name||'صنف');
-    /* 500/900 جم في الاسم قد تكون مقاس عبوة ثابتة.
-       الموزاريلا فقط تستمر كبيع بالوزن عند كونها موزونة فعليًا. */
-    const fixedByName=/(?:\d+(?:[.,]\d+)?\s*)(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)/i.test(name)
-      && !/موزاريلا|موتزاريلا|mozzarella/i.test(name);
-
-    const weightSale=!fixedByName && !!(
-      (typeof isKgProduct==='function' && isKgProduct(p)) ||
-      s?.isWeightSale || s?.sellByWeight || s?.isKgProduct
-    );
-
-    const base=Number(inv?.type==='wholesale' ? (p?.wholesale||0) : (p?.retail||0));
-
-    if(!weightSale){
-      const qty=Math.max(1,Number(s?.packages||s?.qty||1));
-      const unit=Number(s?.price||0)>0 ? Number(s.price) : base;
-      return {
-        weightSale:false,
-        qty:`${qty} ${esc(s?.sellUnit||p?.unit||'وحدة')}`,
-        price:unit,
-        priceLabel:'سعر الوحدة'
-      };
-    }
-
-    const packs=Math.max(1,Number(s?.packages||1));
-    const weight=Math.max(.001,Number(
-      typeof rawSaleWeight==='function' ? rawSaleWeight(s) : (s?.weight||1)
-    ));
-    const totalKg=Number(s?.qty)>0 ? Number(s.qty) : packs*weight;
-    const storedUnit=Number(s?.unitPrice||0);
-    const storedPrice=Number(s?.price||0);
-    const gross=Number(s?.total||0);
-    const valueSale=String(s?.saleMode||'').toLowerCase()==='value' || Number(s?.valueAmount)>0;
-    const looksLikeTotal=storedUnit>0 && Number(s?.qty)>0 && Math.abs(storedUnit-gross)<.011;
-
-    let kg=storedUnit;
-    if(!(kg>0)||valueSale||looksLikeTotal){
-      if(base>0) kg=base;
-      else if(storedPrice>0) kg=storedPrice/weight;
-      else if(totalKg>0&&gross>0) kg=gross/totalKg;
-    }
-    if(!(kg>0)&&totalKg>0&&gross>0) kg=gross/totalKg;
-
-    let pack=kg>0 ? kg*weight : 0;
-    let sizeText=`${packs} × ${weightText(weight)}`;
-    if(Math.abs(weight-.5)<1e-6) sizeText=`${packs} × نصف كيلو`;
-    else if(Math.abs(weight-.25)<1e-6) sizeText=`${packs} × ربع كيلو`;
-
-    return {
-      weightSale:true,
-      qty:weightText(totalKg),
-      price:kg,
-      priceLabel:'سعر الكيلو',
-      packPrice:pack,
-      packLabel:Math.abs(weight-.5)<1e-6?'سعر النصف':
-                Math.abs(weight-.25)<1e-6?'سعر الربع':'سعر العبوة',
-      sizeText
-    };
-  }
-
-  function buildHTML(inv,sales){
-    const products=Store.get('products')||[];
-    const customers=Store.get('customers')||[];
-    const customer=customers.find(c=>inv?.customerId&&String(c.id)===String(inv.customerId));
-    const customerName=inv?.customerName||customer?.name||'عميل عادي';
-    const phone=inv?.customerPhone||customer?.phone||'';
-    const type=inv?.type==='wholesale'?'جملة':'قطاعي';
-    const methodKey=inv?.method||inv?.paymentMethod||'cash';
-    const method=({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[methodKey]||methodKey||'نقدي';
-    const invoiceNo=typeof invoiceDisplayNumber==='function'
-      ? invoiceDisplayNumber(inv)
-      : (inv?.invoiceNo || inv?.invoiceSeq || '—');
-    const date=typeof invoiceDisplayDate==='function' ? invoiceDisplayDate(inv) : (inv?.date||'—');
-    const time=typeof invoiceDisplayTime==='function' ? invoiceDisplayTime(inv) : (inv?.time||'—');
-
-    const list=Array.isArray(sales)?sales:[];
-    const rows=list.map((s,i)=>{
-      const p=products.find(x=>String(x.id)===String(s.productId))||{};
-      const d=lineData(inv,s,p);
-      const img=(p?.image&&/^data:image\//.test(String(p.image)))
-        ? `<img src="${esc(p.image)}" alt="">`
-        : `<span class="wa-si-placeholder">${typeof getProductTypeIcon==='function'?getProductTypeIcon(p?.type):'📦'}</span>`;
-
-      const priceBlock=d.weightSale
-        ? `<strong>${money(d.price)} ج.م</strong>
-           <small>${esc(d.priceLabel)}</small>
-           <small class="wa-si-pack">${esc(d.packLabel)}: ${money(d.packPrice)} ج.م</small>`
-        : `<strong>${money(d.price)} ج.م</strong><small>${esc(d.priceLabel)}</small>`;
-
-      const extraWeight=(d.weightSale && typeof isMozzarellaProduct==='function' && isMozzarellaProduct(p) && d.price>0)
-        ? `<div class="wa-si-chips">
-             <span>1 كجم ${money(d.price)}</span>
-             <span>½ كجم ${money(d.price*.5)}</span>
-             <span>¼ كجم ${money(d.price*.25)}</span>
-           </div>`
-        : '';
-
-      return `<div class="wa-si-row">
-        <div class="wa-si-num">${i+1}</div>
-        <div class="wa-si-product">
-          <div class="wa-si-img">${img}</div>
-          <div class="wa-si-name"><b>${esc(s.productName||p?.name||'صنف')}</b></div>
-        </div>
-        <div class="wa-si-qty"><b>${esc(d.qty)}</b>${d.sizeText?`<small>${esc(d.sizeText)}</small>`:''}</div>
-        <div class="wa-si-price">${priceBlock}${extraWeight}</div>
-        <div class="wa-si-total">${money(s?.total)} ج.م</div>
-      </div>`;
-    }).join('') || `<div class="wa-si-empty">لا توجد أصناف</div>`;
-
-    const subtotal=Number(inv?.subtotal ?? inv?.total ?? 0);
-    const discount=Number(inv?.discount||0);
-    const tax=Number(inv?.tax||0);
-    const total=Number(inv?.total||0);
-    const paid=Number(inv?.paid||0);
-    const remaining=Number(inv?.remaining ?? Math.max(0,total-paid))||0;
-    const change=Number(inv?.change||0);
-    const status=remaining<=.005?'مدفوعة بالكامل':(paid>0?'مدفوعة جزئيًا':'آجل — غير مدفوعة');
-
-    return `<div class="wa-si-wrap" dir="rtl">
-      <div class="wa-si-header">
-        <div>
-          <div class="wa-si-brand">${esc(typeof getAppName==='function'?getAppName():'متجري')}</div>
-          <div class="wa-si-tag">نظام إدارة المبيعات والمخزون</div>
-        </div>
-        <div class="wa-si-badge">فاتورة مبيعات</div>
-      </div>
-
-      <div class="wa-si-info">
-        <div><small>العميل</small><b>${esc(customerName)}</b></div>
-        <div><small>التاريخ</small><b>${esc(date)}</b></div>
-        <div><small>الوقت</small><b>${esc(time)}</b></div>
-        <div><small>رقم الفاتورة</small><b>${esc(invoiceNo)}</b></div>
-      </div>
-
-      <div class="wa-si-type">نوع البيع: <b>${esc(type)}</b></div>
-
-      <div class="wa-si-title"><span>🛒</span> تفاصيل الأصناف <i></i></div>
-
-      <div class="wa-si-table">
-        <div class="wa-si-head">
-          <div>م</div><div>الصنف</div><div>الكمية</div><div>السعر</div><div>الإجمالي</div>
-        </div>
-        ${rows}
-      </div>
-
-      <div class="wa-si-bottom">
-        <div class="wa-si-summary">
-          <div><span>الإجمالي</span><b>${money(subtotal)} ج.م</b></div>
-          ${discount>0?`<div class="discount"><span>الخصم</span><b>− ${money(discount)} ج.م</b></div>`:''}
-          ${tax>0?`<div><span>الضريبة</span><b>+ ${money(tax)} ج.م</b></div>`:''}
-          <div class="grand"><span>الصافي</span><b>${money(total)} ج.م</b></div>
-          <div><span>المدفوع</span><b>${money(paid)} ج.م</b></div>
-          ${methodKey==='cash'&&change>.005?`<div><span>الباقي للعميل</span><b>${money(change)} ج.م</b></div>`:`<div class="remaining"><span>المتبقي</span><b>${money(remaining)} ج.م</b></div>`}
-        </div>
-
-        <div class="wa-si-payment">
-          <small>طريقة السداد</small>
-          <strong>${esc(method)}</strong>
-          <hr>
-          <small>حالة الفاتورة</small>
-          <b>${esc(status)}</b>
-          ${phone?`<div class="wa-si-phone">📞 ${esc(phone)}</div>`:''}
-        </div>
-      </div>
-
-      <div class="wa-si-footer">
-        <div><strong>شكرًا لتعاملكم معنا ❤️</strong><small>نتشرف بخدمتكم دائمًا</small></div>
-        <div class="wa-si-sign">Sherif Fathy</div>
-        <div><strong>${esc(typeof getAppName==='function'?getAppName():'متجري')}</strong><small>أكثر من مجرد متجر</small></div>
-      </div>
-    </div>`;
-  }
-
-  function addStyles(){
-    if(document.getElementById('wa-simple-image-final-safe-style')) return;
-    const s=document.createElement('style');
-    s.id='wa-simple-image-final-safe-style';
-    s.textContent=`
-      .wa-si-stage{
-        position:fixed!important;left:-30000px!important;top:0!important;
-        width:1024px!important;z-index:2147483647!important;
-        opacity:1!important;visibility:visible!important;pointer-events:none!important;
-        direction:rtl!important;
-      }
-      .wa-si-wrap{
-        width:1024px;background:#fbfcf8;color:#203b34;
-        font-family:'Tajawal','Segoe UI',Arial,sans-serif;
-        box-sizing:border-box;padding:0 40px 26px;overflow:hidden;
-      }
-      .wa-si-wrap *{box-sizing:border-box}
-      .wa-si-header{
-        margin:0 -40px;padding:42px 42px 34px;
-        min-height:185px;background:linear-gradient(135deg,#066b5c,#0d8271);
-        color:#fff;display:flex;align-items:center;justify-content:space-between;gap:30px;
-      }
-      .wa-si-brand{font-size:48px;font-weight:950;line-height:1}
-      .wa-si-tag{font-size:18px;font-weight:700;margin-top:10px;opacity:.88}
-      .wa-si-badge{
-        background:#f0c62d;color:#164239;border-radius:22px;
-        padding:13px 34px;font-size:27px;font-weight:950;white-space:nowrap;
-      }
-      .wa-si-info{
-        margin-top:-14px;background:#fff;border-radius:22px;padding:18px;
-        display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
-        border:1px solid #dce8e3;box-shadow:0 8px 24px rgba(20,70,55,.09);
-      }
-      .wa-si-info>div{
-        background:#f7faf9;border:1px solid #e6eeeb;border-radius:15px;
-        padding:16px 14px;text-align:center;min-height:86px;
-      }
-      .wa-si-info small{display:block;color:#7b8984;font-size:15px;font-weight:800}
-      .wa-si-info b{display:block;margin-top:6px;color:#173b32;font-size:22px;font-weight:950;overflow-wrap:anywhere}
-      .wa-si-type{
-        margin-top:15px;display:inline-block;background:#eaf6f2;border:1px solid #cfe2da;
-        color:#0a6654;border-radius:999px;padding:8px 18px;font-size:18px;font-weight:900;
-      }
-      .wa-si-title{
-        display:flex;align-items:center;gap:10px;margin:28px 0 10px;
-        color:#0b6c59;font-size:24px;font-weight:950;
-      }
-      .wa-si-title i{height:2px;background:#d6e4df;flex:1}
-      .wa-si-table{
-        border:1px solid #d5e4de;border-radius:18px;overflow:hidden;background:#fff;
-        box-shadow:0 6px 18px rgba(20,70,55,.05);
-      }
-      .wa-si-head,.wa-si-row{
-        display:grid;grid-template-columns:54px 2.1fr 1fr 1.35fr 1.05fr;
-        align-items:center;
-      }
-      .wa-si-head{
-        background:#0b6b59;color:#fff;padding:16px 12px;
-        font-size:18px;font-weight:950;text-align:center;
-      }
-      .wa-si-head>div:nth-child(2){text-align:right}
-      .wa-si-row{
-        min-height:122px;padding:15px 12px;border-top:1px solid #e6efeb;
-      }
-      .wa-si-row:nth-child(odd){background:#fcfefd}
-      .wa-si-row>div{text-align:center}
-      .wa-si-num{
-        width:34px;height:34px;border-radius:50%;display:grid;place-items:center;margin:auto;
-        background:#e8f5f1;color:#0b6b59;font-weight:950;
-      }
-      .wa-si-product{display:flex;align-items:center;gap:12px;min-width:0;text-align:right!important}
-      .wa-si-img{
-        width:66px;height:66px;flex:0 0 66px;border-radius:13px;
-        background:#f0f5f3;border:1px solid #e0eae6;display:grid;place-items:center;overflow:hidden;
-      }
-      .wa-si-img img{width:100%;height:100%;object-fit:contain;padding:4px}
-      .wa-si-placeholder{font-size:30px}
-      .wa-si-name b{font-size:21px;line-height:1.3;font-weight:950}
-      .wa-si-qty b{font-size:21px;font-weight:950}
-      .wa-si-qty small{display:block;margin-top:4px;color:#70807a;font-size:14px;font-weight:800}
-      .wa-si-price strong{display:block;font-size:19px;font-weight:950;color:#173b32}
-      .wa-si-price small{display:block;margin-top:3px;color:#74847e;font-size:13px;font-weight:800}
-      .wa-si-pack{color:#0b715c!important}
-      .wa-si-chips{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:6px}
-      .wa-si-chips span{
-        background:#edf8f4;border:1px solid #d1e8df;color:#0b6b57;
-        padding:3px 6px;border-radius:8px;font-size:11px;font-weight:900;white-space:nowrap;
-      }
-      .wa-si-total{font-size:21px;font-weight:950;color:#0b705a;white-space:nowrap}
-      .wa-si-empty{padding:30px;text-align:center;color:#75847f;font-weight:800}
-      .wa-si-bottom{
-        margin-top:16px;display:grid;grid-template-columns:1.55fr 1fr;gap:16px;
-      }
-      .wa-si-summary,.wa-si-payment{
-        border:1px solid #d5e3dd;border-radius:18px;background:#fff;
-        box-shadow:0 6px 18px rgba(20,70,55,.04);
-      }
-      .wa-si-summary{padding:10px 18px}
-      .wa-si-summary>div{
-        display:flex;justify-content:space-between;align-items:center;
-        padding:12px 0;border-bottom:1px dashed #e1ebe7;font-size:18px;font-weight:800;
-      }
-      .wa-si-summary>div:last-child{border-bottom:0}
-      .wa-si-summary .discount b{color:#cf4747}
-      .wa-si-summary .grand{
-        margin:4px 0;padding:14px 12px;border-radius:13px;
-        background:#0d745e;color:#fff;border-bottom:0;font-size:22px;
-      }
-      .wa-si-summary .grand b{font-size:27px}
-      .wa-si-summary .remaining{background:#fff8e8;border-radius:10px;padding:11px 12px;border-bottom:0;color:#9a6200}
-      .wa-si-payment{
-        background:#edf7f2;padding:25px;display:flex;flex-direction:column;justify-content:center;
-      }
-      .wa-si-payment small{color:#71817b;font-size:14px;font-weight:800}
-      .wa-si-payment>strong{font-size:31px;color:#0b6653;margin:5px 0 14px;font-weight:950}
-      .wa-si-payment hr{width:100%;border:0;border-top:1px solid #d2e3dc;margin:0 0 13px}
-      .wa-si-payment>b{font-size:21px;color:#173b32;margin-top:4px}
-      .wa-si-phone{
-        margin-top:18px;background:#fff;border:1px solid #d5e7df;border-radius:10px;
-        padding:9px 12px;color:#0b705a;font-weight:900;text-align:center;
-      }
-      .wa-si-footer{
-        margin-top:18px;padding-top:18px;border-top:2px solid #d5e3de;
-        display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;align-items:center;
-      }
-      .wa-si-footer strong{display:block;color:#0b6855;font-size:22px;font-weight:950}
-      .wa-si-footer small{display:block;margin-top:5px;color:#82908b;font-size:13px;font-weight:700}
-      .wa-si-sign{text-align:center;font-size:29px;color:#bc8d18;font-weight:950;font-style:italic}
-    `;
-    document.head.appendChild(s);
-  }
-
-  async function renderSimple(inv,sales){
-    if(typeof ensureHtml2Canvas==='function') await ensureHtml2Canvas();
-    if(typeof html2canvas!=='function') throw new Error('HTML2CANVAS_UNAVAILABLE');
-
-    addStyles();
-    const stage=document.createElement('div');
-    stage.className='wa-si-stage';
-    stage.innerHTML=buildHTML(inv,sales);
-    document.body.appendChild(stage);
-
-    try{
-      const target=stage.querySelector('.wa-si-wrap');
-      if(!target) throw new Error('WA_SIMPLE_TARGET_MISSING');
-
-      if(document.fonts?.ready){try{await document.fonts.ready;}catch(e){}}
-      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-
-      const imgs=[...target.querySelectorAll('img')];
-      await Promise.all(imgs.map(img=>{
-        if(img.complete) return Promise.resolve();
-        return new Promise(resolve=>{
-          const done=()=>resolve();
-          img.addEventListener('load',done,{once:true});
-          img.addEventListener('error',done,{once:true});
-          setTimeout(done,1200);
-        });
-      }));
-
-      const height=Math.max(600,Math.ceil(target.scrollHeight));
-      const canvas=await html2canvas(target,{
-        scale:1,
-        backgroundColor:'#fbfcf8',
-        useCORS:true,
-        allowTaint:false,
-        logging:false,
-        width:1024,
-        height,
-        windowWidth:1024,
-        windowHeight:height,
-        imageTimeout:1200,
-        removeContainer:false,
-        scrollX:0,
-        scrollY:0
-      });
-
-      return await new Promise((resolve,reject)=>{
-        canvas.toBlob(b=>b?resolve(b):reject(new Error('WA_SIMPLE_BLOB_FAILED')),'image/png',.95);
-      });
-    }finally{
-      stage.remove();
-    }
-  }
-
-  window.renderWhatsAppInvoiceImage=renderSimple;
-  window.shareInvoiceImagePro=async function(inv,phone){
-    if(window.__waShareBusy) return;
-    if(!inv) return showToast('تعذر العثور على الفاتورة','warning');
-
-    try{
-      window.__waShareBusy=true;
-      const sales=getSales(inv);
-      if(!sales.length) return showToast('لا توجد أصناف مرتبطة بهذه الفاتورة','warning');
-
-      showToast('⏳ جاري تجهيز صورة الفاتورة...','info');
-      const blob=await renderSimple(inv,sales);
-      if(!blob) throw new Error('WA_SIMPLE_EMPTY');
-
-      const seq=inv?.invoiceSeq||inv?.invoiceNo||'بيع';
-      const file=new File([blob],`فاتورة_${seq}.png`,{type:'image/png'});
-
-      if(typeof navigator!=='undefined' && typeof navigator.share==='function'){
-        try{
-          await navigator.share({
-            files:[file],
-            title:`فاتورة متجري رقم ${seq}`,
-            text:'فاتورة متجري'
-          });
-          showToast('✅ تم فتح المشاركة — اختر واتساب','success');
-          return;
-        }catch(e){
-          if(e?.name==='AbortError') return;
-        }
-      }
-
-      if(typeof ClipboardItem!=='undefined' && navigator.clipboard?.write){
-        try{
-          await navigator.clipboard.write([
-            new ClipboardItem({'image/png':blob})
-          ]);
-          const c=(Store.get('customers')||[]).find(x=>inv.customerId&&String(x.id)===String(inv.customerId));
-          const customerPhone=phone||inv.customerPhone||c?.phone||'';
-          const normalized=phoneForWhatsApp(customerPhone);
-          if(normalized) window.open('https://wa.me/'+normalized,'_blank');
-          else window.open('https://web.whatsapp.com/','_blank');
-          showToast('📋 الصورة اتنسخت — افتح واتساب والصقها في المحادثة','success');
-          return;
-        }catch(e){}
-      }
-
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;
-      a.download=`فاتورة_${seq}.png`;
-      a.click();
-      setTimeout(()=>URL.revokeObjectURL(url),3000);
-      showToast('✅ تم حفظ صورة الفاتورة كبديل للمشاركة','success');
-    }catch(e){
-      if(e?.name!=='AbortError'){
-        console.error('WA simple final:',e);
-        showToast('❌ تعذر تجهيز صورة الفاتورة: '+(e?.message||'خطأ غير معروف'),'error');
-      }
-    }finally{
-      window.__waShareBusy=false;
-    }
-  };
-})();
-</script>
-
 </body></html>`;
   w.document.open(); w.document.write(doc); w.document.close(); w.focus(); setTimeout(()=>w.print(),300);
 }
@@ -13786,5 +13311,292 @@ setTimeout(()=>{
   },1200);
 })();
 </script>
+
+<script id="wa-text-organized-final">
+/* متجري — واتساب: رسالة نصية منظمة وآمنة.
+   لا يعتمد على Canvas أو html2canvas أو صورة الفاتورة.
+   مضاف في نهاية الملف فقط؛ لا يغير تشغيل البرنامج أو البيانات. */
+(function(){
+  'use strict';
+
+  function moneyText(v){
+    const n=Number(v||0);
+    if(!Number.isFinite(n)) return '0.00 ج.م';
+    return n.toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2})+' ج.م';
+  }
+
+  function phoneText(v){
+    let p=String(v||'').replace(/[^\d+]/g,'');
+    if(p.startsWith('+')) p=p.slice(1);
+    if(p.startsWith('002')) p=p.slice(2);
+    if(/^01\d{9}$/.test(p)) p='20'+p.slice(1);
+    return p;
+  }
+
+  function sendToWhatsApp(phone,text){
+    const p=phoneText(phone);
+    const url=p
+      ? `https://wa.me/${p}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    try{
+      window.location.href=url;
+    }catch(e){
+      window.open(url,'_blank');
+    }
+  }
+
+  function getProductForSale(s){
+    const products=Store.get('products')||[];
+    return products.find(x=>String(x.id)===String(s.productId))
+      || (typeof productForSaleLine==='function'?productForSaleLine(s):{})
+      || {};
+  }
+
+  function weightInfo(s,p,inv){
+    const packs=Math.max(1,Number(s?.packages||1));
+    const rawW=typeof rawSaleWeight==='function'
+      ?Number(rawSaleWeight(s)||1)
+      :Number(s?.weight||1);
+    const weight=(Number.isFinite(rawW)&&rawW>0)?rawW:1;
+    const totalKg=Number(s?.qty)>0?Number(s.qty):packs*weight;
+    const gross=Number(s?.total||0);
+    const storedUnit=Number(s?.unitPrice||0);
+    const saleMode=String(s?.saleMode||'').toLowerCase();
+    const valueSale=saleMode==='value'||Number(s?.valueAmount)>0;
+    const base=Number(inv?.type==='wholesale'
+      ?(p?.wholesale||0)
+      :(p?.retail||0));
+    const calculatedKg=(Number(s?.qty)>0&&gross>0)
+      ?gross/Number(s.qty)
+      :0;
+    const priceLooksLikeTotal=
+      Number(s?.qty)>0 &&
+      storedUnit>0 &&
+      Math.abs(storedUnit-gross)<0.011;
+
+    let kgPrice=storedUnit;
+    if(!(kgPrice>0)||valueSale||priceLooksLikeTotal){
+      kgPrice=base>0
+        ?base
+        :(calculatedKg>0
+          ?calculatedKg
+          :(storedUnit>0&&weight>0?storedUnit/weight:0));
+    }
+
+    const formatKg=n=>{
+      const x=Number(n)||0;
+      if(Math.abs(x-1)<0.000001)return '1 كجم';
+      if(Math.abs(x-0.5)<0.000001)return 'نصف كيلو';
+      if(Math.abs(x-0.25)<0.000001)return 'ربع كيلو';
+      return (Number.isInteger(x)
+        ?String(x)
+        :x.toFixed(3).replace(/0+$/,'').replace(/\.$/,'')
+      )+' كجم';
+    };
+
+    let packLabel;
+    if(Math.abs(weight-1)<0.000001) packLabel=`${packs} كيلو`;
+    else if(Math.abs(weight-0.5)<0.000001) packLabel=`${packs} نصف كيلو`;
+    else if(Math.abs(weight-0.25)<0.000001) packLabel=`${packs} ربع كيلو`;
+    else packLabel=`${packs} × ${formatKg(weight)}`;
+
+    return {
+      totalKgLabel:formatKg(totalKg),
+      packLabel,
+      kgPrice,
+      weight,
+      halfPrice:kgPrice>0?kgPrice*0.5:0,
+      quarterPrice:kgPrice>0?kgPrice*0.25:0
+    };
+  }
+
+  function buildOrganizedWhatsAppText(inv){
+    if(!inv) throw new Error('WA_INVOICE_NOT_FOUND');
+
+    const products=Store.get('products')||[];
+    const customers=Store.get('customers')||[];
+    const customer=customers.find(
+      c=>inv.customerId && String(c.id)===String(inv.customerId)
+    );
+
+    const customerName=inv.customerName||customer?.name||'عميل عادي';
+    const phone=inv.customerPhone||customer?.phone||'';
+    const invoiceNo=typeof invoiceDisplayNumber==='function'
+      ?invoiceDisplayNumber(inv)
+      :(inv.invoiceSeq||inv.invoiceNo||'—');
+    const dateText=typeof invoiceDisplayDate==='function'
+      ?invoiceDisplayDate(inv)
+      :(inv.date||'—');
+    const timeText=typeof invoiceDisplayTime==='function'
+      ?invoiceDisplayTime(inv)
+      :(inv.time||'—');
+    const typeLabel=inv.type==='wholesale'?'جملة':'قطاعي';
+    const methodKey=inv.paymentMethod||inv.method||'cash';
+    const methodLabel=typeof paymentLabel==='function'
+      ?paymentLabel(methodKey)
+      :({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[methodKey]||'نقدي';
+
+    let t='';
+    t+='🧾 *متجري — فاتورة بيع*\n';
+    t+='━━━━━━━━━━━━━━━━━━━━\n';
+    t+=`🔢 رقم الفاتورة: *${invoiceNo}*\n`;
+    t+=`📅 التاريخ: *${dateText}*\n`;
+    if(timeText) t+=`⏰ الوقت: *${timeText}*\n`;
+    t+=`👤 العميل: *${customerName}*\n`;
+    if(phone) t+=`📞 الهاتف: *${phone}*\n`;
+    t+=`🛍️ نوع البيع: *${typeLabel}*\n`;
+    t+=`💳 طريقة السداد: *${methodLabel}*\n`;
+    t+='━━━━━━━━━━━━━━━━━━━━\n';
+    t+='📦 *تفاصيل الأصناف*\n';
+
+    const lines=Array.isArray(inv.lines)?inv.lines:[];
+    lines.forEach((s,i)=>{
+      const p=products.find(x=>String(x.id)===String(s.productId))
+        || getProductForSale(s);
+      const name=s.productName||p.name||'صنف';
+      const total=Number(s.total||0);
+      const returned=Number(s.returnedQty||0)>0;
+      const weightSale=!!(
+        (typeof isKgProduct==='function'&&isKgProduct(p))
+        || s.isWeightSale
+      );
+
+      t+=`\n*${i+1}) ${name}${returned?' ↩️ مرتجع':''}*\n`;
+
+      if(weightSale){
+        const d=weightInfo(s,p,inv);
+        t+=`   ⚖️ الكمية: *${d.totalKgLabel}*\n`;
+        t+=`   📦 التفاصيل: ${d.packLabel}\n`;
+
+        if(d.kgPrice>0)
+          t+=`   💰 سعر الكيلو: *${moneyText(d.kgPrice)}*\n`;
+
+        if(Math.abs(d.weight-0.5)<0.000001 && d.halfPrice>0)
+          t+=`   🔸 سعر النصف: *${moneyText(d.halfPrice)}*\n`;
+
+        if(Math.abs(d.weight-0.25)<0.000001 && d.quarterPrice>0)
+          t+=`   🔸 سعر الربع: *${moneyText(d.quarterPrice)}*\n`;
+      }else{
+        const qty=Math.max(1,Number(s.packages||s.qty||1));
+        const unit=s.sellUnit||p.sellUnit||p.unit||'وحدة';
+        const unitPrice=Number(s.price||0)
+          ||(qty>0?total/qty:0);
+
+        t+=`   📦 الكمية: *${qty} ${unit}*\n`;
+        t+=`   💰 سعر الوحدة: *${moneyText(unitPrice)}*\n`;
+      }
+
+      t+=`   💵 إجمالي الصنف: *${moneyText(total)}*\n`;
+
+      if(returned&&Number(s.returnedAmount||0)>0)
+        t+=`   ↩️ قيمة المرتجع: *${moneyText(s.returnedAmount)}*\n`;
+    });
+
+    if(!lines.length)
+      t+='\nلا توجد أصناف مسجلة في الفاتورة.\n';
+
+    const subtotal=Number(inv.subtotal??inv.total??0);
+    const discount=Number(inv.discount||0);
+    const tax=Number(inv.tax||0);
+    const total=Number(inv.total||0);
+    const paid=Math.min(total,Math.max(0,Number(inv.paid||0)));
+    const remaining=Math.max(
+      0,
+      Number(inv.remaining??(total-paid))||0
+    );
+    const change=Number(inv.change||0);
+
+    t+='\n━━━━━━━━━━━━━━━━━━━━\n';
+
+    if(Number.isFinite(subtotal)&&Math.abs(subtotal-total)>0.005)
+      t+=`💰 الإجمالي قبل الخصم: ${moneyText(subtotal)}\n`;
+
+    if(discount>0)
+      t+=`🏷️ الخصم: ${moneyText(discount)}\n`;
+
+    if(tax>0)
+      t+=`🧾 الضريبة: ${moneyText(tax)}\n`;
+
+    t+=`✅ *الإجمالي النهائي: ${moneyText(total)}*\n`;
+    t+=`💵 المدفوع: ${moneyText(paid)}\n`;
+
+    if(methodKey==='cash'&&change>0.005)
+      t+=`💸 الباقي للعميل: *${moneyText(change)}*\n`;
+    else
+      t+=`📌 المتبقي: *${moneyText(remaining)}*\n`;
+
+    if(inv.returnStatus)
+      t+=`↩️ حالة المرتجع: *${
+        inv.returnStatus==='partial'
+          ?'مرتجع جزئي'
+          :'مرتجع بالكامل'
+      }*\n`;
+
+    if(inv.note)
+      t+=`📝 ملاحظة: ${String(inv.note)}\n`;
+
+    t+='━━━━━━━━━━━━━━━━━━━━\n';
+    t+='❤️ *شكرًا لتعاملكم معنا*\n';
+    t+='🟢 *متجري .. أكثر من مجرد متجر*';
+
+    return {text:t,phone};
+  }
+
+  function invoiceFromKey(key){
+    if(typeof findInvoice==='function'){
+      const inv=findInvoice(key);
+      if(inv)return inv;
+    }
+    return null;
+  }
+
+  window.shareInvoicePro=function(key){
+    try{
+      const inv=invoiceFromKey(key);
+      if(!inv)return showToast('تعذر العثور على الفاتورة','warning');
+      const result=buildOrganizedWhatsAppText(inv);
+      sendToWhatsApp(result.phone,result.text);
+    }catch(e){
+      console.error('WA organized text:',e);
+      showToast(
+        '❌ تعذر تجهيز رسالة واتساب: '+(e?.message||'خطأ غير معروف'),
+        'error'
+      );
+    }
+  };
+
+  /* زر واتساب بجوار بيانات العميل — يحول لنفس الرسالة النصية */
+  window.shareInvoiceImagePro=function(key,phone){
+    try{
+      const inv=typeof key==='object'?key:invoiceFromKey(key);
+      if(!inv)return showToast('تعذر العثور على الفاتورة','warning');
+      const result=buildOrganizedWhatsAppText(inv);
+      sendToWhatsApp(phone||result.phone,result.text);
+    }catch(e){
+      console.error('WA organized text:',e);
+      showToast(
+        '❌ تعذر تجهيز رسالة واتساب: '+(e?.message||'خطأ غير معروف'),
+        'error'
+      );
+    }
+  };
+
+  window.sharePOSOnWhatsApp=function(){
+    let inv=null;
+    try{
+      inv=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null');
+    }catch(e){}
+
+    if(!inv)
+      return showToast('احفظ الفاتورة أولًا ثم شاركها على واتساب','warning');
+
+    const result=buildOrganizedWhatsAppText(inv);
+    sendToWhatsApp(result.phone,result.text);
+  };
+
+  window.buildOrganizedWhatsAppText=buildOrganizedWhatsAppText;
+})();
+</script>
+
 </body>
   </html>
