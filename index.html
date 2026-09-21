@@ -6367,130 +6367,15 @@ function printPOSReceipt(){
 .sm-movement-meta{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding-top:9px;border-top:1px dashed var(--border)}.sm-movement-meta>div{min-width:0}.sm-movement-meta strong{display:block;font-size:.66rem;line-height:1.5;overflow-wrap:anywhere}.sm-empty{text-align:center;padding:35px 15px;color:var(--text-muted)}.sm-empty i{font-size:2.5rem;display:block;margin-bottom:10px;opacity:.5}.sm-empty strong{display:block;font-size:.85rem;color:var(--text-light)}.sm-empty p{margin:5px 0 0;font-size:.68rem}
 @media(max-width:800px){.sm-summary{grid-template-columns:repeat(2,1fr)}.sm-filters{grid-template-columns:1fr 1fr}.sm-product-field{grid-column:1/-1}}
 @media(max-width:520px){.stock-movement-page{padding:0 2px 18px}.sm-hero{grid-template-columns:auto 1fr;gap:10px;padding:14px;border-radius:18px}.sm-hero-icon{width:46px;height:46px}.sm-hero-copy h2{font-size:1.08rem}.sm-hero-copy p{font-size:.68rem}.sm-back{grid-column:1/-1;width:100%;justify-content:center}.sm-summary{gap:7px}.sm-stat{padding:10px 8px;gap:7px}.sm-stat-icon{width:32px;height:32px;flex-basis:32px;border-radius:10px;font-size:.78rem}.sm-stat span,.sm-stat small{font-size:.58rem}.sm-stat strong{font-size:.9rem}.sm-filter-card,.sm-list-card{padding:12px!important}.sm-section-title strong{font-size:.8rem}.sm-filters{grid-template-columns:1fr}.sm-product-field{grid-column:auto}.sm-actions{flex-direction:column}.sm-actions .btn{width:100%}.sm-movement-card{padding:11px;border-radius:15px}.sm-movement-top{align-items:flex-start}.sm-movement-body{grid-template-columns:1fr 1fr;gap:7px}.sm-product{grid-column:1/-1}.sm-qty,.sm-balance{text-align:right}.sm-movement-meta{grid-template-columns:1fr}.sm-movement-date b{font-size:.61rem}.sm-movement-type strong{font-size:.72rem}.sm-movement-body>div{padding:8px}.sm-product strong,.sm-qty strong,.sm-balance strong{font-size:.7rem}}
-</style>>
+</style>
 
 
 
 
 
-<!-- MATGARY FINAL INVOICE UNIT RULES — display only, no stock/accounting changes -->
-<script id="matgary-final-invoice-units-20260921">
-(function(){
-  'use strict';
 
-  function nameOf(p,s){
-    return String(s?.productName||s?.name||p?.name||'').trim().toLowerCase();
-  }
 
-  // الوحدة المطلوبة في الفواتير حسب الصنف.
-  window.matgaryInvoiceUnit=function(p,s){
-    const n=nameOf(p,s);
-    if(/موزاريلا|موتزاريلا|mozzarella/.test(n)) return 'كيس';
-    if(/برجر|برغر|burger/.test(n)) return 'عبوة';
-    if(/كفتة|كفته|kofta|kofte/.test(n)) return 'عبوة';
-    if(/لانشون|luncheon|luncheon meat/.test(n)) return 'لفة';
-    if(/مخلل|مخللات|pickle|pickles/.test(n)) return 'كجم';
-    if(/كبدة|كبده|كبد|liver/.test(n)) return 'علبة';
-    if(/رومي|رومى|romy/.test(n)) return 'علبة';
-    if(/قشطة|قشطه|cream/.test(n)) return 'علبة';
-    return String(s?.sellUnit||p?.unit||'').trim() || 'عبوة';
-  };
 
-  // تحديد وزن/عبوة للفواتير فقط: المخلل وزن، والكبدة/الرومي/القشطة عبوة.
-  window.isWeightSaleLine=function(s,p){
-    const n=nameOf(p,s);
-    if(/موزاريلا|موتزاريلا|mozzarella/.test(n)) return true;
-    if(/مخلل|مخللات|pickle|pickles/.test(n)) return true;
-    if(/كبدة|كبده|كبد|liver|رومي|رومى|romy|قشطة|قشطه|cream|برجر|برغر|burger|كفتة|كفته|kofta|kofte|لانشون|luncheon/.test(n)) return false;
-
-    if(/\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)/i.test(n)) return false;
-    if(p?.sellByWeight===true) return true;
-    if(s?.isWeightSale===true) return true;
-    const unit=String(p?.unit||p?.sellUnit||s?.sellUnit||'').trim().toLowerCase();
-    if(/^(?:علبة|عبوة|قطعة|كرتونة|باكت|كيس|لفة|برطمان)$/.test(unit)) return false;
-    return ['كجم','كيلو','كغ','kg','كيلوجرام'].includes(unit);
-  };
-
-  // isKgProduct هو أساس حساب الوزن في البرنامج، لذلك نضيف المخلل ونستبعد العبوات المحددة.
-  // لا نغيّر isKgProduct الأصلي؛ قواعد الوحدة هنا للفاتورة فقط حتى لا نمس المخزون أو الحسابات.
-
-  // الوحدة التي تظهر في كل فواتير البرنامج.
-  window.productSaleUnitLabel=function(p,s){ return window.matgaryInvoiceUnit(p,s); };
-  window.matgaryUnitLabel=function(p,s){ return window.matgaryInvoiceUnit(p,s); };
-
-  // كمية الفاتورة: للموزاريلا نُظهر الكيس + الوزن، وللمخلل الوزن مباشرة.
-  window.saleQuantityLabel=function(p,qty,weight){
-    const q=Math.max(1,Number(qty||1));
-    const n=String(p?.name||'').trim().toLowerCase();
-    if(/موزاريلا|موتزاريلا|mozzarella/.test(n)){
-      const w=Number(weight||1);
-      const wl=typeof weightLabel==='function'?weightLabel(w):(w+' كجم');
-      return `${q} ${q===1?'كيس':'أكياس'} • ${wl}`;
-    }
-    if(/مخلل|مخللات|pickle|pickles/.test(n)){
-      const total=q*Number(weight||1);
-      return typeof weightLabel==='function'?weightLabel(total):`${total} كجم`;
-    }
-    return `${q} ${window.matgaryInvoiceUnit(p,{})}`;
-  };
-
-  // تفاصيل الوزن في سجل/معاينة الفاتورة.
-  window.invoiceSaleQuantityLabel=function(s,p){
-    const packs=Math.max(1,Number(s?.packages||1));
-    const weight=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||1):Number(s?.weight||1);
-    if(window.isWeightSaleLine(s,p)) return window.saleQuantityLabel(p||{unit:'كجم'},packs,weight);
-    return `${Math.max(1,Number(s?.packages||s?.qty||1))} ${window.matgaryInvoiceUnit(p,s)}`;
-  };
-
-  window.invoiceSaleDetailLabel=function(s,p){
-    const packs=Math.max(1,Number(s?.packages||1));
-    const weight=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||1):Number(s?.weight||1);
-    if(!window.isWeightSaleLine(s,p)) return `${Math.max(1,Number(s?.packages||s?.qty||1))} ${window.matgaryInvoiceUnit(p,s)}`;
-    if(/موزاريلا|موتزاريلا|mozzarella/i.test(nameOf(p,s))) return window.saleQuantityLabel(p||{},packs,weight);
-    return window.saleQuantityLabel(p||{},packs,weight);
-  };
-
-  // بيانات جدول صورة واتساب V15 مع نفس قواعد الوحدات.
-  window.waV15WeightSale=function(s,p){ return window.isWeightSaleLine(s,p); };
-  window.waV15SaleData=function(s,p,inv){
-    const weightSale=window.isWeightSaleLine(s,p);
-    const stored=Number(s?.price||0);
-    const base=Number(inv?.type==='wholesale'?(p?.wholesale||0):(p?.retail||0));
-    if(!weightSale){
-      const qty=Math.max(1,Number(s?.packages||s?.qty||1));
-      const unit=stored>0?stored:(base>0?base:0);
-      return {weightSale:false,qtyText:`${qty} ${window.matgaryInvoiceUnit(p,s)}`,subText:'',unitPrice:unit,packPrice:0,weight:0};
-    }
-    const packs=Math.max(1,Number(s?.packages||1));
-    const weight=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||1):Number(s?.weight||1);
-    const totalKg=Number(s?.qty)>0?Number(s.qty):packs*weight;
-    let kgPrice=Number(s?.unitPrice||0);
-    const gross=Number(s?.total||0);
-    const valueSale=String(s?.saleMode||'').toLowerCase()==='value'||Number(s?.valueAmount)>0;
-    const looksTotal=kgPrice>0&&Number(s?.qty)>0&&Math.abs(kgPrice-gross)<0.011;
-    if(!(kgPrice>0)||valueSale||looksTotal){
-      if(base>0) kgPrice=base;
-      else if(stored>0&&weight>0) kgPrice=stored/weight;
-      else if(totalKg>0&&gross>0) kgPrice=gross/totalKg;
-    }
-    const pack=kgPrice>0&&weight>0?Math.round(kgPrice*weight*100)/100:0;
-    let qtyText;
-    const n=nameOf(p,s);
-    if(/موزاريلا|موتزاريلا|mozzarella/.test(n)) qtyText=`${packs} ${packs===1?'كيس':'أكياس'} • ${typeof weightLabel==='function'?weightLabel(totalKg):totalKg+' كجم'}`;
-    else if(/مخلل|مخللات|pickle|pickles/.test(n)) qtyText=typeof weightLabel==='function'?weightLabel(totalKg):totalKg+' كجم';
-    else qtyText=typeof weightLabel==='function'?weightLabel(totalKg):totalKg+' كجم';
-    let sub=`${packs} × ${typeof weightLabel==='function'?weightLabel(weight):weight+' كجم'}`;
-    if(/موزاريلا|موتزاريلا|mozzarella/.test(n)) sub='الوحدة: كيس';
-    else if(/مخلل|مخللات|pickle|pickles/.test(n)) sub='الوحدة: كجم';
-    else if(Math.abs(weight-.5)<1e-6) sub=`${packs} أنصاف كيلو`;
-    else if(Math.abs(weight-.25)<1e-6) sub=`${packs} أرباع كيلو`;
-    return {weightSale:true,qtyText,subText:sub,unitPrice:kgPrice,packPrice:pack,weight};
-  };
-
-  // النص العادي للفاتورة يستخدم نفس الوحدات.
-  window.matgaryInvoiceUnitRulesReady=true;
-})();
-</script>
 
 </body></html>`;
   w.document.open(); w.document.write(doc); w.document.close(); w.focus(); setTimeout(()=>w.print(),300);
@@ -13821,6 +13706,126 @@ setTimeout(()=>{
     const u=String(s?.sellUnit||p?.unit||'').trim();
     return u || 'عبوة';
   };
+})();
+</script>
+
+
+<!-- MATGARY FINAL INVOICE UNIT RULES — display only, no stock/accounting changes -->
+<script id="matgary-final-invoice-units-20260921">
+(function(){
+  'use strict';
+
+  function nameOf(p,s){
+    return String(s?.productName||s?.name||p?.name||'').trim().toLowerCase();
+  }
+
+  // الوحدة المطلوبة في الفواتير حسب الصنف.
+  window.matgaryInvoiceUnit=function(p,s){
+    const n=nameOf(p,s);
+    if(/موزاريلا|موتزاريلا|mozzarella/.test(n)) return 'كيس';
+    if(/برجر|برغر|burger/.test(n)) return 'عبوة';
+    if(/كفتة|كفته|kofta|kofte/.test(n)) return 'عبوة';
+    if(/لانشون|luncheon|luncheon meat/.test(n)) return 'لفة';
+    if(/مخلل|مخللات|pickle|pickles/.test(n)) return 'كجم';
+    if(/كبدة|كبده|كبد|liver/.test(n)) return 'علبة';
+    if(/رومي|رومى|romy/.test(n)) return 'علبة';
+    if(/قشطة|قشطه|cream/.test(n)) return 'علبة';
+    return String(s?.sellUnit||p?.unit||'').trim() || 'عبوة';
+  };
+
+  // تحديد وزن/عبوة للفواتير فقط: المخلل وزن، والكبدة/الرومي/القشطة عبوة.
+  window.isWeightSaleLine=function(s,p){
+    const n=nameOf(p,s);
+    if(/موزاريلا|موتزاريلا|mozzarella/.test(n)) return true;
+    if(/مخلل|مخللات|pickle|pickles/.test(n)) return true;
+    if(/كبدة|كبده|كبد|liver|رومي|رومى|romy|قشطة|قشطه|cream|برجر|برغر|burger|كفتة|كفته|kofta|kofte|لانشون|luncheon/.test(n)) return false;
+
+    if(/\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)/i.test(n)) return false;
+    if(p?.sellByWeight===true) return true;
+    if(s?.isWeightSale===true) return true;
+    const unit=String(p?.unit||p?.sellUnit||s?.sellUnit||'').trim().toLowerCase();
+    if(/^(?:علبة|عبوة|قطعة|كرتونة|باكت|كيس|لفة|برطمان)$/.test(unit)) return false;
+    return ['كجم','كيلو','كغ','kg','كيلوجرام'].includes(unit);
+  };
+
+  // isKgProduct هو أساس حساب الوزن في البرنامج، لذلك نضيف المخلل ونستبعد العبوات المحددة.
+  // لا نغيّر isKgProduct الأصلي؛ قواعد الوحدة هنا للفاتورة فقط حتى لا نمس المخزون أو الحسابات.
+
+  // الوحدة التي تظهر في كل فواتير البرنامج.
+  window.productSaleUnitLabel=function(p,s){ return window.matgaryInvoiceUnit(p,s); };
+  window.matgaryUnitLabel=function(p,s){ return window.matgaryInvoiceUnit(p,s); };
+
+  // كمية الفاتورة: للموزاريلا نُظهر الكيس + الوزن، وللمخلل الوزن مباشرة.
+  window.saleQuantityLabel=function(p,qty,weight){
+    const q=Math.max(1,Number(qty||1));
+    const n=String(p?.name||'').trim().toLowerCase();
+    if(/موزاريلا|موتزاريلا|mozzarella/.test(n)){
+      const w=Number(weight||1);
+      const wl=typeof weightLabel==='function'?weightLabel(w):(w+' كجم');
+      return `${q} ${q===1?'كيس':'أكياس'} • ${wl}`;
+    }
+    if(/مخلل|مخللات|pickle|pickles/.test(n)){
+      const total=q*Number(weight||1);
+      return typeof weightLabel==='function'?weightLabel(total):`${total} كجم`;
+    }
+    return `${q} ${window.matgaryInvoiceUnit(p,{})}`;
+  };
+
+  // تفاصيل الوزن في سجل/معاينة الفاتورة.
+  window.invoiceSaleQuantityLabel=function(s,p){
+    const packs=Math.max(1,Number(s?.packages||1));
+    const weight=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||1):Number(s?.weight||1);
+    if(window.isWeightSaleLine(s,p)) return window.saleQuantityLabel(p||{unit:'كجم'},packs,weight);
+    return `${Math.max(1,Number(s?.packages||s?.qty||1))} ${window.matgaryInvoiceUnit(p,s)}`;
+  };
+
+  window.invoiceSaleDetailLabel=function(s,p){
+    const packs=Math.max(1,Number(s?.packages||1));
+    const weight=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||1):Number(s?.weight||1);
+    if(!window.isWeightSaleLine(s,p)) return `${Math.max(1,Number(s?.packages||s?.qty||1))} ${window.matgaryInvoiceUnit(p,s)}`;
+    if(/موزاريلا|موتزاريلا|mozzarella/i.test(nameOf(p,s))) return window.saleQuantityLabel(p||{},packs,weight);
+    return window.saleQuantityLabel(p||{},packs,weight);
+  };
+
+  // بيانات جدول صورة واتساب V15 مع نفس قواعد الوحدات.
+  window.waV15WeightSale=function(s,p){ return window.isWeightSaleLine(s,p); };
+  window.waV15SaleData=function(s,p,inv){
+    const weightSale=window.isWeightSaleLine(s,p);
+    const stored=Number(s?.price||0);
+    const base=Number(inv?.type==='wholesale'?(p?.wholesale||0):(p?.retail||0));
+    if(!weightSale){
+      const qty=Math.max(1,Number(s?.packages||s?.qty||1));
+      const unit=stored>0?stored:(base>0?base:0);
+      return {weightSale:false,qtyText:`${qty} ${window.matgaryInvoiceUnit(p,s)}`,subText:'',unitPrice:unit,packPrice:0,weight:0};
+    }
+    const packs=Math.max(1,Number(s?.packages||1));
+    const weight=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||1):Number(s?.weight||1);
+    const totalKg=Number(s?.qty)>0?Number(s.qty):packs*weight;
+    let kgPrice=Number(s?.unitPrice||0);
+    const gross=Number(s?.total||0);
+    const valueSale=String(s?.saleMode||'').toLowerCase()==='value'||Number(s?.valueAmount)>0;
+    const looksTotal=kgPrice>0&&Number(s?.qty)>0&&Math.abs(kgPrice-gross)<0.011;
+    if(!(kgPrice>0)||valueSale||looksTotal){
+      if(base>0) kgPrice=base;
+      else if(stored>0&&weight>0) kgPrice=stored/weight;
+      else if(totalKg>0&&gross>0) kgPrice=gross/totalKg;
+    }
+    const pack=kgPrice>0&&weight>0?Math.round(kgPrice*weight*100)/100:0;
+    let qtyText;
+    const n=nameOf(p,s);
+    if(/موزاريلا|موتزاريلا|mozzarella/.test(n)) qtyText=`${packs} ${packs===1?'كيس':'أكياس'} • ${typeof weightLabel==='function'?weightLabel(totalKg):totalKg+' كجم'}`;
+    else if(/مخلل|مخللات|pickle|pickles/.test(n)) qtyText=typeof weightLabel==='function'?weightLabel(totalKg):totalKg+' كجم';
+    else qtyText=typeof weightLabel==='function'?weightLabel(totalKg):totalKg+' كجم';
+    let sub=`${packs} × ${typeof weightLabel==='function'?weightLabel(weight):weight+' كجم'}`;
+    if(/موزاريلا|موتزاريلا|mozzarella/.test(n)) sub='الوحدة: كيس';
+    else if(/مخلل|مخللات|pickle|pickles/.test(n)) sub='الوحدة: كجم';
+    else if(Math.abs(weight-.5)<1e-6) sub=`${packs} أنصاف كيلو`;
+    else if(Math.abs(weight-.25)<1e-6) sub=`${packs} أرباع كيلو`;
+    return {weightSale:true,qtyText,subText:sub,unitPrice:kgPrice,packPrice:pack,weight};
+  };
+
+  // النص العادي للفاتورة يستخدم نفس الوحدات.
+  window.matgaryInvoiceUnitRulesReady=true;
 })();
 </script>
 </body>
