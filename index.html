@@ -5207,10 +5207,10 @@ function renderSalesPage(container){
             <label for="posDiscountMode"><i class="fas fa-tags"></i> طريقة الخصم</label>
             <select id="posDiscountMode" onchange="onPOSDiscountModeChange()">
               <option value="none">بدون خصم</option>
-              <option value="invoiceAmount">خصم مبلغ من إجمالي الفاتورة</option>
-              <option value="invoicePercent">خصم نسبة من إجمالي الفاتورة</option>
-              <option value="selectedAmount">خصم مبلغ من أصناف محددة</option>
-              <option value="selectedPercent">خصم نسبة من أصناف محددة</option>
+              <option value="invoiceAmount">خصم مبلغ من الفاتورة</option>
+              <option value="invoicePercent">خصم نسبة من الفاتورة</option>
+              <option value="selectedAmount">خصم مبلغ على صنف محدد</option>
+              <option value="selectedPercent">خصم نسبة على صنف محدد</option>
             </select>
             <div id="posDiscountValueRow" style="display:none;margin-top:7px">
               <div><span id="posDiscountUnit">ج.م</span><input type="number" id="posDiscount" value="" placeholder="0.00" min="0" step="0.01" oninput="updatePOSSummary()"></div>
@@ -6523,6 +6523,12 @@ function printPOSReceipt(){
 .matgary-discount-panel>#posDiscountValueRow span{font-size:.7rem;color:#8b7b3b}
 .matgary-discount-panel>#posDiscountItemsBox{grid-column:1/-1;width:100%}
 .matgary-discount-hint{grid-column:1/-1;color:#8a7a4d!important;font-size:.62rem!important;line-height:1.55!important;margin-top:-1px!important}
+ .matgary-discount-target-title{display:flex;align-items:center;gap:6px;margin-bottom:5px;color:#0f766e;font-size:.66rem;font-weight:900}
+.matgary-discount-target-title i{font-size:.75rem}
+.matgary-discount-target{width:100%;height:40px;border:1.5px solid #c99a22;border-radius:11px;background:#fff;color:#273437;padding:0 10px;font:inherit;font-size:.7rem;font-weight:900;outline:none}
+.matgary-discount-target:focus{border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.10)}
+.matgary-discount-target-note{margin-top:5px;padding:6px 8px;border-radius:9px;background:#f7faf8;color:#71807b;font-size:.59rem;line-height:1.5}
+.matgary-discount-target-note b{color:#0f766e}
 .matgary-discount-items-title{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px;padding:7px 8px;background:#fffdf6;border:1px dashed #e4d9b2;border-radius:10px;color:#756327;font-size:.64rem;font-weight:900}
 .matgary-discount-items-title span{flex:1;min-width:150px}.matgary-discount-items-title i{margin-left:4px}
 .matgary-discount-items-title button{border:1px solid #e4d79f;background:#fff;color:#7b650f;border-radius:8px;padding:4px 7px;font:inherit;font-size:.58rem;font-weight:900;cursor:pointer}
@@ -6670,10 +6676,11 @@ function printPOSReceipt(){
     const unit=el('posDiscountUnit');
     const input=el('posDiscount');
     const hint=el('posDiscountHint');
+
     if(valueRow) valueRow.style.display=mode==='none'?'none':'block';
     if(input){
-      input.placeholder=(mode==='invoicePercent'||mode==='selectedPercent')?'مثلاً 5':'مثلاً 40';
-      input.step=(mode==='invoicePercent'||mode==='selectedPercent')?'0.01':'0.01';
+      input.placeholder=(mode==='invoicePercent'||mode==='selectedPercent')?'مثلاً 5':'مثلاً 20';
+      input.step='0.01';
     }
     if(unit) unit.textContent=(mode==='invoicePercent'||mode==='selectedPercent')?'%':'ج.م';
 
@@ -6682,23 +6689,41 @@ function printPOSReceipt(){
       itemsBox.style.display=needsSelection?'block':'none';
       if(needsSelection){
         const ids=getSelectedIds();
-        itemsBox.innerHTML=`<div class="matgary-discount-items-title"><span><i class="fas fa-list-check"></i> اختر الأصناف التي يشملها الخصم</span><button type="button" onclick="selectAllPOSDiscountItems()">تحديد الكل</button><button type="button" onclick="clearPOSDiscountItems()">مسح</button></div>`+
-          (cart().length?cart().map((item,i)=>{
-            const p=lineProduct(item);
-            const name=escapeHtml(item.name||p?.name||'صنف');
-            const gross=fmt(lineGross(item));
-            return `<label class="matgary-discount-item"><input type="checkbox" ${ids.has(String(item._posLineId))?'checked':''} onchange="togglePOSDiscountItem('${String(item._posLineId).replace(/'/g,"\\'")}')"><span class="matgary-discount-check"></span><span class="matgary-discount-item-main"><b>${name}</b><small>قيمة الصنف: ${gross} ج.م</small></span></label>`;
-          }).join(''):'<div class="matgary-discount-empty">السلة فارغة.</div>');
+        const selectedId=[...ids][0]||'';
+        itemsBox.innerHTML = cart().length ? `
+          <div class="matgary-discount-target-title">
+            <i class="fas fa-bullseye"></i>
+            <span>${mode==='selectedPercent'?'الصنف الذي ستطبق عليه النسبة':'الصنف الذي سيأخذ الخصم'}</span>
+          </div>
+          <select class="matgary-discount-target" onchange="setPOSDiscountTarget(this.value)">
+            <option value="">— اختر الصنف —</option>
+            ${cart().map(item=>{
+              const p=lineProduct(item);
+              const name=escapeHtml(item.name||p?.name||'صنف');
+              const gross=fmt(lineGross(item));
+              const id=String(item._posLineId);
+              return `<option value="${id}" ${id===selectedId?'selected':''}>${name} — ${gross} ج.م</option>`;
+            }).join('')}
+          </select>
+          <div class="matgary-discount-target-note"><i class="fas fa-circle-info"></i> اختر الصنف ثم اكتب مبلغ الخصم، مثل <b>20 ج.م</b>.</div>
+        ` : '<div class="matgary-discount-empty">أضف صنفًا إلى السلة أولًا.</div>';
       }
     }
 
     if(hint){
       const calc=calculateDiscount();
       if(mode==='none') hint.textContent='لا يوجد خصم على الفاتورة.';
-      else if(needsSelection) hint.textContent=calc.valid ? `${selectedSummaryText()} — الخصم سيُطبَّق على المحدد فقط.` : calc.message;
-      else hint.textContent=mode==='invoicePercent'?'النسبة ستُطبَّق على إجمالي الفاتورة بالكامل.':'المبلغ سيُوزَّع نسبيًا على جميع أصناف الفاتورة.';
+      else if(needsSelection) hint.textContent=calc.valid ? `${selectedSummaryText()} — الخصم سيُطبَّق على هذا الصنف فقط.` : 'اختر الصنف الذي تريد عمل الخصم عليه.';
+      else hint.textContent=mode==='invoicePercent'?'النسبة ستُطبَّق على إجمالي الفاتورة بالكامل.':'اكتب مبلغ الخصم الذي تريد طرحه من إجمالي الفاتورة.';
     }
   }
+
+  window.setPOSDiscountTarget=function(lineId){
+    const id=String(lineId||'');
+    window.posDiscountSelectedLines=id?[id]:[];
+    renderDiscountControls();
+    window.updatePOSSummary();
+  };
 
   window.onPOSDiscountModeChange=function(){
     if(!window.posDiscountSelectedLines) window.posDiscountSelectedLines=[];
