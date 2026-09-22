@@ -3716,7 +3716,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.30 — إصدار نهائي بعد تعديلات الخصومات والفواتير
-const APP_VERSION='v1.8.30';
+const APP_VERSION='v1.8.31';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "18 سبتمبر 2026 — تحسين شامل ودقيق للوضع الداكن وتوحيد الألوان";
 
@@ -6255,7 +6255,7 @@ function buildWhatsAppInvoiceHTML(inv,sales){
     const totalKg=Number(s?.qty)>0 ? Number(s.qty) : packs*weight;
     const totalLabel=weightLabel(totalKg);
     let subQty=`${packs} × ${weightLabel(weight)}`;
-    if(isBramili) subQty=`${packs} بستلة × ${weightLabel(weight)}`;
+    if(isBramili && String(inv?.type||s?.type||s?.saleType||'').toLowerCase()==='wholesale') subQty=`${packs} بستلة × ${weightLabel(weight)}`;
     else if(Math.abs(weight-0.5)<0.000001) subQty=`${packs} أنصاف كيلو`;
     else if(Math.abs(weight-0.25)<0.000001) subQty=`${packs} أرباع كيلو`;
 
@@ -6288,7 +6288,7 @@ function buildWhatsAppInvoiceHTML(inv,sales){
     const badge = typeof isMozzarellaProduct==='function' && isMozzarellaProduct(p)
       ? (String(p?.name||'').includes('نباتي') ? 'نباتي' : 'طبيعي') : '';
     const priceHtml=d.weightSale
-      ? `<strong>سعر الكيلو: ${waEsc(d.unitPrice)} ج.م</strong><small>${isBramili?'سعر البستلة':Math.abs(d.weight-0.25)<0.000001?'سعر الربع':Math.abs(d.weight-0.5)<0.000001?'سعر النصف':'سعر العبوة'}: ${waEsc(d.packPrice)} ج.م</small>`
+      ? `<strong>سعر الكيلو: ${waEsc(d.unitPrice)} ج.م</strong><small>${(inv.type==='wholesale' && isBramili)?'سعر البستلة':Math.abs(d.weight-0.25)<0.000001?'سعر الربع':Math.abs(d.weight-0.5)<0.000001?'سعر النصف':'سعر العبوة'}: ${waEsc(d.packPrice)} ج.م</small>`
       : `<strong class="single-line">${waEsc(d.unitTitle)} ${waEsc(d.unitPrice)} ج.م</strong>`;
 
     const chips=d.weightSale && typeof isMozzarellaProduct==='function' && isMozzarellaProduct(p) && d.kgPrice>0
@@ -11454,7 +11454,7 @@ function historyCard(inv){
                     ? `سعر الكيلو: ${fmt(reliableKgPrice)} • سعر الربع كيلو: ${fmt(packPriceForDisplay)}`
                     : `سعر الكيلو: ${fmt(reliableKgPrice)}`))
           : `سعر الوحدة: ${fmt(s.price||0)}`
-      const detailUnit=isBramili ? 'بستلة' : (typeof productSaleUnitLabel==='function'?productSaleUnitLabel(p,s):(s.sellUnit||p?.unit||'عبوة'));
+      const detailUnit=(isBramili && String(inv?.type||s?.type||s?.saleType||'').toLowerCase()==='wholesale') ? 'بستلة' : (typeof productSaleUnitLabel==='function'?productSaleUnitLabel(p,s):(s.sellUnit||p?.unit||'عبوة'));
       const detailLabel=fixedPackDisplay ? `${Math.max(1,Number(s.packages||s.qty||1))} ${detailUnit}${fixedPackSize?' • '+fixedPackSize:''}` : invoiceSaleDetailLabel(s,p);
       const itemDiscount=Number(s.discountAmount||0);
       const discountText=itemDiscount>0.005 ? ` • خصم ${fmt(itemDiscount)} ج.م` : '';
@@ -13573,8 +13573,9 @@ html[data-theme="dark"] [style*="background-color: #ffffff"]{
         w=weightOf(s);
         const totalKg=n(s.qty)>0?n(s.qty):packs*w;
         qtyText=weightLabel(totalKg);
-        if(Math.abs(w-.5)<.0001)sub=`${packs} أنصاف كيلو`;
-        else if(Math.abs(w-.25)<.0001)sub=`${packs} أرباع كيلو`;
+        if(inv.type==='wholesale' && /براميلي|براميل/i.test(name)) sub=`${packs} بستلة × ${weightLabel(w)}`;
+        else if(Math.abs(w-.5)<.0001)sub=`${packs} أنصاف كيلو`;
+        else if(Math.abs(w-.25)<0.0001)sub=`${packs} أرباع كيلو`;
         else sub=`${packs} × ${weightLabel(w)}`;
 
         unit=n(s.unitPrice);
@@ -13600,7 +13601,7 @@ html[data-theme="dark"] [style*="background-color: #ffffff"]{
 
       if(weighted){
         center(c,'سعر الكيلو: '+money(unit)+' ج.م',C.price,cy-11,16,900,'#173b32',225);
-        const title=/براميلي|براميل/i.test(name)?'سعر البستلة':Math.abs(w-.5)<.0001?'سعر النصف':Math.abs(w-.25)<.0001?'سعر الربع':'سعر العبوة';
+        const title=(inv.type==='wholesale' && /براميلي|براميل/i.test(name))?'سعر البستلة':Math.abs(w-.5)<.0001?'سعر النصف':Math.abs(w-.25)<.0001?'سعر الربع':'سعر العبوة';
         center(c,title+': '+money(pack)+' ج.م',C.price,cy+18,15,800,'#60726b',225);
       }else{
         center(c,'سعر الوحدة: '+money(unit)+' ج.م',C.price,cy+2,16,900,'#173b32',230);
@@ -14755,7 +14756,7 @@ setTimeout(()=>{
   // الوحدة التي تظهر في الفواتير والرسائل حسب طبيعة الصنف.
   window.matgaryInvoiceUnit=function(p,s){
     const n=nameOf(p,s);
-    if(/براميلي|براميل/.test(n) && Number(s?.packages||0)>0 && Number(s?.weight||0)>0) return 'بستلة';
+    if(/براميلي|براميل/.test(n) && String(s?.type||s?.saleType||'').toLowerCase()==='wholesale' && Number(s?.packages||0)>0 && Number(s?.weight||0)>0) return 'بستلة';
     if(/موزاريلا|موتزاريلا|mozzarella/.test(n)) return 'كجم';
     if(/مخلل|مخللات|pickle|pickles/.test(n)) return 'كجم';
     if(/برجر|برغر|burger/.test(n)) return 'عبوة';
@@ -14808,7 +14809,12 @@ setTimeout(()=>{
     const w=Math.max(0.001,Number(weight||1));
 
     if(/براميلي|براميل/.test(n)){
-      return `${q} بستلة × ${typeof weightLabel==='function'?weightLabel(w):w+' كجم'}`;
+      const wholesale=String(arguments[0]?.type||'').toLowerCase()==='wholesale';
+      const totalKg=q*w;
+      const total=typeof weightLabel==='function'?weightLabel(totalKg):`${totalKg} كجم`;
+      return wholesale
+        ? `${q} بستلة × ${typeof weightLabel==='function'?weightLabel(w):w+' كجم'}`
+        : total;
     }
 
     if(/موزاريلا|موتزاريلا|mozzarella/.test(n)){
@@ -14835,7 +14841,10 @@ setTimeout(()=>{
     if(/براميلي|براميل/.test(n)){
       const totalKg=Number(s?.qty)>0?Number(s.qty):packs*weight;
       const total=typeof weightLabel==='function'?weightLabel(totalKg):`${totalKg} كجم`;
-      return `${total} • ${packs} بستلة × ${typeof weightLabel==='function'?weightLabel(weight):weight+' كجم'}`;
+      const wholesale=String(s?.type||s?.saleType||'').toLowerCase()==='wholesale';
+      return wholesale
+        ? `${total} • ${packs} بستلة × ${typeof weightLabel==='function'?weightLabel(weight):weight+' كجم'}`
+        : total;
     }
 
     if(/موزاريلا|موتزاريلا|mozzarella/.test(n)){
@@ -15314,7 +15323,8 @@ setTimeout(()=>{
 
       t+=`\n*${i+1}) ${name}*\n`;
 
-      if(bramili){
+      const bramiliWholesale=bramili && String(inv?.type||s?.type||s?.saleType||'').toLowerCase()==='wholesale';
+      if(bramiliWholesale){
         const d=weightDetails(s,p,inv);
         const packs=Math.max(1,Number(s.packages||1));
         const packWeight=d.weight>0?d.weight:(d.totalKg/packs);
