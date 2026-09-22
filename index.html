@@ -15034,99 +15034,103 @@ setTimeout(()=>{
 
     const lines=Array.isArray(inv.lines)?inv.lines:[];
     const type=inv.type==='wholesale'?'جملة':'قطاعي';
-    const method=({
-      cash:'نقدي',credit:'آجل',transfer:'تحويل',
-      card:'بطاقة'
-    })[inv.paymentMethod||inv.method||'cash']||'نقدي';
-
+    const method=({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[inv.paymentMethod||inv.method||'cash']||'نقدي';
     const no=inv.invoiceSeq||inv.invoiceNo||'—';
 
-    let t='';
-    t+='🧾 *متجري — فاتورة بيع*\n';
-    t+='━━━━━━━━━━━━━━━━━━━━\n';
-    t+=`🔢 *رقم الفاتورة:* ${no}\n`;
-    if(inv.date)t+=`📅 *التاريخ:* ${inv.date}\n`;
-    if(inv.time)t+=`⏰ *الوقت:* ${inv.time}\n`;
-    t+=`👤 *العميل:* ${inv.customerName||'عميل عادي'}\n`;
-    if(inv.customerPhone)t+=`📞 *الهاتف:* ${inv.customerPhone}\n`;
-    t+=`🛍️ *نوع البيع:* ${type}\n`;
-    t+=`💳 *طريقة السداد:* ${method}\n`;
-    t+='━━━━━━━━━━━━━━━━━━━━\n';
-    t+='📦 *الأصناف*\n';
+    let t='🧾 *متجري — فاتورة بيع*\n';
+    t+='━━━━━━━━━━━━━━━━━━\n';
+    t+=`🔢 رقم الفاتورة: *${no}*\n`;
+    if(inv.date)t+=`📅 التاريخ: *${inv.date}*`;
+    if(inv.time)t+=` • ⏰ *${inv.time}*`;
+    t+='\n';
+    t+=`👤 العميل: *${inv.customerName||'عميل عادي'}*\n`;
+    t+=`🛍️ نوع البيع: *${type}*\n`;
+    t+=`💳 السداد: *${method}*\n`;
+    t+='━━━━━━━━━━━━━━━━━━\n';
+    t+='📦 *تفاصيل الأصناف*\n';
 
     lines.forEach((s,i)=>{
       const p=productFor(s);
       const name=nameOf(s,p);
       const total=Math.max(0,Number(s.total||0));
+      const itemDiscount=Math.max(0,Number(s.discountAmount||s.discount||0));
+      const gross=Math.max(total+itemDiscount,Number(s.grossTotal||0));
       const ws=isWeight(s,p);
+      const bramili=/براميلي|براميل/i.test(name);
 
       t+=`\n*${i+1}) ${name}*\n`;
 
+      if(bramili){
+        const d=weightDetails(s,p,inv);
+        const packs=Math.max(1,Number(s.packages||1));
+        const packWeight=d.weight>0?d.weight:(d.totalKg/packs);
+        const grossPack=(gross>0&&packs>0)?gross/packs:(d.kgPrice*packWeight);
+        const packPrice=(Math.abs(grossPack-Math.round(grossPack))<0.011)
+          ?Math.round(grossPack)
+          :grossPack;
+
+        t+=`   ⚖️ الكمية: *${d.totalLabel}*\n`;
+        t+=`   📦 التفصيل: *${packs} بستلة × ${weightLabel(packWeight)}*\n`;
+        t+=`   💰 سعر الكيلو: *${money(d.kgPrice)}*\n`;
+        t+=`   💰 سعر البستلة: *${money(packPrice)}*\n`;
+        if(itemDiscount>0.005)t+=`   🏷️ خصم الصنف: *${money(itemDiscount)}*\n`;
+        if(itemDiscount>0.005)t+=`   💵 الصافي: *${money(total)}*\n`;
+        else t+=`   💵 إجمالي الصنف: *${money(total)}*\n`;
+        return;
+      }
+
       if(ws){
         const d=weightDetails(s,p,inv);
-        t+=`   الكمية: *${d.totalLabel}*`;
+        let qtyText=d.totalLabel;
+        if(d.halves)qtyText+=` • ${d.halves} أنصاف كيلو`;
+        else if(d.quarters)qtyText+=` • ${d.quarters} أرباع كيلو`;
 
-        if(d.halves)
-          t+=` • *${d.halves} أنصاف كيلو*`;
-        else if(d.quarters)
-          t+=` • *${d.quarters} أرباع كيلو*`;
-
-        t+='\n';
-        t+=`   سعر الكيلو: *${money(d.kgPrice)}*\n`;
-
-        if(d.halves)
-          t+=`   سعر النصف: *${money(d.kgPrice*0.5)}*\n`;
-        else if(d.quarters)
-          t+=`   سعر الربع: *${money(d.kgPrice*0.25)}*\n`;
+        t+=`   ⚖️ الكمية: *${qtyText}*\n`;
+        t+=`   💰 سعر الكيلو: *${money(d.kgPrice)}*\n`;
+        if(d.halves)t+=`   🔸 سعر النصف: *${money(d.kgPrice*.5)}*\n`;
+        else if(d.quarters)t+=`   🔸 سعر الربع: *${money(d.kgPrice*.25)}*\n`;
       }else{
         const qty=Math.max(1,Number(s.packages||s.qty||1));
         let unit=unitFor(s,p);
         const selectedWeight=Number(s?.weight||0);
-        const size=fixedPackSize(name) || (selectedWeight>0 && selectedWeight<1 ? `${Math.round(selectedWeight*1000)} جم` : '');
-        if(selectedWeight>0 && selectedWeight<1 && unit==='كجم') unit='عبوة';
-        const unitPrice=Number(s.unitPrice||s.price||0)||(qty?total/qty:0);
-        const qtyLabel=`${qty} ${unit}${size?' • '+size:''}`;
-
-        t+=`   ⚖️ *الكمية:* ${qtyLabel}\n`;
-        t+=`   💰 *سعر الوحدة:* ${money(unitPrice)}\n`;
+        const size=fixedPackSize(name) || (selectedWeight>0&&selectedWeight<1?`${Math.round(selectedWeight*1000)} جم`:'');
+        if(selectedWeight>0&&selectedWeight<1&&unit==='كجم')unit='عبوة';
+        const unitPrice=Number(s.unitPrice||s.price||0)||(qty?gross/qty:0);
+        t+=`   ⚖️ الكمية: *${qty} ${unit}${size?' • '+size:''}*\n`;
+        t+=`   💰 سعر الوحدة: *${money(unitPrice)}*\n`;
       }
 
-      const itemDiscount=Number(s.discountAmount||0);
-      if(itemDiscount>0) t+=`   🏷️ *خصم الصنف:* ${money(itemDiscount)}\n`;
-      t+=`   💵 *إجمالي الصنف:* ${money(total)}\n`;
+      if(itemDiscount>0.005)t+=`   🏷️ خصم الصنف: *${money(itemDiscount)}*\n`;
+      if(itemDiscount>0.005)t+=`   💵 الصافي: *${money(total)}*\n`;
+      else t+=`   💵 إجمالي الصنف: *${money(total)}*\n`;
     });
 
-    t+='\n━━━━━━━━━━━━━━━━━━━━\n';
+    t+='\n━━━━━━━━━━━━━━━━━━\n';
 
     const subtotal=Number(inv.subtotal||0);
     const discount=Number(inv.discount||0);
     const tax=Number(inv.tax||0);
     const total=Number(inv.total||0);
     const paid=Math.min(total,Math.max(0,Number(inv.paid||0)));
-    const remaining=Math.max(
-      0,
-      Number(inv.remaining??(total-paid))||0
-    );
+    const remaining=Math.max(0,Number(inv.remaining??(total-paid))||0);
     const change=Number(inv.change||0);
 
-    if(subtotal>0&&Math.abs(subtotal-total)>0.005)
-      t+=`الإجمالي قبل الخصم: ${money(subtotal)}\n`;
-    if(discount>0)t+=`الخصم: ${money(discount)}\n`;
-    if(tax>0)t+=`الضريبة: ${money(tax)}\n`;
-
+    if(subtotal>0&&Math.abs(subtotal-total)>0.005)t+=`💰 الإجمالي قبل الخصم: *${money(subtotal)}*\n`;
+    if(discount>0)t+=`🏷️ إجمالي الخصم: *${money(discount)}*\n`;
+    if(tax>0)t+=`🧾 الضريبة: *${money(tax)}*\n`;
     t+=`🧮 *الإجمالي النهائي: ${money(total)}*\n`;
-    t+=`💵 *المدفوع:* ${money(paid)}\n`;
-
+    t+=`💵 المدفوع: *${money(paid)}*\n`;
     if((inv.paymentMethod||inv.method)==='cash'&&change>0.005)
       t+=`💸 الباقي للعميل: *${money(change)}*\n`;
+    else if(remaining>0.005)
+      t+=`📌 المتبقي: *${money(remaining)}*\n`;
     else
-      t+=`📌 المتبقي: ${money(remaining)}\n`;
+      t+='✅ *مدفوعة بالكامل*\n';
 
-    t+='━━━━━━━━━━━━━━━━━━━━\n';
+    t+='━━━━━━━━━━━━━━━━━━\n';
     t+='❤️ *شكرًا لتعاملكم معنا*\n';
     t+='📋 *فاتورة إلكترونية من متجري*\n';
     t+='🟢 *متجري — أكثر من مجرد متجر*';
-
     return t;
   }
 
