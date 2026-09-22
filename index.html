@@ -3715,8 +3715,8 @@ html[data-theme="dark"] .sales-summary-card .value{
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-// متجري v1.8.31 — تحسين شامل ودقيق للوضع الداكن
-const APP_VERSION='v1.8.26';
+// متجري v1.8.30 — إصدار نهائي بعد تعديلات الخصومات والفواتير
+const APP_VERSION='v1.8.30';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "18 سبتمبر 2026 — تحسين شامل ودقيق للوضع الداكن وتوحيد الألوان";
 
@@ -6705,7 +6705,7 @@ function printPOSReceipt(){
               return `<option value="${id}" ${id===selectedId?'selected':''}>${name} — ${gross} ج.م</option>`;
             }).join('')}
           </select>
-          <div class="matgary-discount-target-note"><i class="fas fa-circle-info"></i> اختر الصنف ثم اكتب مبلغ الخصم، مثل <b>20 ج.م</b>.</div>
+          <div class="matgary-discount-target-note"><i class="fas fa-circle-info"></i> ${mode==='selectedPercent'?'اختر الصنف ثم اكتب نسبة الخصم، مثل <b>10%</b>.':'اختر الصنف ثم اكتب مبلغ الخصم، مثل <b>20 ج.م</b>.'}</div>
         ` : '<div class="matgary-discount-empty">أضف صنفًا إلى السلة أولًا.</div>';
       }
     }
@@ -7084,53 +7084,33 @@ function currentTimeLabel(){
 }
 
 function checkoutPOS(){
-  const cart=window.posCart||[]; if(!cart.length)return showToast('السلة فارغة','warning');
+  const c=window.posCart||[];
+  if(!c.length)return showToast('السلة فارغة','warning');
   const type=document.getElementById('posSaleType')?.value||'retail';
   const method=document.getElementById('posPaymentMethod')?.value||'cash';
-  const discount=Math.max(0,Number(document.getElementById('posDiscount')?.value||0));
-  const taxRate=Math.min(100,Math.max(0,Number(document.getElementById('posTaxRate')?.value||0)));
   const note=document.getElementById('posSaleNote')?.value?.trim()||'';
   const invoiceDate=document.getElementById('posInvoiceDate')?.value||today();
   const customerId=document.getElementById('posCustomer')?.value||'';
   const customName=document.getElementById('posCustomCustomer')?.value?.trim()||'';
-  const customerName=customerId?(Store.get('customers').find(c=>c.id===customerId)?.name||''):(customName||'عميل عادي');
-  const products=window.saleProducts||[];
-  const invoiceSeq=getNextInvoiceSequence();
-  const invoiceNo='INV-'+String(invoiceSeq);
-  const saleBatchId='SALE-'+safeUUID();
-  const saleTime=currentTimeLabel();
-  const lineTotal=item=>{
-    if(item.service)return roundPOSMoney(Number(item.price||0)*Number(item.qty||0));
-    const p=products.find(x=>String(x.id)===String(item.id)); if(!p)return 0;
-    const price=getPOSItemUnitPrice(item,p,type);
-    const weight=Number(item.weight||1), qty=Number(item.qty||0);
-    if(isKgProduct(p)&&item.saleMode==='value')return roundPOSMoney(Number(item.valueAmount||0)*qty);
-    return roundPOSMoney(price*weight*qty);
-  };
-  const subtotal=roundPOSMoney(cart.reduce((sum,item)=>sum+lineTotal(item),0));
-  const safeDiscount=roundPOSMoney(Math.min(Math.max(0,discount),subtotal));
+  const customerName=customerId
+    ? (Store.get('customers').find(x=>x.id===customerId)?.name||'')
+    : (customName||'عميل عادي');
+  const taxRate=Math.min(100,Math.max(0,Number(document.getElementById('posTaxRate')?.value||0)));
+
+  // استخدم نفس محرك الخصم الذي يعرضه أسفل شاشة البيع.
+  // هذا هو الجزء الذي يجعل «خصم مبلغ/نسبة على صنف محدد» يعمل فعليًا عند إتمام الفاتورة.
+  const discountBreakdown = typeof window.getPOSDiscountBreakdown==='function'
+    ? window.getPOSDiscountBreakdown()
+    : null;
+  if(!discountBreakdown || !discountBreakdown.valid){
+    return showToast('❌ '+(discountBreakdown?.message||'تعذر حساب الخصم، اختر الصنف وأدخل قيمة صحيحة.'),'warning');
+  }
+
+  const subtotal=roundPOSMoney(discountBreakdown.subtotal);
+  const safeDiscount=roundPOSMoney(discountBreakdown.discount);
   const taxable=Math.max(0,subtotal-safeDiscount);
   const tax=roundPOSMoney(taxable*taxRate/100);
   const total=roundPOSMoney(taxable+tax);
-
-  // توزيع الخصم والضريبة على جميع بنود الفاتورة بنسبة قيمة كل بند، مع تثبيت فرق التقريب في آخر بند حتى يطابق مجموع البنود إجمالي الفاتورة حرفيًا.
-  const cartFinance=cart.map(item=>({item,gross:lineTotal(item)}));
-  let allocatedDiscount=0, allocatedTax=0;
-  const lastFinanceIndex=Math.max(0,cartFinance.length-1);
-  cartFinance.forEach((row,index)=>{
-    const ratio=subtotal>0 ? row.gross/subtotal : 0;
-    row.discount=index===lastFinanceIndex
-      ? roundPOSMoney(safeDiscount-allocatedDiscount)
-      : roundPOSMoney(safeDiscount*ratio);
-    allocatedDiscount=roundPOSMoney(allocatedDiscount+row.discount);
-    const taxableRow=Math.max(0,row.gross-row.discount);
-    const taxBase=Math.max(0,subtotal-safeDiscount);
-    row.tax=index===lastFinanceIndex
-      ? roundPOSMoney(tax-allocatedTax)
-      : roundPOSMoney(taxBase>0 ? tax*(taxableRow/taxBase) : 0);
-    allocatedTax=roundPOSMoney(allocatedTax+row.tax);
-    row.total=roundPOSMoney(taxableRow+row.tax);
-  });
 
   const enteredPaid=roundPOSMoney(Math.max(0,Number(document.getElementById('posPaid')?.value)||0));
   if(enteredPaid-total>0.0001)return showToast('المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة','warning');
@@ -7140,69 +7120,155 @@ function checkoutPOS(){
   if(method==='credit'&&remaining>0&&!hasNamedCustomer)return showToast('حدد العميل أو اكتب اسمه لتسجيل المبلغ المتبقي كآجل','warning');
   if(method!=='credit'&&paid<total)return showToast('المبلغ المدفوع أقل من إجمالي الفاتورة','warning');
 
-  // تحقق كامل قبل أي تعديل على المخزون أو حفظ الفاتورة.
-  for(const item of cart){
-    if(item.service) continue;
-    const p=products.find(x=>String(x.id)===String(item.id));
-    if(!p) return showToast('الصنف غير موجود أو تم حذفه','error');
+  // تحقق من المخزون قبل أي تعديل.
+  for(const item of c){
+    if(item.service)continue;
+    const p=(window.saleProducts||[]).find(x=>String(x.id)===String(item.id));
+    if(!p)return showToast('الصنف غير موجود أو تم حذفه','error');
     const weight=Number(item.weight||1), packs=Number(item.qty||0);
-    if(!Number.isFinite(weight)||weight<=0||!Number.isFinite(packs)||packs<=0) return showToast('كمية أو وزن غير صالح','warning');
-    const required=Number(weight*packs), available=Number(p.qty||0);
-    if(required>available+0.000001) return showToast(`المخزون غير كافٍ للصنف: ${p.name} — المتاح ${formatProductQty(p,available)}`,'warning');
+    if(!Number.isFinite(weight)||weight<=0||!Number.isFinite(packs)||packs<=0)return showToast('كمية أو وزن غير صالح','warning');
+    const required=weight*packs, available=Number(p.qty||0);
+    if(required>available+0.000001)return showToast(`المخزون غير كافٍ للصنف: ${p.name} — المتاح ${formatProductQty(p,available)}`,'warning');
   }
 
   const transactionKeys=['products','sales','debts','customers','auditLog'];
   const transactionSnapshot={};
   transactionKeys.forEach(k=>{
-    try{ transactionSnapshot[k]=JSON.parse(JSON.stringify(Store.get(k)||[])); }
-    catch(e){ transactionSnapshot[k]=[]; }
+    try{transactionSnapshot[k]=JSON.parse(JSON.stringify(Store.get(k)||[]));}
+    catch(e){transactionSnapshot[k]=[];}
   });
+
   try{
-  cart.forEach((item,index)=>{
-    const fin=cartFinance[index]||{gross:0,discount:0,tax:0,total:0};
-    const gross=Number(fin.gross||0);
-    const itemDiscount=Number(fin.discount||0);
-    const itemTax=Number(fin.tax||0);
-    const itemTotal=Number(fin.total||0);
-    if(item.service){
-      const serviceTotal=gross;
-      const serviceProfit=Math.max(0,serviceTotal-itemDiscount); // بدون ضريبة
-      Store.add('sales',{saleBatchId,invoiceNo,invoiceSeq,date:invoiceDate,time:saleTime,productId:null,productName:item.name,customerId:customerId||null,customerName,type,qty:item.qty,packages:item.qty,weight:1,unitPrice:Number(item.price||0),price:Number(item.price||0),cost:0,grossTotal:serviceTotal,netTotal:Math.max(0,itemTotal-itemTax),discount:serviceTotal?((itemDiscount/serviceTotal)*100):0,discountAmount:itemDiscount,taxRate,taxAmount:itemTax,discountedPrice:Number(item.price||0),total:itemTotal,profit:serviceProfit,paymentMethod:method,paid,remaining,initialPaid:money(paid),collectionHistory:[],isWeightSale:false,sellUnit:String(item.unit||'خدمة'),note:note||'خدمة من الكاشير'});
-      return;
+    const invoiceSeq=getNextInvoiceSequence();
+    const invoiceNo='INV-'+String(invoiceSeq);
+    const saleBatchId='SALE-'+safeUUID();
+    const saleTime=currentTimeLabel();
+    const financeById=new Map(
+      (discountBreakdown.items||[]).map(x=>[
+        String(x.item?._posLineId||''),
+        {gross:roundPOSMoney(x.gross),discount:roundPOSMoney(x.discount)}
+      ])
+    );
+
+    const cartFinance=c.map(item=>{
+      const f=financeById.get(String(item._posLineId));
+      return {item,gross:roundPOSMoney(f?.gross||0),discount:roundPOSMoney(f?.discount||0),tax:0,total:0};
+    });
+
+    // توزيع الضريبة على صافي البنود، مع تثبيت فرق التقريب في آخر بند.
+    let allocatedTax=0;
+    const taxBase=Math.max(0,subtotal-safeDiscount);
+    cartFinance.forEach((row,index)=>{
+      const netGross=Math.max(0,row.gross-row.discount);
+      row.tax=(index===cartFinance.length-1)
+        ? roundPOSMoney(tax-allocatedTax)
+        : roundPOSMoney(taxBase>0 ? tax*(netGross/taxBase) : 0);
+      allocatedTax=roundPOSMoney(allocatedTax+row.tax);
+      row.total=roundPOSMoney(Math.max(0,netGross+row.tax));
+    });
+
+    c.forEach((item,index)=>{
+      const fin=cartFinance[index]||{gross:0,discount:0,tax:0,total:0};
+      const gross=roundPOSMoney(fin.gross);
+      const lineDiscount=roundPOSMoney(fin.discount);
+      const itemTax=roundPOSMoney(fin.tax);
+      const itemTotal=roundPOSMoney(fin.total);
+
+      if(item.service){
+        const serviceProfit=roundPOSMoney(Math.max(0,gross-lineDiscount));
+        Store.add('sales',{
+          saleBatchId,invoiceNo,invoiceSeq,date:invoiceDate,time:saleTime,
+          productId:null,productName:item.name,customerId:customerId||null,customerName,type,
+          qty:item.qty,packages:item.qty,weight:1,unitPrice:Number(item.price||0),price:Number(item.price||0),cost:0,
+          grossTotal:gross,netTotal:Math.max(0,itemTotal-itemTax),discount:gross?(lineDiscount/gross*100):0,
+          discountAmount:lineDiscount,taxRate,taxAmount:itemTax,discountedPrice:Number(item.price||0),total:itemTotal,
+          profit:serviceProfit,paymentMethod:method,paid,remaining,initialPaid:money(paid),collectionHistory:[],
+          isWeightSale:false,sellUnit:String(item.unit||'خدمة'),note:note||'خدمة من الكاشير'
+        });
+        return;
+      }
+
+      const p=(window.saleProducts||[]).find(x=>String(x.id)===String(item.id));
+      if(!p)return;
+      const weight=Number(item.weight||1), packs=Number(item.qty||0);
+      const price=typeof getPOSItemUnitPrice==='function'
+        ? Number(getPOSItemUnitPrice(item,p,type))
+        : Number(item.price||0);
+      const qtyKg=weight*packs;
+      const costKg=Number(p.purchase||0);
+      const netRevenue=roundPOSMoney(Math.max(0,gross-lineDiscount));
+      const netPerPack=packs?netRevenue/packs:0;
+      const profit=roundPOSMoney((netPerPack-(costKg*weight))*packs);
+      const newQty=Math.max(0,Number(p.qty||0)-qtyKg);
+      Store.update('products',p.id,{qty:newQty});
+      const effectivePackPrice=packs?roundPOSMoney(itemTotal/packs):0;
+      const discountedPackPrice=packs?roundPOSMoney(netRevenue/packs):0;
+
+      Store.add('sales',{
+        saleBatchId,invoiceNo,invoiceSeq,date:invoiceDate,time:saleTime,
+        productId:p.id,productName:p.name,customerId:customerId||null,customerName,type,
+        qty:qtyKg,packages:packs,weight,unitPrice:price,price:price,cost:costKg*weight,
+        grossTotal:gross,netTotal:Math.max(0,itemTotal-itemTax),discount:gross?((lineDiscount/gross)*100):0,
+        discountAmount:lineDiscount,taxRate,taxAmount:itemTax,discountedPrice:discountedPackPrice,total:itemTotal,
+        profit,paymentMethod:method,paid,remaining,initialPaid:money(paid),collectionHistory:[],
+        isWeightSale:typeof isKgProduct==='function'?isKgProduct(p):false,
+        sellUnit:typeof isKgProduct==='function'&&isKgProduct(p)?'كجم':(typeof productSaleUnitLabel==='function'?productSaleUnitLabel(p,item):String(p.unit||'عبوة')),
+        saleMode:typeof isKgProduct==='function'&&isKgProduct(p)?(item.saleMode==='value'?'value':'weight'):null,
+        valueAmount:typeof isKgProduct==='function'&&isKgProduct(p)&&item.saleMode==='value'?Number(item.valueAmount||0):null,
+        note:note||`بيع من الكاشير — ${saleQuantityLabel(p,packs,weight)}${method==='credit'?' — آجل':''}`
+      });
+    });
+
+    if(customerId){
+      const customers=Store.get('customers');
+      const i=customers.findIndex(c=>c.id===customerId);
+      if(i>=0){
+        customers[i].points=(customers[i].points||0)+Math.floor(total/10);
+        customers[i].totalSpent=(customers[i].totalSpent||0)+total;
+        Store.set('customers',customers);
+      }
     }
-    const p=products.find(x=>String(x.id)===String(item.id)); if(!p)return;
-    const weight=Number(item.weight||1), packs=Number(item.qty||0), price=getPOSItemUnitPrice(item,p,type);
-    const qtyKg=weight*packs, costKg=Number(p.purchase||0);
-    const effectivePackPrice=packs?roundPOSMoney(itemTotal/packs):0;
-    // الربح الحقيقي = الإيراد بدون ضريبة − التكلفة
-    const netRevenue=Math.max(0,gross-itemDiscount);
-    const netPerPack=packs?netRevenue/packs:0;
-    const profit=roundPOSMoney((netPerPack-(costKg*weight))*packs);
-    const newQty=Math.max(0,Number(p.qty||0)-qtyKg);
-    Store.update('products',p.id,{qty:newQty});
-    Store.add('sales',{saleBatchId,invoiceNo,invoiceSeq,date:invoiceDate,time:saleTime,productId:p.id,productName:p.name,customerId:customerId||null,customerName,type,qty:qtyKg,packages:packs,weight,unitPrice:price,price:effectivePackPrice,cost:costKg*weight,grossTotal:gross,netTotal:Math.max(0,itemTotal-itemTax),discount:price?((itemDiscount/gross)*100):0,discountAmount:itemDiscount,taxRate,taxAmount:itemTax,discountedPrice:effectivePackPrice,total:itemTotal,profit,paymentMethod:method,paid,remaining,initialPaid:money(paid),collectionHistory:[],isWeightSale:isKgProduct(p),sellUnit:isKgProduct(p)?'كجم':(typeof productSaleUnitLabel==='function'?productSaleUnitLabel(p,item):String(p.unit||'عبوة')),saleMode:isKgProduct(p)?(item.saleMode==='value'?'value':'weight'):null,valueAmount:isKgProduct(p)&&item.saleMode==='value'?Number(item.valueAmount||0):null,note:note||`بيع من الكاشير — ${saleQuantityLabel(p,packs,weight)}${method==='credit'?' — آجل':''}`});
-  });
-  if(customerId){const customers=Store.get('customers');const i=customers.findIndex(c=>c.id===customerId);if(i>=0){customers[i].points=(customers[i].points||0)+Math.floor(total/10);customers[i].totalSpent=(customers[i].totalSpent||0)+total;Store.set('customers',customers);}}
-  if(method==='credit'&&remaining>0){
-    // الدين يمثل إجمالي الفاتورة، وpaidAmount يشمل الدفعة الأولى التي تمت من شاشة المبيعات.
-    // التحصيلات اللاحقة فقط تُسجل داخل paymentHistory حتى لا تتكرر في الخزنة.
-    Store.add('debts',{saleBatchId,invoiceNo,sourceSaleId:null,customerId:customerId||null,date:invoiceDate,person:customerName,type:'لنا',amount:total,paidAmount:Math.min(total,Math.max(0,paid)),paymentHistory:[],debtVersion:2,due:document.getElementById('posDueDate')?.value||'',note:`آجل من الفاتورة ${invoiceNo}${customerId?' — عميل مسجل':''}`,paid:remaining<=0,source:'sale',saleTotal:total});
-  }
-  // اكتملت تغييرات البيانات داخل العملية المحمية.
-  const invoice={invoiceNo,invoiceSeq,saleBatchId,date:invoiceDate,time:saleTime,customerName,type,method,subtotal,discount:safeDiscount,taxRate,tax, total,paid,remaining,change:method==='cash'?roundPOSMoney(paid-total):0,note};
-  localStorage.setItem('bm_lastPOSInvoice',JSON.stringify(invoice));
-  const invChip=document.getElementById('posInvoiceNo'); if(invChip)invChip.textContent=String(invoiceSeq);
-  showToast(method==='credit'?`📋 تم حفظ الفاتورة ${invoiceNo} — المتبقي ${fmt(remaining)}`:`✅ تم حفظ الفاتورة ${invoiceNo} — الباقي ${fmt(invoice.change)}`,'success');
-  window.posCart=[];
-  renderSalesPage(document.getElementById('contentArea'));
-  setTimeout(()=>openPOSReceiptPreview(invoice),180);
+
+    if(method==='credit'&&remaining>0){
+      Store.add('debts',{
+        saleBatchId,invoiceNo,sourceSaleId:null,customerId:customerId||null,date:invoiceDate,
+        person:customerName,type:'لنا',amount:total,paidAmount:Math.min(total,Math.max(0,paid)),
+        paymentHistory:[],debtVersion:2,due:document.getElementById('posDueDate')?.value||'',
+        note:`آجل من الفاتورة ${invoiceNo}${customerId?' — عميل مسجل':''}`,
+        paid:remaining<=0,source:'sale',saleTotal:total
+      });
+    }
+
+    const modeKey=document.getElementById('posDiscountMode')?.value||'none';
+    const modeText=({
+      none:'بدون خصم',
+      invoiceAmount:'خصم مبلغ من الفاتورة',
+      invoicePercent:'خصم نسبة من الفاتورة',
+      selectedAmount:'خصم مبلغ على صنف محدد',
+      selectedPercent:'خصم نسبة على صنف محدد'
+    })[modeKey]||'بدون خصم';
+    const selected=[...(window.posDiscountSelectedLines||[])].map(String);
+    const invoice={
+      invoiceNo,invoiceSeq,saleBatchId,date:invoiceDate,time:saleTime,customerName,
+      customerId:customerId||null,type,method,subtotal,discount:safeDiscount,
+      discountMode:modeText,discountModeKey:modeKey,discountInput:typeof window.getPOSDiscountBreakdown==='function'
+        ? Number(document.getElementById('posDiscount')?.value||0):0,
+      discountSelectedLines:selected,taxRate,tax,total,paid,remaining,
+      change:method==='cash'?roundPOSMoney(paid-total):0,note
+    };
+    localStorage.setItem('bm_lastPOSInvoice',JSON.stringify(invoice));
+    const chip=document.getElementById('posInvoiceNo'); if(chip)chip.textContent=String(invoiceSeq);
+    showToast(method==='credit'?`📋 تم حفظ الفاتورة ${invoiceNo} — المتبقي ${fmt(remaining)}`:`✅ تم حفظ الفاتورة ${invoiceNo} — الباقي ${fmt(invoice.change)}`,'success');
+    window.posCart=[];
+    window.posDiscountSelectedLines=[];
+    renderSalesPage(document.getElementById('contentArea'));
+    setTimeout(()=>openPOSReceiptPreview(invoice),180);
   }catch(error){
-    transactionKeys.forEach(k=>{try{ Store.set(k,transactionSnapshot[k]); }catch(e){} });
-    console.error('فشل حفظ الفاتورة وتم التراجع عن العملية:',error);
+    transactionKeys.forEach(k=>{try{Store.set(k,transactionSnapshot[k]);}catch(e){}});
+    console.error('فشل حفظ الفاتورة الجديدة وتم التراجع:',error);
     showToast('❌ تعذر حفظ الفاتورة — تم التراجع عن العملية بالكامل','error');
   }
 }
-
 function renderSaleProductGrid(){
   const grid=document.getElementById('saleProductGrid');
   if(!grid)return;
@@ -11582,6 +11648,169 @@ th,td{padding:9px 7px;border-bottom:1px solid #e6eeeb;text-align:right}
 
 <div class="thanks">شكرًا لتعاملكم معنا ❤️</div>
 </div>
+
+
+<style id="matgary-discount-ui-v21">
+/* ====== خصم متجري — واجهة مبسطة وواضحة على الموبايل ====== */
+.sale-ref-payment-discount.matgary-discount-panel{
+  display:grid!important;
+  grid-template-columns:minmax(110px,.62fr) minmax(0,1.38fr)!important;
+  gap:9px 12px!important;
+  align-items:center!important;
+  margin-top:11px!important;
+  padding:13px!important;
+  border:1px solid #eadfb8!important;
+  border-radius:16px!important;
+  background:linear-gradient(135deg,#fffdf5,#fffaf0)!important;
+  box-shadow:0 5px 16px rgba(133,108,31,.06)!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>label{
+  grid-column:1!important;
+  color:#705b12!important;
+  font-weight:950!important;
+  font-size:.78rem!important;
+  white-space:nowrap!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:6px!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>label i{margin:0!important;color:#a17b08!important;font-size:.9rem!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountMode{
+  grid-column:2!important;
+  width:100%!important;
+  height:44px!important;
+  border:1px solid #dfcf93!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#394447!important;
+  padding:0 12px!important;
+  font:inherit!important;
+  font-size:.75rem!important;
+  font-weight:900!important;
+  outline:none!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountMode:focus{border-color:#0f766e!important;box-shadow:0 0 0 3px rgba(15,118,110,.10)!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow{
+  grid-column:1/-1!important;
+  width:100%!important;
+  margin-top:0!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow>div{
+  display:grid!important;
+  grid-template-columns:auto minmax(0,1fr)!important;
+  gap:8px!important;
+  align-items:center!important;
+  justify-content:stretch!important;
+  padding:7px 8px!important;
+  border:1px solid #e5d79c!important;
+  border-radius:13px!important;
+  background:#fff!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow>div:before{
+  content:'قيمة الخصم';
+  grid-column:1/-1;
+  color:#827334!important;
+  font-size:.67rem!important;
+  font-weight:900!important;
+  text-align:right!important;
+  padding:0 2px!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow #posDiscountUnit{
+  font-size:.78rem!important;
+  color:#8b7b3b!important;
+  font-weight:950!important;
+  background:#fff8dc!important;
+  border:1px solid #eadca8!important;
+  border-radius:9px!important;
+  padding:7px 9px!important;
+  text-align:center!important;
+  min-width:48px!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow input#posDiscount{
+  width:100%!important;
+  height:48px!important;
+  border:2px solid #d6c47e!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#173b32!important;
+  padding:0 12px!important;
+  text-align:center!important;
+  font:inherit!important;
+  font-size:1rem!important;
+  font-weight:950!important;
+  outline:none!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow input#posDiscount:focus{
+  border-color:#0f766e!important;
+  box-shadow:0 0 0 4px rgba(15,118,110,.10)!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow input#posDiscount::placeholder{color:#a2aaad!important;font-size:.72rem!important;font-weight:800!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox{
+  grid-column:1/-1!important;
+  width:100%!important;
+  margin:0!important;
+  padding:9px!important;
+  border:1px dashed #d9ca8c!important;
+  border-radius:13px!important;
+  background:#fffdf7!important;
+  display:none;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target-title{
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  margin:0 0 7px!important;
+  color:#786317!important;
+  font-size:.7rem!important;
+  font-weight:950!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target-title i{color:#a17b08!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target{
+  display:block!important;
+  width:100%!important;
+  height:46px!important;
+  border:1.5px solid #cdbb6f!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#263337!important;
+  padding:0 12px!important;
+  font:inherit!important;
+  font-size:.76rem!important;
+  font-weight:900!important;
+  outline:none!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target:focus{border-color:#0f766e!important;box-shadow:0 0 0 3px rgba(15,118,110,.09)!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target-note{
+  margin:6px 0 0!important;
+  padding:6px 8px!important;
+  border-radius:9px!important;
+  background:#f7faf8!important;
+  color:#71807b!important;
+  font-size:.61rem!important;
+  line-height:1.5!important;
+  font-weight:700!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target-note b{color:#0f766e!important}
+.sale-ref-payment-discount.matgary-discount-panel>.matgary-discount-hint{
+  grid-column:1/-1!important;
+  margin:0!important;
+  padding:1px 3px 0!important;
+  color:#8a7a4d!important;
+  font-size:.61rem!important;
+  line-height:1.5!important;
+  font-weight:700!important;
+}
+@media(max-width:700px){
+  .sale-ref-payment-discount.matgary-discount-panel{grid-template-columns:1fr!important;gap:8px!important;padding:12px!important}
+  .sale-ref-payment-discount.matgary-discount-panel>label,
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountMode,
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow,
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox,
+  .sale-ref-payment-discount.matgary-discount-panel>.matgary-discount-hint{grid-column:1!important}
+}
+</style>
+
 </body></html>`;
 
   w.document.open();
@@ -15299,6 +15528,169 @@ setTimeout(()=>{
   window.__matgaryWhatsAppBuildText=buildWhatsAppText;
 })();
 </script>
+
+
+
+<style id="matgary-discount-ui-v21">
+/* ====== خصم متجري — واجهة مبسطة وواضحة على الموبايل ====== */
+.sale-ref-payment-discount.matgary-discount-panel{
+  display:grid!important;
+  grid-template-columns:minmax(110px,.62fr) minmax(0,1.38fr)!important;
+  gap:9px 12px!important;
+  align-items:center!important;
+  margin-top:11px!important;
+  padding:13px!important;
+  border:1px solid #eadfb8!important;
+  border-radius:16px!important;
+  background:linear-gradient(135deg,#fffdf5,#fffaf0)!important;
+  box-shadow:0 5px 16px rgba(133,108,31,.06)!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>label{
+  grid-column:1!important;
+  color:#705b12!important;
+  font-weight:950!important;
+  font-size:.78rem!important;
+  white-space:nowrap!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:6px!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>label i{margin:0!important;color:#a17b08!important;font-size:.9rem!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountMode{
+  grid-column:2!important;
+  width:100%!important;
+  height:44px!important;
+  border:1px solid #dfcf93!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#394447!important;
+  padding:0 12px!important;
+  font:inherit!important;
+  font-size:.75rem!important;
+  font-weight:900!important;
+  outline:none!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountMode:focus{border-color:#0f766e!important;box-shadow:0 0 0 3px rgba(15,118,110,.10)!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow{
+  grid-column:1/-1!important;
+  width:100%!important;
+  margin-top:0!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow>div{
+  display:grid!important;
+  grid-template-columns:auto minmax(0,1fr)!important;
+  gap:8px!important;
+  align-items:center!important;
+  justify-content:stretch!important;
+  padding:7px 8px!important;
+  border:1px solid #e5d79c!important;
+  border-radius:13px!important;
+  background:#fff!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow>div:before{
+  content:'قيمة الخصم';
+  grid-column:1/-1;
+  color:#827334!important;
+  font-size:.67rem!important;
+  font-weight:900!important;
+  text-align:right!important;
+  padding:0 2px!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow #posDiscountUnit{
+  font-size:.78rem!important;
+  color:#8b7b3b!important;
+  font-weight:950!important;
+  background:#fff8dc!important;
+  border:1px solid #eadca8!important;
+  border-radius:9px!important;
+  padding:7px 9px!important;
+  text-align:center!important;
+  min-width:48px!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow input#posDiscount{
+  width:100%!important;
+  height:48px!important;
+  border:2px solid #d6c47e!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#173b32!important;
+  padding:0 12px!important;
+  text-align:center!important;
+  font:inherit!important;
+  font-size:1rem!important;
+  font-weight:950!important;
+  outline:none!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow input#posDiscount:focus{
+  border-color:#0f766e!important;
+  box-shadow:0 0 0 4px rgba(15,118,110,.10)!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow input#posDiscount::placeholder{color:#a2aaad!important;font-size:.72rem!important;font-weight:800!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox{
+  grid-column:1/-1!important;
+  width:100%!important;
+  margin:0!important;
+  padding:9px!important;
+  border:1px dashed #d9ca8c!important;
+  border-radius:13px!important;
+  background:#fffdf7!important;
+  display:none;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target-title{
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  margin:0 0 7px!important;
+  color:#786317!important;
+  font-size:.7rem!important;
+  font-weight:950!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target-title i{color:#a17b08!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target{
+  display:block!important;
+  width:100%!important;
+  height:46px!important;
+  border:1.5px solid #cdbb6f!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#263337!important;
+  padding:0 12px!important;
+  font:inherit!important;
+  font-size:.76rem!important;
+  font-weight:900!important;
+  outline:none!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target:focus{border-color:#0f766e!important;box-shadow:0 0 0 3px rgba(15,118,110,.09)!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target-note{
+  margin:6px 0 0!important;
+  padding:6px 8px!important;
+  border-radius:9px!important;
+  background:#f7faf8!important;
+  color:#71807b!important;
+  font-size:.61rem!important;
+  line-height:1.5!important;
+  font-weight:700!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target-note b{color:#0f766e!important}
+.sale-ref-payment-discount.matgary-discount-panel>.matgary-discount-hint{
+  grid-column:1/-1!important;
+  margin:0!important;
+  padding:1px 3px 0!important;
+  color:#8a7a4d!important;
+  font-size:.61rem!important;
+  line-height:1.5!important;
+  font-weight:700!important;
+}
+@media(max-width:700px){
+  .sale-ref-payment-discount.matgary-discount-panel{grid-template-columns:1fr!important;gap:8px!important;padding:12px!important}
+  .sale-ref-payment-discount.matgary-discount-panel>label,
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountMode,
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow,
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox,
+  .sale-ref-payment-discount.matgary-discount-panel>.matgary-discount-hint{grid-column:1!important}
+}
+</style>
 
 </body>
   </html>
