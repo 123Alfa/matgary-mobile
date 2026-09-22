@@ -6226,7 +6226,9 @@ function buildWhatsAppInvoiceHTML(inv,sales){
     const saleName = String(s?.productName || p?.name || '');
     const fixedByName = /(?:\d+(?:[.,]\d+)?\s*)(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)/i.test(saleName)
       && !/موزاريلا|موتزاريلا|mozzarella/i.test(saleName);
-    const weightSale = fixedByName ? false : !!(isKgProduct(p) || s?.isWeightSale || s?.sellByWeight || s?.isKgProduct);
+    const isBramili = /براميلي|براميل/i.test(saleName);
+    const hasActualPackWeight = Number(s?.packages||0)>0 && Number(s?.weight||0)>0;
+    const weightSale = fixedByName ? false : !!(isKgProduct(p) || s?.isWeightSale || s?.sellByWeight || s?.isKgProduct || (isBramili && (String(s?.type||inv?.type||'').toLowerCase()==='wholesale' || hasActualPackWeight)));
 
     if(!weightSale){
       const qty=Math.max(1,Number(s?.packages||s?.qty||1));
@@ -6253,7 +6255,8 @@ function buildWhatsAppInvoiceHTML(inv,sales){
     const totalKg=Number(s?.qty)>0 ? Number(s.qty) : packs*weight;
     const totalLabel=weightLabel(totalKg);
     let subQty=`${packs} × ${weightLabel(weight)}`;
-    if(Math.abs(weight-0.5)<0.000001) subQty=`${packs} أنصاف كيلو`;
+    if(isBramili) subQty=`${packs} بستلة × ${weightLabel(weight)}`;
+    else if(Math.abs(weight-0.5)<0.000001) subQty=`${packs} أنصاف كيلو`;
     else if(Math.abs(weight-0.25)<0.000001) subQty=`${packs} أرباع كيلو`;
 
     const storedUnitPrice=Number(s?.unitPrice||0);
@@ -6285,7 +6288,7 @@ function buildWhatsAppInvoiceHTML(inv,sales){
     const badge = typeof isMozzarellaProduct==='function' && isMozzarellaProduct(p)
       ? (String(p?.name||'').includes('نباتي') ? 'نباتي' : 'طبيعي') : '';
     const priceHtml=d.weightSale
-      ? `<strong>سعر الكيلو: ${waEsc(d.unitPrice)} ج.م</strong><small>${Math.abs(d.weight-0.25)<0.000001?'سعر الربع':Math.abs(d.weight-0.5)<0.000001?'سعر النصف':'سعر العبوة'}: ${waEsc(d.packPrice)} ج.م</small>`
+      ? `<strong>سعر الكيلو: ${waEsc(d.unitPrice)} ج.م</strong><small>${isBramili?'سعر البستلة':Math.abs(d.weight-0.25)<0.000001?'سعر الربع':Math.abs(d.weight-0.5)<0.000001?'سعر النصف':'سعر العبوة'}: ${waEsc(d.packPrice)} ج.م</small>`
       : `<strong class="single-line">${waEsc(d.unitTitle)} ${waEsc(d.unitPrice)} ج.م</strong>`;
 
     const chips=d.weightSale && typeof isMozzarellaProduct==='function' && isMozzarellaProduct(p) && d.kgPrice>0
@@ -11361,7 +11364,7 @@ function historyCard(inv){
                     ? `سعر الكيلو: ${fmt(reliableKgPrice)} • سعر الربع كيلو: ${fmt(packPriceForDisplay)}`
                     : `سعر الكيلو: ${fmt(reliableKgPrice)}`))
           : `سعر الوحدة: ${fmt(s.price||0)}`
-      const detailUnit=isBramili ? 'عبوة' : (typeof productSaleUnitLabel==='function'?productSaleUnitLabel(p,s):(s.sellUnit||p?.unit||'عبوة'));
+      const detailUnit=isBramili ? 'بستلة' : (typeof productSaleUnitLabel==='function'?productSaleUnitLabel(p,s):(s.sellUnit||p?.unit||'عبوة'));
       const detailLabel=fixedPackDisplay ? `${Math.max(1,Number(s.packages||s.qty||1))} ${detailUnit}${fixedPackSize?' • '+fixedPackSize:''}` : invoiceSaleDetailLabel(s,p);
       const itemDiscount=Number(s.discountAmount||0);
       const discountText=itemDiscount>0.005 ? ` • خصم ${fmt(itemDiscount)} ج.م` : '';
@@ -13344,7 +13347,7 @@ html[data-theme="dark"] [style*="background-color: #ffffff"]{
 
       if(weighted){
         center(c,'سعر الكيلو: '+money(unit)+' ج.م',C.price,cy-11,16,900,'#173b32',225);
-        const title=Math.abs(w-.5)<.0001?'سعر النصف':Math.abs(w-.25)<.0001?'سعر الربع':'سعر العبوة';
+        const title=/براميلي|براميل/i.test(name)?'سعر البستلة':Math.abs(w-.5)<.0001?'سعر النصف':Math.abs(w-.25)<.0001?'سعر الربع':'سعر العبوة';
         center(c,title+': '+money(pack)+' ج.م',C.price,cy+18,15,800,'#60726b',225);
       }else{
         center(c,'سعر الوحدة: '+money(unit)+' ج.م',C.price,cy+2,16,900,'#173b32',230);
@@ -14499,6 +14502,7 @@ setTimeout(()=>{
   // الوحدة التي تظهر في الفواتير والرسائل حسب طبيعة الصنف.
   window.matgaryInvoiceUnit=function(p,s){
     const n=nameOf(p,s);
+    if(/براميلي|براميل/.test(n) && Number(s?.packages||0)>0 && Number(s?.weight||0)>0) return 'بستلة';
     if(/موزاريلا|موتزاريلا|mozzarella/.test(n)) return 'كجم';
     if(/مخلل|مخللات|pickle|pickles/.test(n)) return 'كجم';
     if(/برجر|برغر|burger/.test(n)) return 'عبوة';
@@ -14513,6 +14517,11 @@ setTimeout(()=>{
   // الوزن هنا للعرض في الفاتورة فقط. لا نغير isKgProduct ولا الحسابات.
   window.isWeightSaleLine=function(s,p){
     const n=nameOf(p,s);
+
+    if(/براميلي|براميل/.test(n)){
+      const hasActualPackWeight=Number(s?.packages||0)>0 && Number(s?.weight||0)>0;
+      if(hasActualPackWeight || String(s?.type||'').toLowerCase()==='wholesale' || p?.sellByWeight===true || s?.isWeightSale===true) return true;
+    }
 
     if(/موزاريلا|موتزاريلا|mozzarella/.test(n)) return true;
     if(/مخلل|مخللات|pickle|pickles/.test(n)) return true;
@@ -14545,6 +14554,10 @@ setTimeout(()=>{
     const n=String(p?.name||'').trim().toLowerCase();
     const w=Math.max(0.001,Number(weight||1));
 
+    if(/براميلي|براميل/.test(n)){
+      return `${q} بستلة × ${typeof weightLabel==='function'?weightLabel(w):w+' كجم'}`;
+    }
+
     if(/موزاريلا|موتزاريلا|mozzarella/.test(n)){
       const totalKg=q*w;
       const total=typeof weightLabel==='function'?weightLabel(totalKg):`${totalKg} كجم`;
@@ -14565,6 +14578,12 @@ setTimeout(()=>{
     const packs=Math.max(1,Number(s?.packages||1));
     const weight=typeof rawSaleWeight==='function'?Number(rawSaleWeight(s)||1):Number(s?.weight||1);
     const n=nameOf(p,s);
+
+    if(/براميلي|براميل/.test(n)){
+      const totalKg=Number(s?.qty)>0?Number(s.qty):packs*weight;
+      const total=typeof weightLabel==='function'?weightLabel(totalKg):`${totalKg} كجم`;
+      return `${total} • ${packs} بستلة × ${typeof weightLabel==='function'?weightLabel(weight):weight+' كجم'}`;
+    }
 
     if(/موزاريلا|موتزاريلا|mozzarella/.test(n)){
       const totalKg=Number(s?.qty)>0?Number(s.qty):packs*weight;
@@ -14768,7 +14787,7 @@ setTimeout(()=>{
      - يحذف ملاحظة "بيع من الكاشير" من الصورة.
      ========================================================= */
 
-  const IMAGE_VERSION='v18-bramili';
+  const IMAGE_VERSION='v18-bramili-safe';
 
   function cacheKey(inv){
     return IMAGE_VERSION+'|'+String(inv?.saleBatchId||inv?.invoiceSeq||inv?.invoiceNo||inv?.id||'');
@@ -15250,362 +15269,6 @@ setTimeout(()=>{
 
   window.__matgaryWhatsAppTextFinal=true;
   window.__matgaryWhatsAppBuildText=buildWhatsAppText;
-})();
-</script>
-
-
-<script id="matgary-final-bramili-wholesale-retail-v18">
-(function(){
-  'use strict';
-
-  /* ==========================================================
-     الإصلاح النهائي للبراميلي V18
-     - وزن البستلة يُؤخذ من سجل الفاتورة نفسه (s.weight).
-     - عدد البستلات يُؤخذ من s.packages.
-     - يدعم جملة وقطاعي؛ نوع البيع يحدد السعر فقط.
-     - لا يكتب 500 جم أو «عبوة» للبراميلي عندما يكون البيع مسجلاً
-       كبستلات موزونة.
-     - يحافظ على سعر الكيلو الأصلي، ويعرض الخصم منفصلًا.
-     ========================================================== */
-
-  function bName(s,p){
-    return String(s?.productName||s?.name||p?.name||'').trim();
-  }
-
-  function isBramili(s,p){
-    return /براميلي|براميل/i.test(bName(s,p));
-  }
-
-  function bNum(v){
-    const n=Number(v);
-    return Number.isFinite(n)?n:0;
-  }
-
-  function bMoney(v){
-    const n=bNum(v);
-    return n.toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2});
-  }
-
-  function bWeightLabel(v){
-    const n=bNum(v);
-    if(typeof window.weightLabel==='function'){
-      try{return window.weightLabel(n);}catch(_){ }
-    }
-    const kg=Math.round((n+Number.EPSILON)*1000)/1000;
-    return (Number.isInteger(kg)?String(kg):kg.toFixed(3).replace(/0+$/,'').replace(/\.$/,''))+' كجم';
-  }
-
-  function bEsc(v){
-    if(typeof window.waEsc==='function'){
-      try{return window.waEsc(String(v??''));}catch(_){ }
-    }
-    return String(v??'')
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  }
-
-  function bProduct(s){
-    return (Store.get('products')||[]).find(p=>String(p.id)===String(s?.productId))||{};
-  }
-
-  function bramiliData(s,p,inv){
-    const packs=Math.max(1,bNum(s?.packages)||0);
-    let weight=typeof window.rawSaleWeight==='function'
-      ?bNum(window.rawSaleWeight(s))
-      :bNum(s?.weight);
-    if(!(weight>0)){
-      const qty=bNum(s?.qty);
-      weight=qty>0 && packs>0 ? qty/packs : 1;
-    }
-    const totalKg=bNum(s?.qty)>0 ? bNum(s.qty) : packs*weight;
-    const discount=Math.max(0,bNum(s?.discountAmount));
-    const tax=Math.max(0,bNum(s?.taxAmount));
-    const net=Math.max(0,bNum(s?.total));
-    const grossStored=bNum(s?.grossTotal);
-    const gross=grossStored>0 ? grossStored : Math.max(0,net+discount-tax);
-
-    const saleType=String(s?.type||inv?.type||'retail').toLowerCase();
-    const pBase=saleType==='wholesale' ? bNum(p?.wholesale) : bNum(p?.retail);
-
-    let kgPrice=bNum(s?.unitPrice);
-    const valueSale=String(s?.saleMode||'').toLowerCase()==='value' || bNum(s?.valueAmount)>0;
-    const looksLikeGross=kgPrice>0 && totalKg>0 && Math.abs(kgPrice-gross)<0.011;
-    if(!(kgPrice>0)||looksLikeGross||valueSale){
-      if(pBase>0)kgPrice=pBase;
-      else if(bNum(s?.price)>0 && weight>0)kgPrice=bNum(s.price)/weight;
-      else if(gross>0 && totalKg>0)kgPrice=gross/totalKg;
-    }
-
-    const packPrice=(kgPrice>0&&weight>0)
-      ? Math.round((kgPrice*weight+Number.EPSILON)*100)/100 : 0;
-
-    return {
-      packs,weight,totalKg,gross,discount,tax,net,kgPrice,packPrice,
-      type:saleType==='wholesale'?'جملة':'قطاعي',
-      totalText:bWeightLabel(totalKg),
-      detailText:`${packs} بستلة × ${bWeightLabel(weight)}`
-    };
-  }
-
-  window.matgaryBramiliInvoiceData=bramiliData;
-  window.isMatgaryBramili=isBramili;
-
-  /* ---------- وحدات وتفاصيل الفواتير داخل البرنامج ---------- */
-  const oldInvoiceUnit=window.matgaryInvoiceUnit;
-  window.matgaryInvoiceUnit=function(p,s){
-    if(isBramili(s,p)){
-      const packs=bNum(s?.packages);
-      const w=bNum(s?.weight);
-      if(packs>0 && w>0)return 'بستلة';
-    }
-    return typeof oldInvoiceUnit==='function'
-      ? oldInvoiceUnit(p,s)
-      : (s?.sellUnit||p?.unit||'عبوة');
-  };
-
-  const oldSaleQuantityLabel=window.saleQuantityLabel;
-  window.saleQuantityLabel=function(p,qty,weight){
-    if(isBramili(null,p)){
-      const q=Math.max(1,bNum(qty));
-      return `${q} بستلة × ${bWeightLabel(weight||1)}`;
-    }
-    return typeof oldSaleQuantityLabel==='function'
-      ? oldSaleQuantityLabel(p,qty,weight)
-      : `${Math.max(1,bNum(qty))} ${bWeightLabel(weight||1)}`;
-  };
-
-  const oldInvoiceSaleQuantityLabel=window.invoiceSaleQuantityLabel;
-  window.invoiceSaleQuantityLabel=function(s,p){
-    if(isBramili(s,p)){
-      const d=bramiliData(s,p,{type:s?.type||'retail'});
-      return `${d.totalText} • ${d.detailText}`;
-    }
-    return typeof oldInvoiceSaleQuantityLabel==='function'
-      ? oldInvoiceSaleQuantityLabel(s,p)
-      : `${Math.max(1,bNum(s?.packages||s?.qty||1))} ${window.matgaryInvoiceUnit(p,s)}`;
-  };
-
-  window.invoiceSaleDetailLabel=window.invoiceSaleQuantityLabel;
-
-  /* ---------- تعديل نافذة تفاصيل الفاتورة الظاهرة في البرنامج ---------- */
-  function resolveAnyInvoice(key){
-    try{
-      if(typeof window.__waResolveInvoiceV2==='function'){
-        const x=window.__waResolveInvoiceV2(key);
-        if(x)return x;
-      }
-    }catch(_){ }
-    const sales=Array.isArray(Store.get('sales'))?Store.get('sales'):[];
-    let raw=String(key??'');
-    if(raw.startsWith('batch:')){
-      const b=raw.slice(6);
-      const lines=sales.filter(s=>String(s.saleBatchId||'')===b);
-      if(lines.length)return {lines,type:lines[0]?.type||'retail'};
-    }
-    if(raw.startsWith('sale:')) raw=raw.slice(5);
-    const one=sales.find(s=>String(s.id||'')===raw||String(s.invoiceNo||'')===raw||String(s.invoiceSeq||'')===raw||String(s.saleBatchId||'')===raw);
-    if(!one)return null;
-    const lines=one.saleBatchId?sales.filter(s=>String(s.saleBatchId||'')===String(one.saleBatchId||'')):[one];
-    return {lines,type:one.type||'retail'};
-  }
-
-  function patchOpenInvoiceDOM(key){
-    try{
-      const inv=resolveAnyInvoice(key);
-      if(!inv || !Array.isArray(inv.lines))return;
-      const rows=[...document.querySelectorAll('.invoice-lines-pro .invoice-line-pro')];
-      inv.lines.forEach((s,i)=>{
-        if(!isBramili(s,bProduct(s)))return;
-        const row=rows[i];
-        if(!row)return;
-        const p=bProduct(s);
-        const d=bramiliData(s,p,inv);
-        const small=row.querySelector('small');
-        const big=row.querySelector('b');
-        if(small){
-          let html=`${bEsc(d.totalText)} • ${bEsc(d.detailText)} • سعر الكيلو: ${bMoney(d.kgPrice)} ج.م • سعر البستلة: ${bMoney(d.packPrice)} ج.م`;
-          if(d.discount>0.005)html+=` • خصم الصنف: ${bMoney(d.discount)} ج.م`;
-          if(s.returnedQty)html+=` • مرتجع ${bMoney(s.returnedAmount||0)}`;
-          small.innerHTML=html;
-        }
-        if(big)big.textContent=bMoney(d.net)+' ج.م';
-      });
-    }catch(e){console.warn('[Matgary] bramili invoice DOM patch:',e);}
-  }
-
-  const oldOpenInvoice=window.openInvoicePro;
-  if(typeof oldOpenInvoice==='function'&&!oldOpenInvoice.__bramiliV18){
-    const wrapped=function(key){
-      const result=oldOpenInvoice.apply(this,arguments);
-      setTimeout(()=>patchOpenInvoiceDOM(key),0);
-      return result;
-    };
-    wrapped.__bramiliV18=true;
-    window.openInvoicePro=wrapped;
-  }
-
-  /* ---------- صورة فاتورة واتساب: نفس بيانات الفاتورة ---------- */
-  const oldBuildWhatsAppInvoiceHTML=window.buildWhatsAppInvoiceHTML;
-  if(typeof oldBuildWhatsAppInvoiceHTML==='function'&&!oldBuildWhatsAppInvoiceHTML.__bramiliV18){
-    const wrappedBuild=function(inv,sales){
-      const html=oldBuildWhatsAppInvoiceHTML.apply(this,arguments);
-      try{
-        const holder=document.createElement('div');
-        holder.innerHTML=html;
-        const rows=[...holder.querySelectorAll('tbody tr')];
-        const list=Array.isArray(sales)?sales:[];
-        list.forEach((s,i)=>{
-          if(!isBramili(s,bProduct(s)))return;
-          const row=rows[i];
-          if(!row)return;
-          const p=bProduct(s);
-          const d=bramiliData(s,p,inv);
-          const cells=row.querySelectorAll('td');
-          if(cells[2]){
-            cells[2].innerHTML=`<div class="wa-detail-lines wa-bramili-detail"><span class="main">${bEsc(d.totalText)}</span><span class="sub">${bEsc(d.detailText)}</span>${d.discount>0.005?`<span class="sub">خصم الصنف: ${bMoney(d.discount)} ج.م</span>`:''}</div>`;
-          }
-          if(cells[3]){
-            cells[3].innerHTML=`<div class="wa-price-cell wa-bramili-price"><strong>سعر الكيلو: ${bMoney(d.kgPrice)} ج.م</strong><small>سعر البستلة: ${bMoney(d.packPrice)} ج.م</small></div>`;
-          }
-          if(cells[4]){
-            cells[4].innerHTML=`<div class="wa-total-cell"><div>${bMoney(d.net)} ج.م</div>${d.discount>0.005?'<small>بعد الخصم</small>':''}</div>`;
-          }
-        });
-        return holder.firstElementChild?.outerHTML || html;
-      }catch(e){
-        console.warn('[Matgary] bramili WA image patch:',e);
-        return html;
-      }
-    };
-    wrappedBuild.__bramiliV18=true;
-    window.buildWhatsAppInvoiceHTML=wrappedBuild;
-  }
-
-  /* ---------- رسالة واتساب النهائية ---------- */
-  function buildBramiliAwareWhatsAppText(inv){
-    if(!inv)throw new Error('WA_INVOICE_NOT_FOUND');
-    const lines=Array.isArray(inv.lines)?inv.lines:[];
-    const type=inv.type==='wholesale'?'جملة':'قطاعي';
-    const method=({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[inv.paymentMethod||inv.method||'cash']||'نقدي';
-    const no=inv.invoiceSeq||inv.invoiceNo||'—';
-    const money=(v)=>bMoney(v)+' ج.م';
-
-    let t='🧾 *متجري — فاتورة بيع*\n';
-    t+='━━━━━━━━━━━━━━━━━━━━\n';
-    t+=`🔢 *رقم الفاتورة:* ${no}\n`;
-    if(inv.date)t+=`📅 *التاريخ:* ${inv.date}\n`;
-    if(inv.time)t+=`⏰ *الوقت:* ${inv.time}\n`;
-    t+=`👤 *العميل:* ${inv.customerName||'عميل عادي'}\n`;
-    if(inv.customerPhone)t+=`📞 *الهاتف:* ${inv.customerPhone}\n`;
-    t+=`🛍️ *نوع البيع:* ${type}\n`;
-    t+=`💳 *طريقة السداد:* ${method}\n`;
-    t+='━━━━━━━━━━━━━━━━━━━━\n';
-    t+='📦 *الأصناف*\n';
-
-    lines.forEach((s,i)=>{
-      const p=bProduct(s);
-      const name=bName(s,p)||'صنف';
-      const total=Math.max(0,bNum(s.total));
-      const d=isBramili(s,p)?bramiliData(s,p,inv):null;
-      t+=`\n*${i+1}) ${name}*\n`;
-
-      if(d){
-        t+=`   ⚖️ *الكمية:* ${d.totalText}\n`;
-        t+=`   📦 *التفصيل:* ${d.detailText}\n`;
-        t+=`   💰 *سعر الكيلو:* ${money(d.kgPrice)}\n`;
-        t+=`   💵 *سعر البستلة:* ${money(d.packPrice)}\n`;
-      }else{
-        const ws=typeof window.isWeightSaleLine==='function'?!!window.isWeightSaleLine(s,p):false;
-        if(ws){
-          const packs=Math.max(1,bNum(s.packages));
-          const weight=typeof window.rawSaleWeight==='function'?bNum(window.rawSaleWeight(s)):bNum(s.weight);
-          const totalKg=bNum(s.qty)>0?bNum(s.qty):packs*weight;
-          const kgPrice=bNum(s.unitPrice)||((bNum(s.grossTotal)||totalKg*0)>0&&totalKg>0?bNum(s.grossTotal)/totalKg:0);
-          t+=`   ⚖️ *الكمية:* ${bWeightLabel(totalKg)}\n`;
-          t+=`   💰 *سعر الكيلو:* ${money(kgPrice)}\n`;
-        }else{
-          const qty=Math.max(1,bNum(s.packages||s.qty||1));
-          const unit=typeof window.matgaryInvoiceUnit==='function'?window.matgaryInvoiceUnit(p,s):(s.sellUnit||p.unit||'عبوة');
-          const unitPrice=bNum(s.unitPrice||s.price)||(qty?total/qty:0);
-          t+=`   📦 *الكمية:* ${qty} ${unit}\n`;
-          t+=`   💰 *سعر الوحدة:* ${money(unitPrice)}\n`;
-        }
-      }
-
-      const itemDiscount=Math.max(0,bNum(s.discountAmount));
-      if(itemDiscount>0.005)t+=`   🏷️ *خصم الصنف:* ${money(itemDiscount)}\n`;
-      t+=`   💵 *إجمالي الصنف:* ${money(total)}\n`;
-    });
-
-    t+='\n━━━━━━━━━━━━━━━━━━━━\n';
-    const subtotal=bNum(inv.subtotal||inv.total);
-    const discount=bNum(inv.discount);
-    const tax=bNum(inv.tax);
-    const finalTotal=bNum(inv.total);
-    const paid=Math.min(finalTotal,Math.max(0,bNum(inv.paid)));
-    const remaining=Math.max(0,bNum(inv.remaining!=null?inv.remaining:finalTotal-paid));
-    const change=Math.max(0,bNum(inv.change));
-
-    if(subtotal>0&&Math.abs(subtotal-finalTotal)>0.005)t+=`💰 *الإجمالي قبل الخصم:* ${money(subtotal)}\n`;
-    if(discount>0.005)t+=`🏷️ *الخصم:* ${money(discount)}\n`;
-    if(tax>0.005)t+=`🧾 *الضريبة:* ${money(tax)}\n`;
-    t+=`🧮 *الإجمالي النهائي:* ${money(finalTotal)}\n`;
-    t+=`💵 *المدفوع:* ${money(paid)}\n`;
-    if((inv.paymentMethod||inv.method)==='cash'&&change>0.005)t+=`💸 *الباقي للعميل:* ${money(change)}\n`;
-    else t+=`📌 *المتبقي:* ${money(remaining)}\n`;
-    t+='━━━━━━━━━━━━━━━━━━━━\n';
-    t+='❤️ *شكرًا لتعاملكم معنا*\n';
-    t+='📋 *فاتورة إلكترونية من متجري*\n';
-    t+='🟢 *متجري — أكثر من مجرد متجر*';
-    return t;
-  }
-
-  window.__matgaryBramiliWhatsAppText=buildBramiliAwareWhatsAppText;
-
-  function sendTextForKey(key,phone){
-    let inv=null;
-    try{inv=resolveAnyInvoice(key);}catch(_){ }
-    if(!inv)return showToast('❌ لم أتمكن من العثور على الفاتورة','error');
-    const text=buildBramiliAwareWhatsAppText(inv);
-    const p=String(phone||inv.customerPhone||'').replace(/[^\d+]/g,'');
-    const normalized=(typeof normalizeWhatsAppPhone==='function'?normalizeWhatsAppPhone(p):p);
-    const url=normalized
-      ?'https://wa.me/'+normalized+'?text='+encodeURIComponent(text)
-      :'https://wa.me/?text='+encodeURIComponent(text);
-    window.location.href=url;
-  }
-
-  window.shareInvoicePro=function(key){sendTextForKey(key,'');};
-  window.shareInvoiceImagePro=function(key,phone){sendTextForKey(key,phone||'');};
-  window.sharePOSOnWhatsApp=function(){
-    let raw=null;
-    try{raw=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null');}catch(_){ }
-    if(!raw)return showToast('احفظ الفاتورة أولًا ثم شاركها على واتساب','warning');
-    const inv=raw.saleBatchId?resolveAnyInvoice('batch:'+raw.saleBatchId):raw;
-    if(!inv)return showToast('❌ لم أتمكن من العثور على الفاتورة','error');
-    const text=buildBramiliAwareWhatsAppText(inv);
-    const phone=raw.customerPhone||inv.customerPhone||'';
-    const p=typeof normalizeWhatsAppPhone==='function'?normalizeWhatsAppPhone(phone):String(phone||'').replace(/[^\d+]/g,'');
-    const url=p?'https://wa.me/'+p+'?text='+encodeURIComponent(text):'https://wa.me/?text='+encodeURIComponent(text);
-    window.location.href=url;
-  };
-
-  /* CSS خفيف لإظهار التفاصيل داخل صورة الفاتورة بوضوح. */
-  const style=document.createElement('style');
-  style.id='matgary-bramili-v18-style';
-  style.textContent=`
-    .wa-bramili-detail .sub{font-weight:800!important}
-    .wa-bramili-price small{display:block!important;margin-top:4px!important}
-    .wa-total-cell small{display:block!important;margin-top:3px!important;font-size:.66rem!important;opacity:.75}
-  `;
-  (document.head||document.documentElement).appendChild(style);
-
-  /* اضبط أي نافذة فاتورة سبق فتحها بعد إضافة الكود. */
-  setTimeout(()=>{
-    try{patchOpenInvoiceDOM('batch:'+((JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'{}')||{}).saleBatchId||''));}catch(_){ }
-  },100);
-
-  window.__matgaryBramiliV18=true;
 })();
 </script>
 
