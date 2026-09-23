@@ -8418,6 +8418,9 @@ function editPurchaseInvoice(id){
     <div class="purchase-edit-note-v185">
       ✏️ يمكنك تعديل <b>كل أصناف الفاتورة</b> والكميات والأسعار. المدفوعات السابقة محفوظة ولا يتم فقدها.
     </div>
+    <div class="purchase-edit-note-v185" style="background:#fff8e8;border-color:#f0dfad;color:#7a5a00">
+      ⚠️ إذا كانت كمية من هذه الفاتورة قد بيعت بالفعل، سيصحح البرنامج تكلفة المبيعات والمخزون تلقائيًا عند تغيير سعر الشراء، ولن يخصم الكمية من المخزون مرة ثانية.
+    </div>
     <div class="form-grid">
       <div class="form-group"><label>التاريخ</label><input type="date" id="mpurDate" value="${escapeHtml(first.date||today())}" class="sales-date-filter"></div>
       <div class="form-group"><label>المورد</label><select id="mpurSupplier">${supplierOpts}</select></div>
@@ -8449,22 +8452,17 @@ function savePurchaseInvoiceEdit(id){
     const row=rowEls[i];
     const qty=Number(row.querySelector('[data-field="qty"]')?.value||0);
     const price=Number(row.querySelector('[data-field="price"]')?.value||0);
-    return {...old,qty,price,total:qty*price};
+    return {...old,qty,price,total:money(qty*price)};
   });
   if(edited.some(x=>!Number.isFinite(x.qty)||x.qty<=0||!Number.isFinite(x.price)||x.price<=0))
     return showToast('❌ تأكد من الكمية والسعر في كل الأصناف','warning');
 
-  const total=edited.reduce((n,x)=>n+x.total,0);
+  const total=money(edited.reduce((n,x)=>n+x.total,0));
   const oldDebt=(Store.get('debts')||[]).find(d=>d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===batchId);
   const oldHistory=Array.isArray(oldDebt?.paymentHistory)?oldDebt.paymentHistory.slice():[];
   const historyPaid=oldHistory.reduce((n,h)=>n+Math.max(0,Number(h.amount)||0),0);
   const oldLinePaid=batch.reduce((n,p)=>n+Math.max(0,Number(p.paid)||0),0);
-  // paidAmount is cumulative in v2. Adding paymentHistory to it double-counts
-  // later supplier payments (e.g. 160 + 100 = 260). Use the compatibility-aware
-  // helper, which also understands the old v1.8.7 purchase-debt shape.
   const totalCollected=Math.max(oldLinePaid,Number(first.invoicePaid)||0,getDebtPaidAmount(oldDebt));
-  const initialPaid=Math.max(0,totalCollected-historyPaid);
-
   if(total+0.0001<totalCollected)
     return showToast(`❌ لا يمكن جعل إجمالي الفاتورة أقل من المدفوع بالفعل (${fmt(totalCollected)})`,'warning');
 
@@ -8476,43 +8474,27 @@ function savePurchaseInvoiceEdit(id){
   if(totalCollected>0 && String(oldSupplierId)!==String(supplierId))
     return showToast('❌ لا يمكن تغيير المورد بعد وجود سداد سابق','warning');
 
-  const newInitialPaid=Math.min(total,initialPaid);
   const newTotalCollected=Math.min(total,totalCollected);
   const remaining=Math.max(0,total-newTotalCollected);
   const date=document.getElementById('mpurDate')?.value||first.date||today();
   const note=(document.getElementById('mpurNote')?.value||'').trim();
 
   const snapshot={};
-  ['products','purchases','debts'].forEach(k=>{
+  ['products','purchases','debts','sales'].forEach(k=>{
     try{snapshot[k]=JSON.parse(JSON.stringify(Store.get(k)||[]));}catch(e){snapshot[k]=[];}
   });
 
   try{
-    // Reverse the old stock quantity AND its cost value, so changing an old purchase
-    // cannot corrupt the weighted-average purchase cost of the product.
     const currentProducts=Store.get('products')||[];
+    const sales=Store.get('sales')||[];
     const oldByProduct={};
+    const newByProduct={};
     batch.forEach(p=>{
       const k=String(p.productId||'');
-      if(!oldByProduct[k])oldByProduct[k]={qty:0,cost:0};
+      if(!oldByProduct[k])oldByProduct[k]={qty:0,cost:0,priceWeighted:0};
       oldByProduct[k].qty+=Math.max(0,Number(p.qty)||0);
       oldByProduct[k].cost+=Math.max(0,Number(p.qty)||0)*Math.max(0,Number(p.price)||0);
     });
-    Object.entries(oldByProduct).forEach(([pid,data])=>{
-      const p=currentProducts.find(x=>String(x.id)===pid);
-      if(!p)throw new Error('OLD_PRODUCT_NOT_FOUND');
-      const currentQty=Math.max(0,Number(p.qty)||0);
-      const newQty=currentQty-data.qty;
-      if(newQty<-0.0001)throw new Error('INVALID_OLD_STOCK');
-      const currentValue=currentQty*Math.max(0,Number(p.purchase)||0);
-      const remainingValue=Math.max(0,currentValue-data.cost);
-      const baseAvg=newQty>0?remainingValue/newQty:0;
-      Store.update('products',p.id,{qty:Math.max(0,newQty),purchase:baseAvg});
-    });
-
-    // Re-apply the edited invoice lines and calculate the weighted average from the
-    // remaining inventory value + the new purchase cost.
-    const newByProduct={};
     edited.forEach(x=>{
       const k=String(x.productId||'');
       if(!newByProduct[k])newByProduct[k]={qty:0,cost:0,lines:[]};
@@ -8520,24 +8502,70 @@ function savePurchaseInvoiceEdit(id){
       newByProduct[k].cost+=x.qty*x.price;
       newByProduct[k].lines.push(x);
     });
-    Object.entries(newByProduct).forEach(([pid,data])=>{
-      const p=(Store.get('products')||[]).find(x=>String(x.id)===pid);
-      if(!p)throw new Error('NEW_PRODUCT_NOT_FOUND');
-      const baseQty=Math.max(0,Number(p.qty)||0);
-      const baseAvg=Math.max(0,Number(p.purchase)||0);
-      const finalQty=baseQty+data.qty;
-      const finalValue=(baseQty*baseAvg)+data.cost;
-      const avg=finalQty>0?finalValue/finalQty:data.lines[0].price;
-      Store.update('products',p.id,{qty:finalQty,purchase:avg});
+
+    /*
+      تصحيح فاتورة شراء بعد بيع جزء من الكمية:
+      النظام لا يملك تتبع Lot مستقل لكل شراء، لذلك عند اكتشاف أن الرصيد الحالي
+      أقل من كمية الفاتورة القديمة نعتبر الفرق هو الكمية التي خرجت بعد هذا الشراء.
+      نوزع فرق التكلفة على مبيعات الصنف اللاحقة لتاريخ الشراء، ثم نضع أثر الكمية
+      المتبقية في متوسط تكلفة المخزون الحالي. بهذه الطريقة لا نطلب من المستخدم
+      حذف الفاتورة أو إدخال حركة وهمية، ولا نحاول خصم 9 كجم مرة أخرى من المخزون.
+    */
+    const soldAdjustments=[];
+    Object.entries(oldByProduct).forEach(([pid,oldData])=>{
+      const p=currentProducts.find(x=>String(x.id)===pid);
+      if(!p)throw new Error('OLD_PRODUCT_NOT_FOUND');
+      const newData=newByProduct[pid]||{qty:0,cost:0,lines:[]};
+      const currentQty=Math.max(0,Number(p.qty)||0);
+      const oldQty=oldData.qty;
+      const oldUnit=oldQty>0?oldData.cost/oldQty:0;
+      const newUnit=newData.qty>0?newData.cost/newData.qty:oldUnit;
+      const deltaPerUnit=newUnit-oldUnit;
+
+      // لو الكمية الحالية أقل من كمية الشراء القديمة، فجزء من هذه الكمية خرج بالفعل.
+      const soldQty=Math.min(oldQty,Math.max(0,oldQty-currentQty));
+      const remainingFromPurchase=Math.max(0,oldQty-soldQty);
+
+      if(soldQty>0 && Math.abs(deltaPerUnit)>0.000001){
+        soldAdjustments.push({pid,soldQty,deltaPerUnit,fromDate:oldData.date||first.date||date});
+      }
+
+      // لا نغير كمية المخزون هنا؛ الكمية الحالية هي الرصيد الحقيقي بعد المبيعات.
+      // نغيّر فقط قيمة التكلفة المرتبطة بالجزء المتبقي من الشراء.
+      if(Math.abs(deltaPerUnit)>0.000001){
+        const currentAvg=Math.max(0,Number(p.purchase)||0);
+        const currentValue=currentQty*currentAvg;
+        const remainingDelta=deltaPerUnit*remainingFromPurchase;
+        const correctedValue=Math.max(0,currentValue+remainingDelta);
+        const correctedAvg=currentQty>0?correctedValue/currentQty:currentAvg;
+        Store.update('products',p.id,{purchase:correctedAvg});
+      }
     });
 
-    // Preserve the original first payment on invoice lines. Later supplier payments
-    // live only in paymentHistory/paidAmount and are never double-counted here.
+    // تعديل تكلفة المبيعات المرتبطة بالجزء الذي خرج بعد شراء الفاتورة.
+    // نبدأ بالأقدم بعد تاريخ الشراء (FIFO تقريبي) لأن البرنامج لا يحتفظ بأرقام Lots.
+    soldAdjustments.forEach(adj=>{
+      let left=adj.soldQty;
+      const candidates=sales
+        .filter(s=>String(s.productId)===String(adj.pid) && String(s.date||'')>=String(adj.fromDate||''))
+        .sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+      candidates.forEach(sale=>{
+        if(left<=0)return;
+        const q=Math.max(0,Number(sale.qty)||0);
+        if(q<=0)return;
+        const applyQty=Math.min(left,q);
+        const costDelta=adj.deltaPerUnit*applyQty;
+        const oldCost=Number(sale.cost)||0;
+        const newCost=Math.max(0,oldCost+costDelta);
+        const oldProfit=Number(sale.profit)||0;
+        Store.update('sales',sale.id,{cost:newCost,profit:oldProfit-costDelta});
+        left-=applyQty;
+      });
+    });
+
+    // تحديث بيانات الفاتورة نفسها بدون إضافة/خصم كمية جديدة من المخزون.
     let distributed=0;
     edited.forEach((x,i)=>{
-      // paid on each line is the cumulative amount collected for the whole invoice,
-      // distributed by line value. This keeps the cashbox total equal to the real
-      // amount paid, even for multi-item invoices.
       const cumulativeLinePaid=i===edited.length-1
         ?Math.max(0,newTotalCollected-distributed)
         :(total>0?newTotalCollected*(x.total/total):0);
@@ -8552,8 +8580,6 @@ function savePurchaseInvoiceEdit(id){
       });
     });
 
-    // Purchase debt uses the standard model: amount = full invoice total,
-    // paidAmount = total collected so far, and paymentHistory = later collections.
     const debts=(Store.get('debts')||[]).filter(d=>d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===batchId);
     debts.forEach(d=>Store.delete('debts',d.id));
     if(remaining>0){
@@ -8567,11 +8593,12 @@ function savePurchaseInvoiceEdit(id){
     }
 
     closeModal();
-    showToast(`✅ تم تعديل فاتورة الشراء #${first.invoiceSeq||getPurchaseDisplaySequence(batch)||''} وحفظ ${edited.length} أصناف`,'success');
+    showToast(`✅ تم تعديل فاتورة الشراء #${first.invoiceSeq||getPurchaseDisplaySequence(batch)||''} وتصحيح التكلفة مع الحفاظ على المبيعات السابقة`,'success');
     renderPurchasesPage(document.getElementById('contentArea'));
+    if(typeof renderSalesPage==='function')renderSalesPage(document.getElementById('contentArea'));
     if(typeof renderCashboxData==='function')renderCashboxData();
   }catch(error){
-    ['products','purchases','debts'].forEach(k=>{try{Store.set(k,snapshot[k]||[]);}catch(e){}});
+    ['products','purchases','debts','sales'].forEach(k=>{try{Store.set(k,snapshot[k]||[]);}catch(e){}});
     console.error('فشل تعديل فاتورة الشراء المتعددة وتم التراجع:',error);
     showToast('❌ تعذر تعديل الفاتورة — تم التراجع عن العملية','error');
   }
