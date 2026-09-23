@@ -3646,6 +3646,32 @@ html[data-theme="dark"] .sales-summary-card .value{
 .wa-product{max-width:205px;overflow:hidden}
 </style>
 <!-- WhatsApp invoice V19: fixed-pack classification + slogan correction -->
+
+<style id="matgary-reports-v31-css">
+/* ==================== متجري v1.8.31 — التقارير والمتابعة ==================== */
+.reports-v31{display:flex;flex-direction:column;gap:14px}
+.rep-hero{background:linear-gradient(135deg,#0f766e 0%,#0b5f58 58%,#c99a22 150%);color:#fff;border-radius:22px;padding:19px 18px;box-shadow:0 12px 30px rgba(15,118,110,.16);position:relative;overflow:hidden}
+.rep-hero:after{content:'';position:absolute;inset:auto -60px -90px auto;width:210px;height:210px;border-radius:50%;background:rgba(255,255,255,.08)}
+.rep-hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:relative;z-index:1}
+.rep-hero h2{font-size:1.2rem;font-weight:950;margin:4px 0 2px}.rep-hero p{font-size:.72rem;color:rgba(255,255,255,.82);margin:0}
+.rep-hero-badge{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:6px 9px;font-size:.64rem;font-weight:900;white-space:nowrap}
+.rep-toolbar{background:#fff;border:1px solid var(--border);border-radius:18px;padding:12px;box-shadow:var(--shadow)}
+.rep-toolbar-grid{display:grid;grid-template-columns:1fr 1fr 1.3fr auto;gap:9px;align-items:end}.rep-field label{display:block;font-size:.66rem;font-weight:900;color:var(--text-muted);margin-bottom:5px}.rep-field input,.rep-field select{width:100%;padding:10px 11px;border:1.5px solid var(--border);border-radius:11px;background:var(--bg-input);font:inherit;font-size:.76rem;color:var(--text);font-weight:800}
+.rep-periods{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.rep-periods button{border:1px solid var(--border);background:#f8faf9;color:var(--text-light);border-radius:999px;padding:7px 10px;font:inherit;font-size:.62rem;font-weight:900;cursor:pointer}.rep-periods button.active,.rep-periods button:hover{background:#eaf7f3;color:var(--primary);border-color:#b9ddd3}
+.rep-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.rep-kpi{background:#fff;border:1px solid var(--border);border-radius:16px;padding:13px;box-shadow:var(--shadow);min-width:0}.rep-kpi .kicon{width:34px;height:34px;border-radius:11px;background:#edf8f4;color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.9rem;margin-bottom:7px}.rep-kpi span{display:block;color:var(--text-muted);font-size:.62rem;font-weight:800}.rep-kpi strong{display:block;margin-top:4px;font-size:1rem;font-weight:950;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rep-kpi em{display:block;font-style:normal;color:var(--text-light);font-size:.58rem;margin-top:2px}
+.rep-alerts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.rep-alert{background:#fff;border:1px solid var(--border);border-radius:14px;padding:10px;display:flex;align-items:center;gap:9px}.rep-alert .aicon{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:0 0 34px}.rep-alert.warn .aicon{background:#fff7e8;color:#b36c00}.rep-alert.danger .aicon{background:#fff0f0;color:#b42318}.rep-alert.info .aicon{background:#eef5ff;color:#315db7}.rep-alert.ok .aicon{background:#eaf8f1;color:#087443}.rep-alert b{display:block;font-size:.7rem;font-weight:950}.rep-alert span{display:block;font-size:.58rem;color:var(--text-muted);margin-top:2px}
+.rep-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:7px;box-shadow:var(--shadow)}.rep-nav button{border:0;background:transparent;color:var(--text-muted);padding:10px 6px;border-radius:11px;font:inherit;font-size:.63rem;font-weight:900;cursor:pointer}.rep-nav button.active{background:#eaf7f3;color:var(--primary);box-shadow:inset 0 0 0 1px #c7e4dc}
+.rep-panel{background:#fff;border:1px solid var(--border);border-radius:18px;padding:13px;box-shadow:var(--shadow)}.rep-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}.rep-panel-head h3{font-size:.83rem;font-weight:950;color:var(--text)}.rep-panel-head small{font-size:.58rem;color:var(--text-muted)}
+.rep-chart{position:relative;height:245px}.rep-chart.tall{height:290px}
+.rep-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.rep-mini-note{background:#f7faf9;border:1px solid #e2ebe7;border-radius:12px;padding:9px 10px;font-size:.6rem;color:var(--text-light);line-height:1.7;margin-top:9px}
+.rep-table-wrap{overflow:auto;border:1px solid var(--border);border-radius:13px}.rep-table{width:100%;border-collapse:collapse;font-size:.68rem}.rep-table th,.rep-table td{padding:9px 7px;border-bottom:1px solid var(--border);white-space:nowrap;text-align:right}.rep-table th{background:#eef4f1;color:var(--primary);font-size:.6rem;font-weight:950}.rep-table tbody tr:nth-child(even) td{background:#fbfcfb}.rep-table tbody tr:hover td{background:#f2faf7}.rep-num{font-weight:900}.rep-pos{color:#087443;font-weight:900}.rep-neg{color:#b42318;font-weight:900}.rep-muted{color:var(--text-muted)}
+.rep-empty{padding:34px 15px;text-align:center;color:var(--text-muted)}.rep-empty i{font-size:2rem;display:block;margin-bottom:7px;color:#b7cbc5}
+.rep-section-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.rep-filter-tip{font-size:.58rem;color:var(--text-muted);margin-top:7px}.rep-actions{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap}.rep-actions .btn{padding:9px 12px;font-size:.68rem}
+.rep-progress{height:7px;background:#edf2f0;border-radius:99px;overflow:hidden;min-width:90px}.rep-progress span{display:block;height:100%;background:linear-gradient(90deg,#0f766e,#14b8a6);border-radius:inherit}
+@media(max-width:800px){.rep-toolbar-grid{grid-template-columns:1fr 1fr}.rep-kpi-grid{grid-template-columns:repeat(2,1fr)}.rep-alerts{grid-template-columns:1fr 1fr}.rep-section-grid,.rep-two{grid-template-columns:1fr}.rep-nav{grid-template-columns:repeat(4,1fr)} }
+@media(max-width:520px){.rep-toolbar-grid{grid-template-columns:1fr}.rep-kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}.rep-alerts{grid-template-columns:1fr}.rep-hero-top{flex-direction:column}.rep-nav button{font-size:.58rem;padding:9px 3px}.rep-panel{padding:10px}.rep-chart{height:220px}}
+@media print{.rep-toolbar,.rep-nav,.rep-actions,.no-print,.bottom-nav,.app-header{display:none!important}.reports-v31{gap:8px}.rep-hero{box-shadow:none}.rep-panel{break-inside:avoid;box-shadow:none}.rep-chart{height:230px}}
+</style>
 </head>
 <body>
 <div id="loading-screen">
@@ -3715,7 +3741,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-// متجري v1.8.30 — إصدار نهائي بعد تعديلات الخصومات والفواتير
+// متجري v1.8.31 — مركز التقارير والمتابعة الاحترافي
 const APP_VERSION='v1.8.32';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "18 سبتمبر 2026 — تحسين شامل ودقيق للوضع الداكن وتوحيد الألوان";
@@ -10472,55 +10498,152 @@ function loadSummary(){
 
 // ==================== التقارير (مُحسّن) ====================
 function renderReportsPage(container){
-  if (typeof Chart === 'undefined') { console.warn('Chart.js غير متاح بدون إنترنت'); return; }
-
-  container.innerHTML=`<div class="fade-in">
-    <div class="card"><div class="card-title"><i class="fas fa-chart-line"></i> تحليل المبيعات الشهرية</div><div class="chart-container"><canvas id="salesChart"></canvas></div></div>
-    <div class="card"><div class="card-title"><i class="fas fa-chart-pie"></i> توزيع المصروفات</div><div class="chart-container"><canvas id="expenseChart"></canvas></div></div>
-    <div class="card"><div class="card-title"><i class="fas fa-chart-bar"></i> أفضل 5 أصناف مبيعاً</div><div class="chart-container"><canvas id="topProductsChart"></canvas></div></div>
-    <div class="card"><div class="card-title"><i class="fas fa-coins"></i> الأرباح مقابل المصروفات</div><div class="chart-container"><canvas id="profitExpenseChart"></canvas></div></div>
+  const monthStart=(today()||'').slice(0,7)+'-01';
+  const existingFrom=document.getElementById('repFrom')?.value||monthStart;
+  const existingTo=document.getElementById('repTo')?.value||today();
+  const existingMode=window.matgaryReportMode||'overview';
+  window.__matgaryReportCharts=window.__matgaryReportCharts||{};
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  container.innerHTML=`<div class="fade-in reports-v31">
+    <section class="rep-hero">
+      <div class="rep-hero-top"><div><div style="font-size:.64rem;color:rgba(255,255,255,.72);font-weight:800">متجري • v1.8.31</div><h2><i class="fas fa-chart-line"></i> مركز التقارير والمتابعة</h2><p>تحليل المبيعات والربحية والأصناف والعملاء والمخزون والمصروفات والديون في شاشة واحدة.</p></div><div class="rep-hero-badge" id="repRangeBadge">${esc(existingFrom)} → ${esc(existingTo)}</div></div>
+    </section>
+    <section class="rep-toolbar no-print">
+      <div class="rep-toolbar-grid">
+        <div class="rep-field"><label>من تاريخ</label><input id="repFrom" type="date" value="${esc(existingFrom)}"></div>
+        <div class="rep-field"><label>إلى تاريخ</label><input id="repTo" type="date" value="${esc(existingTo)}"></div>
+        <div class="rep-field"><label>التقرير</label><select id="repSelect" onchange="setMatgaryReportMode(this.value)">
+          <option value="overview">لوحة الأداء</option><option value="sales">المبيعات</option><option value="products">الأصناف</option><option value="profit">الربحية</option><option value="channels">جملة × قطاعي</option><option value="customers">العملاء</option><option value="inventory">المخزون</option><option value="expenses">المصروفات</option><option value="debts">الديون</option>
+        </select></div>
+        <div class="rep-actions"><button class="btn btn-primary" onclick="loadMatgaryReports()"><i class="fas fa-rotate"></i> تحديث</button><button class="btn btn-outline" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button></div>
+      </div>
+      <div class="rep-periods">
+        <button type="button" data-rep-p="today" onclick="setMatgaryReportPeriod('today')">اليوم</button>
+        <button type="button" data-rep-p="week" onclick="setMatgaryReportPeriod('week')">7 أيام</button>
+        <button type="button" data-rep-p="month" onclick="setMatgaryReportPeriod('month')">هذا الشهر</button>
+        <button type="button" data-rep-p="prevmonth" onclick="setMatgaryReportPeriod('prevmonth')">الشهر السابق</button>
+        <button type="button" data-rep-p="90" onclick="setMatgaryReportPeriod('90')">90 يوم</button>
+        <span class="rep-filter-tip">التقارير تعتمد على البيانات المحفوظة حاليًا ولا تغيّر أي بيانات تشغيلية.</span>
+      </div>
+    </section>
+    <div id="repKpis"></div><div id="repAlerts"></div>
+    <section class="rep-nav no-print" id="repNav">
+      ${[['overview','الأداء'],['sales','المبيعات'],['products','الأصناف'],['profit','الربحية'],['channels','جملة/قطاعي'],['customers','العملاء'],['inventory','المخزون'],['expenses','المصروفات'],['debts','الديون']].map(x=>`<button data-rep-nav="${x[0]}" onclick="setMatgaryReportMode('${x[0]}')">${x[1]}</button>`).join('')}
+    </section>
+    <div id="repBody"></div>
   </div>`;
+  document.getElementById('repSelect').value=existingMode;
+  loadMatgaryReports();
+}
 
-  const sales=Store.get('sales');
-  const expenses=Store.get('expenses');
-
-  const monthly={};
-  sales.forEach(s=>{const m=s.date?.slice(0,7)||'unknown';monthly[m]=(monthly[m]||0)+(s.total||0)});
-  new Chart(document.getElementById('salesChart'),{
-    type:'line',
-    data:{labels:Object.keys(monthly).sort(),datasets:[{label:'المبيعات الشهرية',data:Object.keys(monthly).sort().map(k=>monthly[k]),borderColor:'#d4a72c',backgroundColor:'rgba(212,175,55,0.1)',fill:true,tension:0.4,borderWidth:3,pointBackgroundColor:'#d4a72c',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#94a3b8'}},x:{grid:{display:false},ticks:{color:'#94a3b8'}}}}
-  });
-
-  const byType={};
-  expenses.forEach(e=>{byType[e.type]=(byType[e.type]||0)+(e.amount||0)});
-  new Chart(document.getElementById('expenseChart'),{
-    type:'doughnut',
-    data:{labels:Object.keys(byType),datasets:[{data:Object.values(byType),backgroundColor:['#d4a72c','#c99a22','#f39c12','#e74c3c','#3498db','#9b59b6','#2ecc71','#e67e22']}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:15,font:{size:12}}}}}
-  });
-
-  const ps={};
-  sales.forEach(s=>{ps[s.productName]=(ps[s.productName]||0)+(s.total||0)});
-  const top5=Object.entries(ps).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  new Chart(document.getElementById('topProductsChart'),{
-    type:'bar',
-    data:{labels:top5.map(x=>x[0]),datasets:[{label:'المبيعات',data:top5.map(x=>x[1]),backgroundColor:['#d4a72c','#c99a22','#b8960c','#a67c00','#8b6914'],borderRadius:8}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#94a3b8'}},x:{grid:{display:false},ticks:{color:'#94a3b8'}}}}
-  });
-
-  const monthlyProfit={}, monthlyExpense={};
-  sales.forEach(s=>{const m=s.date?.slice(0,7)||'unknown';monthlyProfit[m]=(monthlyProfit[m]||0)+(s.profit||0)});
-  expenses.forEach(e=>{const m=e.date?.slice(0,7)||'unknown';monthlyExpense[m]=(monthlyExpense[m]||0)+(e.amount||0)});
-  const allMonths=[...new Set([...Object.keys(monthlyProfit),...Object.keys(monthlyExpense)])].sort();
-  new Chart(document.getElementById('profitExpenseChart'),{
-    type:'bar',
-    data:{labels:allMonths,datasets:[
-      {label:'الأرباح',data:allMonths.map(m=>monthlyProfit[m]||0),backgroundColor:'rgba(16,185,129,0.7)',borderColor:'#10b981',borderWidth:1,borderRadius:8},
-      {label:'المصروفات',data:allMonths.map(m=>monthlyExpense[m]||0),backgroundColor:'rgba(239,68,68,0.7)',borderColor:'#ef4444',borderWidth:1,borderRadius:8}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8'}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#94a3b8'}},x:{grid:{display:false},ticks:{color:'#94a3b8'}}}}
-  });
+function matgaryReportNum(v){const n=Number(v);return Number.isFinite(n)?n:0;}
+function matgaryReportMoney(v){return typeof fmt==='function'?fmt(v):matgaryReportNum(v).toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2})+' ج.م';}
+function matgaryReportDateLabel(d){if(!d)return '-';try{return new Date(d+'T00:00:00').toLocaleDateString('ar-EG',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(_){return d;}}
+function matgaryReportDaysAgo(n){const d=new Date((today()||'2026-01-01')+'T00:00:00');d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
+function matgaryReportPrevRange(from,to){const a=new Date(from+'T00:00:00'),b=new Date(to+'T00:00:00');const days=Math.max(1,Math.round((b-a)/86400000)+1);const pTo=new Date(a);pTo.setDate(pTo.getDate()-1);const pFrom=new Date(pTo);pFrom.setDate(pFrom.getDate()-days+1);return [pFrom.toISOString().slice(0,10),pTo.toISOString().slice(0,10)];}
+function matgaryReportInRange(d,from,to){const x=String(d||'');return (!from||x>=from)&&(!to||x<=to);}
+function matgaryReportInvoiceKey(s){return String(s?.saleBatchId||s?.invoiceNo||s?.invoiceSeq||s?.id||'');}
+function matgaryReportSaleMode(s){return String(s?.type||s?.saleType||'retail').toLowerCase()==='wholesale'?'wholesale':'retail';}
+function matgaryReportUnit(s,p){try{return typeof window.matgaryInvoiceUnit==='function'?window.matgaryInvoiceUnit(p||{},s||{}):(s?.sellUnit||p?.unit||'وحدة');}catch(_){return s?.sellUnit||p?.unit||'وحدة';}}
+function matgaryReportRemainingDebt(d){try{if(typeof getDebtRemaining==='function')return matgaryReportNum(getDebtRemaining(d));}catch(_){}return d?.paid?0:Math.max(0,matgaryReportNum(d?.amount)-matgaryReportNum(d?.paidAmount));}
+function matgaryReportData(from,to){
+  const sales=(Store.get('sales')||[]).filter(s=>matgaryReportInRange(s.date,from,to));
+  const purchases=(Store.get('purchases')||[]).filter(p=>matgaryReportInRange(p.date,from,to));
+  const expenses=(Store.get('expenses')||[]).filter(e=>matgaryReportInRange(e.date,from,to));
+  const withdrawals=(Store.get('withdrawals')||[]).filter(w=>matgaryReportInRange(w.date,from,to));
+  const allSales=Store.get('sales')||[],allProducts=Store.get('products')||[],allDebts=Store.get('debts')||[],customers=Store.get('customers')||[],suppliers=Store.get('suppliers')||[];
+  const invoices=new Map();
+  sales.forEach(s=>{const k=matgaryReportInvoiceKey(s);if(!invoices.has(k))invoices.set(k,{key:k,date:s.date||'',customerId:s.customerId,customerName:s.customerName||'عميل عادي',type:matgaryReportSaleMode(s),total:0,profit:0,discount:0,paid:0,remaining:0,lines:0});const g=invoices.get(k);g.total+=matgaryReportNum(s.total);g.profit+=matgaryReportNum(s.profit);g.discount+=Math.max(0,matgaryReportNum(s.discountAmount));g.paid=Math.max(g.paid,matgaryReportNum(s.paid));g.remaining=Math.max(g.remaining,matgaryReportNum(s.remaining));g.lines++;});
+  const totalSales=sales.reduce((n,s)=>n+matgaryReportNum(s.total),0), totalProfit=sales.reduce((n,s)=>n+matgaryReportNum(s.profit),0), totalDiscount=sales.reduce((n,s)=>n+Math.max(0,matgaryReportNum(s.discountAmount)),0), totalExpenses=expenses.reduce((n,e)=>n+matgaryReportNum(e.amount),0), totalPurchases=purchases.reduce((n,p)=>n+matgaryReportNum(p.total??(matgaryReportNum(p.qty)*matgaryReportNum(p.price))),0), totalWithdrawals=withdrawals.reduce((n,w)=>n+matgaryReportNum(w.amount),0);
+  const costBase=Math.max(0,totalSales-totalProfit); const netProfit=totalProfit-totalExpenses; const margin=totalSales>0?(totalProfit/totalSales)*100:0;
+  const productMap=new Map(allProducts.map(p=>[String(p.id),p]));
+  const products=new Map(); sales.forEach(s=>{const p=productMap.get(String(s.productId));const key=String(s.productId||s.productName||'');if(!products.has(key))products.set(key,{id:key,name:s.productName||p?.name||'صنف',qty:0,sales:0,profit:0,discount:0,lines:0,unit:matgaryReportUnit(s,p)});const g=products.get(key);g.qty+=matgaryReportNum(s.qty);g.sales+=matgaryReportNum(s.total);g.profit+=matgaryReportNum(s.profit);g.discount+=Math.max(0,matgaryReportNum(s.discountAmount));g.lines++;if(g.unit==='وحدة')g.unit=matgaryReportUnit(s,p);});
+  const byDay=new Map(), byMonth=new Map(), byChannel={retail:{sales:0,profit:0,discount:0,invoices:new Set()},wholesale:{sales:0,profit:0,discount:0,invoices:new Set()}};
+  sales.forEach(s=>{const day=String(s.date||'غير محدد');const month=day.slice(0,7)||'غير محدد';if(!byDay.has(day))byDay.set(day,{sales:0,profit:0,discount:0,invoices:new Set()});const d=byDay.get(day);d.sales+=matgaryReportNum(s.total);d.profit+=matgaryReportNum(s.profit);d.discount+=Math.max(0,matgaryReportNum(s.discountAmount));d.invoices.add(matgaryReportInvoiceKey(s));if(!byMonth.has(month))byMonth.set(month,{sales:0,profit:0,expense:0});const m=byMonth.get(month);m.sales+=matgaryReportNum(s.total);m.profit+=matgaryReportNum(s.profit);const c=byChannel[matgaryReportSaleMode(s)];c.sales+=matgaryReportNum(s.total);c.profit+=matgaryReportNum(s.profit);c.discount+=Math.max(0,matgaryReportNum(s.discountAmount));c.invoices.add(matgaryReportInvoiceKey(s));});
+  expenses.forEach(e=>{const m=String(e.date||'').slice(0,7)||'غير محدد';if(!byMonth.has(m))byMonth.set(m,{sales:0,profit:0,expense:0});byMonth.get(m).expense+=matgaryReportNum(e.amount);});
+  const expenseTypes=new Map();expenses.forEach(e=>expenseTypes.set(e.type||'أخرى',(expenseTypes.get(e.type||'أخرى')||0)+matgaryReportNum(e.amount)));
+  const customerRows=new Map();sales.forEach(s=>{const key=String(s.customerId||s.customerName||'عميل عادي');if(!customerRows.has(key))customerRows.set(key,{id:key,name:s.customerName||'عميل عادي',sales:0,profit:0,invoices:new Set(),qty:0});const g=customerRows.get(key);g.sales+=matgaryReportNum(s.total);g.profit+=matgaryReportNum(s.profit);g.invoices.add(matgaryReportInvoiceKey(s));g.qty+=matgaryReportNum(s.qty);});
+  const debtRows=new Map();allDebts.forEach(d=>{const rem=matgaryReportRemainingDebt(d);if(rem<=0)return;const key=String(d.type||'')+'|'+String(d.person||'').trim().toLowerCase();if(!debtRows.has(key))debtRows.set(key,{name:d.person||'غير محدد',type:d.type||'',remaining:0,due:d.due||'',overdue:0});const g=debtRows.get(key);g.remaining+=rem;if(d.due&&d.due<=(today()||'')&&rem>0)g.overdue+=rem;if(d.due&&(!g.due||d.due<g.due))g.due=d.due;});
+  const returns=sales.reduce((n,s)=>n+Math.max(0,matgaryReportNum(s.returnedAmount)),0), returnQty=sales.reduce((n,s)=>n+Math.max(0,matgaryReportNum(s.returnedQty)),0);
+  const inventoryValue=allProducts.reduce((n,p)=>n+Math.max(0,matgaryReportNum(p.qty))*Math.max(0,matgaryReportNum(p.purchase)),0), retailValue=allProducts.reduce((n,p)=>n+Math.max(0,matgaryReportNum(p.qty))*Math.max(0,matgaryReportNum(p.retail)),0);
+  const lowStock=allProducts.filter(p=>matgaryReportNum(p.qty)>0&&matgaryReportNum(p.qty)<=Math.max(0,matgaryReportNum(p.minStock||5))); const outStock=allProducts.filter(p=>matgaryReportNum(p.qty)<=0);
+  const lastSaleByProduct={};allSales.forEach(s=>{const id=String(s.productId||'');if(id&&s.date&&(!lastSaleByProduct[id]||s.date>lastSaleByProduct[id]))lastSaleByProduct[id]=s.date;});
+  const stale=allProducts.filter(p=>{const last=lastSaleByProduct[String(p.id)];return !last||((new Date((today()||'')+'T00:00:00')-new Date(last+'T00:00:00'))/86400000)>=30;});
+  return {sales,purchases,expenses,withdrawals,allProducts,customers,suppliers,invoices,products,byDay,byMonth,byChannel,expenseTypes,customerRows,debtRows,totalSales,totalProfit,totalDiscount,totalExpenses,totalPurchases,totalWithdrawals,costBase,netProfit,margin,returns,returnQty,inventoryValue,retailValue,lowStock,outStock,stale};
+}
+function matgaryReportsEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+function setMatgaryReportMode(mode){window.matgaryReportMode=mode||'overview';const s=document.getElementById('repSelect');if(s)s.value=window.matgaryReportMode;loadMatgaryReports();}
+function setMatgaryReportPeriod(key){const from=document.getElementById('repFrom'),to=document.getElementById('repTo');if(!from||!to)return;const t=today();let f=t;if(key==='today')f=t;else if(key==='week')f=matgaryReportDaysAgo(6);else if(key==='month')f=t.slice(0,7)+'-01';else if(key==='prevmonth'){const d=new Date(t.slice(0,7)+'-01T00:00:00');d.setDate(0);to.value=d.toISOString().slice(0,10);d.setDate(1);f=d.toISOString().slice(0,10);from.value=f;document.querySelectorAll('[data-rep-p]').forEach(x=>x.classList.toggle('active',x.dataset.repP===key));loadMatgaryReports();return;}else if(key==='90')f=matgaryReportDaysAgo(89);from.value=f;to.value=t;document.querySelectorAll('[data-rep-p]').forEach(x=>x.classList.toggle('active',x.dataset.repP===key));loadMatgaryReports();}
+function loadMatgaryReports(){
+  const from=document.getElementById('repFrom')?.value||((today()||'').slice(0,7)+'-01'),to=document.getElementById('repTo')?.value||today();
+  if(from&&to&&from>to){ showToast('⚠️ تاريخ البداية لا يمكن أن يكون بعد تاريخ النهاية','warning'); return; }
+  const d=matgaryReportData(from,to);const mode=window.matgaryReportMode||'overview';
+  const badge=document.getElementById('repRangeBadge');if(badge)badge.textContent=matgaryReportDateLabel(from)+' → '+matgaryReportDateLabel(to);
+  const prev=matgaryReportPrevRange(from,to),pd=matgaryReportData(prev[0],prev[1]);
+  const delta=base=>{const cur=d[base],old=pd[base];if(!old)return null;return ((cur-old)/Math.abs(old))*100;};
+  const cards=[['fa-sack-dollar','المبيعات',matgaryReportMoney(d.totalSales),delta('totalSales')],['fa-bullseye','إجمالي الربح',matgaryReportMoney(d.totalProfit),delta('totalProfit')],['fa-chart-pie','هامش الربح',d.margin.toFixed(1)+'%',null],['fa-wallet','صافي الربح',matgaryReportMoney(d.netProfit),delta('netProfit')],['fa-file-invoice','الفواتير',String(d.invoices.size),null],['fa-percent','الخصومات',matgaryReportMoney(d.totalDiscount),null],['fa-receipt','المصروفات',matgaryReportMoney(d.totalExpenses),delta('totalExpenses')],['fa-boxes-stacked','مخزون التكلفة',matgaryReportMoney(d.inventoryValue),null]];
+  const k=document.getElementById('repKpis');if(k)k.innerHTML='<div class="rep-kpi-grid">'+cards.map(c=>`<div class="rep-kpi"><div class="kicon"><i class="fas ${c[0]}"></i></div><span>${c[1]}</span><strong>${c[2]}</strong><em>${c[3]===null?'الفترة المحددة':(c[3]>=0?'▲ ':'▼ ')+Math.abs(c[3]).toFixed(1)+'% مقابل الفترة السابقة'}</em></div>`).join('')+'</div>';
+  const a=document.getElementById('repAlerts');const alerts=[];if(d.outStock.length)alerts.push(['danger','fa-box-open','أصناف نافدة',d.outStock.length+' صنف يحتاج مراجعة']);if(d.lowStock.length)alerts.push(['warn','fa-triangle-exclamation','مخزون منخفض',d.lowStock.length+' صنف تحت الحد الأدنى']);const overdue=[...d.debtRows.values()].filter(x=>x.overdue>0).sort((a,b)=>b.overdue-a.overdue);if(overdue.length)alerts.push(['danger','fa-calendar-xmark','ديون متأخرة',overdue.length+' حساب بإجمالي '+matgaryReportMoney(overdue.reduce((n,x)=>n+x.overdue,0))]);if(d.stale.length)alerts.push(['info','fa-clock','أصناف راكدة',d.stale.length+' صنف بدون حركة 30 يومًا أو أكثر']);if(!alerts.length)alerts.push(['ok','fa-circle-check','لا توجد تنبيهات رئيسية','الوضع التشغيلي الحالي بلا تنبيهات مسجلة']);if(a)a.innerHTML='<div class="rep-alerts">'+alerts.slice(0,4).map(x=>`<div class="rep-alert ${x[0]}"><div class="aicon"><i class="fas ${x[1]}"></i></div><div><b>${x[2]}</b><span>${x[3]}</span></div></div>`).join('')+'</div>';
+  document.querySelectorAll('[data-rep-nav]').forEach(b=>b.classList.toggle('active',b.dataset.repNav===mode));
+  renderMatgaryReportBody(mode,d,pd,from,to);
+  /* Chart.js يُحمّل async؛ لو لم يكن جاهزًا عند فتح التقرير، أعد رسم المخططات تلقائيًا بعد تحميله. */
+  if(typeof Chart==='undefined') setTimeout(()=>{ if(typeof Chart!=='undefined' && document.getElementById('repBody')) loadMatgaryReports(); },900);
+}
+function matgaryReportTable(headers,rows,empty='لا توجد بيانات'){return `<div class="rep-table-wrap"><table class="rep-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="${headers.length}" class="rep-empty"><i class="fas fa-inbox"></i>${empty}</td></tr>`}</tbody></table></div>`;}
+function destroyMatgaryReportCharts(){window.__matgaryReportCharts=window.__matgaryReportCharts||{};Object.values(window.__matgaryReportCharts).forEach(c=>{try{c.destroy()}catch(_){}});window.__matgaryReportCharts={};}
+function makeMatgaryReportChart(id,cfg){if(typeof Chart==='undefined')return null;const el=document.getElementById(id);if(!el)return null;try{const c=new Chart(el,cfg);window.__matgaryReportCharts[id]=c;return c;}catch(e){console.warn('Matgary report chart error',id,e);return null;}}
+function renderMatgaryReportBody(mode,d,pd,from,to){
+  destroyMatgaryReportCharts();const body=document.getElementById('repBody');if(!body)return;const rowsByDay=[...d.byDay.entries()].sort((a,b)=>a[0].localeCompare(b[0]));const productRows=[...d.products.values()].sort((a,b)=>b.sales-a.sales);const customerRows=[...d.customerRows.values()].sort((a,b)=>b.sales-a.sales);const debtRows=[...d.debtRows.values()].sort((a,b)=>b.remaining-a.remaining);
+  if(mode==='overview'){
+    body.innerHTML=`<div class="rep-section-grid">
+      <section class="rep-panel"><div class="rep-panel-head"><h3>📈 اتجاه المبيعات</h3><small>حسب الأيام داخل الفترة</small></div><div class="rep-chart"><canvas id="repSalesTrend"></canvas></div></section>
+      <section class="rep-panel"><div class="rep-panel-head"><h3>💰 الربح والمصروفات</h3><small>حسب الشهر</small></div><div class="rep-chart"><canvas id="repProfitExpense"></canvas></div></section>
+      <section class="rep-panel"><div class="rep-panel-head"><h3>🏆 أعلى 5 أصناف بالقيمة</h3><small>إجمالي المبيعات</small></div><div class="rep-chart"><canvas id="repTopProducts"></canvas></div></section>
+      <section class="rep-panel"><div class="rep-panel-head"><h3>💸 توزيع المصروفات</h3><small>حسب النوع</small></div><div class="rep-chart"><canvas id="repExpensePie"></canvas></div></section>
+    </div>
+    <section class="rep-panel"><div class="rep-panel-head"><h3>🔎 لقطة سريعة من الفترة</h3><small>أبرز الأرقام التشغيلية</small></div>${matgaryReportTable(['المؤشر','القيمة','ملاحظة'],[
+      `<tr><td>التكلفة التقريبية للمبيعات</td><td class="rep-num">${matgaryReportMoney(d.costBase)}</td><td class="rep-muted">المبيعات − الربح المسجل</td></tr>`,
+      `<tr><td>متوسط الفاتورة</td><td class="rep-num">${matgaryReportMoney(d.invoices.size?d.totalSales/d.invoices.size:0)}</td><td class="rep-muted">عدد الفواتير الفعلي</td></tr>`,
+      `<tr><td>المرتجعات</td><td class="rep-num">${matgaryReportMoney(d.returns)}</td><td class="rep-muted">كمية مرتجعة: ${d.returnQty||0}</td></tr>`,
+      `<tr><td>السحوبات</td><td class="rep-num">${matgaryReportMoney(d.totalWithdrawals)}</td><td class="rep-muted">لا تُخصم من ربح المبيعات</td></tr>`
+    ])}</section></div>`;
+    makeMatgaryReportChart('repSalesTrend',{type:'line',data:{labels:rowsByDay.map(x=>x[0]),datasets:[{label:'المبيعات',data:rowsByDay.map(x=>x[1].sales),tension:.35,fill:true,borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
+    const months=[...d.byMonth.keys()].sort();makeMatgaryReportChart('repProfitExpense',{type:'bar',data:{labels:months,datasets:[{label:'الربح',data:months.map(m=>d.byMonth.get(m).profit),borderRadius:7},{label:'المصروفات',data:months.map(m=>d.byMonth.get(m).expense),borderRadius:7}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
+    makeMatgaryReportChart('repTopProducts',{type:'bar',data:{labels:productRows.slice(0,5).map(x=>x.name),datasets:[{label:'المبيعات',data:productRows.slice(0,5).map(x=>x.sales),borderRadius:7}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{grid:{display:false}}}}});
+    const ex=[...d.expenseTypes.entries()].sort((a,b)=>b[1]-a[1]);makeMatgaryReportChart('repExpensePie',{type:'doughnut',data:{labels:ex.map(x=>x[0]),datasets:[{data:ex.map(x=>x[1])}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+    return;
+  }
+  if(mode==='sales'){
+    body.innerHTML=`<div class="rep-panel"><div class="rep-panel-head"><h3>🧾 تقرير المبيعات اليومي</h3><small>${matgaryReportDateLabel(from)} → ${matgaryReportDateLabel(to)}</small></div>${matgaryReportTable(['التاريخ','الفواتير','المبيعات','الربح','الخصومات','متوسط الفاتورة'],rowsByDay.slice().reverse().map(([day,x])=>`<tr><td>${matgaryReportDateLabel(day)}</td><td class="rep-num">${x.invoices.size}</td><td class="rep-num">${matgaryReportMoney(x.sales)}</td><td class="rep-pos">${matgaryReportMoney(x.profit)}</td><td>${matgaryReportMoney(x.discount)}</td><td>${matgaryReportMoney(x.invoices.size?x.sales/x.invoices.size:0)}</td></tr>`))}</div><div class="rep-two"><section class="rep-panel"><div class="rep-panel-head"><h3>📌 ملخص طرق السداد</h3><small>الفاتورة قد تكون مدفوعة أو آجلة</small></div>${matgaryReportTable(['النوع','عدد الفواتير','القيمة'],[['cash','نقدي'],['credit','آجل']].map(x=>{const list=[...d.invoices.values()].filter(i=>String(d.sales.find(s=>matgaryReportInvoiceKey(s)===i.key)?.paymentMethod||'cash')===x[0]);return `<tr><td>${x[1]}</td><td>${list.length}</td><td>${matgaryReportMoney(list.reduce((n,i)=>n+i.total,0))}</td></tr>`;}))}</section><section class="rep-panel"><div class="rep-panel-head"><h3>↩️ المرتجعات</h3><small>مسجلة داخل فترة التقرير</small></div><div class="rep-mini-note">قيمة المرتجعات: <b>${matgaryReportMoney(d.returns)}</b><br>الكمية المرتجعة: <b>${d.returnQty}</b></div></section></div>`;
+    return;
+  }
+  if(mode==='products'){
+    body.innerHTML=`<div class="rep-panel"><div class="rep-panel-head"><h3>📦 تحليل الأصناف</h3><small>القيمة + الكمية + الربحية</small></div>${matgaryReportTable(['الصنف','الكمية','الوحدة','المبيعات','الربح','هامش الربح','الخصم'],productRows.map(x=>`<tr><td class="rep-num">${matgaryReportEsc(x.name)}</td><td>${matgaryReportNum(x.qty).toLocaleString('ar-EG',{maximumFractionDigits:3})}</td><td>${matgaryReportEsc(x.unit)}</td><td>${matgaryReportMoney(x.sales)}</td><td class="rep-pos">${matgaryReportMoney(x.profit)}</td><td>${x.sales>0?(x.profit/x.sales*100).toFixed(1):'0.0'}%</td><td>${matgaryReportMoney(x.discount)}</td></tr>`))}</div><div class="rep-two"><section class="rep-panel"><div class="rep-panel-head"><h3>🏆 الأكثر مبيعًا بالقيمة</h3><small>أعلى إجمالي مبيعات</small></div>${matgaryReportTable(['الصنف','المبيعات'],productRows.slice(0,10).map(x=>`<tr><td>${matgaryReportEsc(x.name)}</td><td class="rep-num">${matgaryReportMoney(x.sales)}</td></tr>`))}</section><section class="rep-panel"><div class="rep-panel-head"><h3>🎯 الأعلى ربحًا</h3><small>بالربح المسجل</small></div>${matgaryReportTable(['الصنف','الربح'],productRows.slice().sort((a,b)=>b.profit-a.profit).slice(0,10).map(x=>`<tr><td>${matgaryReportEsc(x.name)}</td><td class="rep-pos">${matgaryReportMoney(x.profit)}</td></tr>`))}</section></div>`;
+    return;
+  }
+  if(mode==='profit'){
+    const months=[...d.byMonth.keys()].sort();body.innerHTML=`<div class="rep-two"><section class="rep-panel"><div class="rep-panel-head"><h3>📊 الربحية حسب الشهر</h3><small>المبيعات، التكلفة، الربح، المصروفات</small></div>${matgaryReportTable(['الشهر','المبيعات','التكلفة التقريبية','الربح','المصروفات','صافي الربح'],months.map(m=>{const x=d.byMonth.get(m),cost=Math.max(0,x.sales-x.profit),net=x.profit-x.expense;return `<tr><td>${m}</td><td>${matgaryReportMoney(x.sales)}</td><td>${matgaryReportMoney(cost)}</td><td class="rep-pos">${matgaryReportMoney(x.profit)}</td><td>${matgaryReportMoney(x.expense)}</td><td class="${net>=0?'rep-pos':'rep-neg'}">${matgaryReportMoney(net)}</td></tr>`;}))}</section><section class="rep-panel"><div class="rep-panel-head"><h3>🧮 معادلة النتيجة</h3><small>للمراجعة الواضحة</small></div><div class="rep-mini-note"><b>إجمالي الربح:</b> المبيعات − التكلفة التقريبية المسجلة.<br><b>صافي الربح النهائي:</b> إجمالي الربح − المصروفات.<br><b>السحوبات والديون</b> تظهر كحركات مالية منفصلة ولا تدخل تلقائيًا في صافي الربح التشغيلي.</div></section></div><section class="rep-panel"><div class="rep-panel-head"><h3>💼 ربحية الأصناف</h3><small>من الأعلى للأقل حسب الربح</small></div>${matgaryReportTable(['الصنف','المبيعات','الربح','الهامش'],productRows.slice().sort((a,b)=>b.profit-a.profit).map(x=>`<tr><td>${matgaryReportEsc(x.name)}</td><td>${matgaryReportMoney(x.sales)}</td><td class="rep-pos">${matgaryReportMoney(x.profit)}</td><td>${x.sales>0?(x.profit/x.sales*100).toFixed(1):'0.0'}%</td></tr>`))}</section>`;
+    return;
+  }
+  if(mode==='channels'){
+    const ch=[['retail','قطاعي'],['wholesale','جملة']];body.innerHTML=`<section class="rep-panel"><div class="rep-panel-head"><h3>⚖️ مقارنة الجملة والقطاعي</h3><small>حسب نوع البيع المحفوظ في الفواتير</small></div>${matgaryReportTable(['نوع البيع','الفواتير','المبيعات','الربح','هامش الربح','الخصومات'],ch.map(([k,label])=>{const x=d.byChannel[k];const margin=x.sales>0?x.profit/x.sales*100:0;return `<tr><td class="rep-num">${label}</td><td>${x.invoices.size}</td><td>${matgaryReportMoney(x.sales)}</td><td class="rep-pos">${matgaryReportMoney(x.profit)}</td><td>${margin.toFixed(1)}%</td><td>${matgaryReportMoney(x.discount)}</td></tr>`;}))}</section><div class="rep-two"><section class="rep-panel"><div class="rep-panel-head"><h3>قطاعي</h3><small>مؤشرات الفترة</small></div>${(()=>{const x=d.byChannel.retail;return `<div class="rep-mini-note">المبيعات: <b>${matgaryReportMoney(x.sales)}</b><br>الفواتير: <b>${x.invoices.size}</b><br>الربح: <b>${matgaryReportMoney(x.profit)}</b></div>`})()}</section><section class="rep-panel"><div class="rep-panel-head"><h3>جملة</h3><small>مؤشرات الفترة</small></div>${(()=>{const x=d.byChannel.wholesale;return `<div class="rep-mini-note">المبيعات: <b>${matgaryReportMoney(x.sales)}</b><br>الفواتير: <b>${x.invoices.size}</b><br>الربح: <b>${matgaryReportMoney(x.profit)}</b></div>`})()}</section></div>`;
+    return;
+  }
+  if(mode==='customers'){
+    const debtByPerson={};[...d.debtRows.values()].forEach(x=>{const key=String(x.name||'').trim().toLowerCase();debtByPerson[key]=(debtByPerson[key]||0)+(x.type==='لنا'?x.remaining:0);});body.innerHTML=`<section class="rep-panel"><div class="rep-panel-head"><h3>👥 تقرير العملاء</h3><small>ترتيب حسب قيمة المبيعات</small></div>${matgaryReportTable(['العميل','الفواتير','المبيعات','الربح','متوسط الفاتورة','مديونية لنا'],customerRows.map(x=>`<tr><td class="rep-num">${matgaryReportEsc(x.name)}</td><td>${x.invoices.size}</td><td>${matgaryReportMoney(x.sales)}</td><td class="rep-pos">${matgaryReportMoney(x.profit)}</td><td>${matgaryReportMoney(x.invoices.size?x.sales/x.invoices.size:0)}</td><td>${matgaryReportMoney(debtByPerson[String(x.name||'').trim().toLowerCase()]||0)}</td></tr>`))}</section>`;
+    return;
+  }
+  if(mode==='inventory'){
+    const invRows=d.allProducts.slice().sort((a,b)=>matgaryReportNum(a.qty)-matgaryReportNum(b.qty)).map(p=>{const qty=matgaryReportNum(p.qty),purchase=matgaryReportNum(p.purchase),retail=matgaryReportNum(p.retail),cost=qty*purchase,sale=qty*retail;const status=qty<=0?'<span class="rep-neg">نافد</span>':qty<=matgaryReportNum(p.minStock||5)?'<span style="color:#b36c00;font-weight:900">منخفض</span>':'<span class="rep-pos">جيد</span>';return `<tr><td>${matgaryReportEsc(p.name)}</td><td>${qty.toLocaleString('ar-EG',{maximumFractionDigits:3})}</td><td>${matgaryReportEsc(p.unit||'وحدة')}</td><td>${matgaryReportMoney(cost)}</td><td>${matgaryReportMoney(sale)}</td><td>${status}</td></tr>`;});body.innerHTML=`<section class="rep-panel"><div class="rep-panel-head"><h3>📦 تقرير المخزون الحالي</h3><small>التكلفة + قيمة البيع القطاعي التقريبية</small></div>${matgaryReportTable(['الصنف','الرصيد','الوحدة','قيمة التكلفة','قيمة البيع القطاعي','الحالة'],invRows)}</section><div class="rep-two"><section class="rep-panel"><div class="rep-panel-head"><h3>🚨 يحتاج طلب</h3><small>نافد أو تحت الحد الأدنى</small></div>${matgaryReportTable(['الصنف','الرصيد','الحد الأدنى'],d.allProducts.filter(p=>matgaryReportNum(p.qty)<=matgaryReportNum(p.minStock||5)).sort((a,b)=>matgaryReportNum(a.qty)-matgaryReportNum(b.qty)).slice(0,20).map(p=>`<tr><td>${matgaryReportEsc(p.name)}</td><td class="${matgaryReportNum(p.qty)<=0?'rep-neg':''}">${matgaryReportNum(p.qty)}</td><td>${matgaryReportNum(p.minStock||5)}</td></tr>`))}</section><section class="rep-panel"><div class="rep-panel-head"><h3>⏳ أصناف راكدة</h3><small>30 يومًا أو أكثر بدون بيع</small></div>${matgaryReportTable(['الصنف','الرصيد','آخر بيع'],d.stale.slice(0,20).map(p=>`<tr><td>${matgaryReportEsc(p.name)}</td><td>${matgaryReportNum(p.qty)}</td><td>${d.allProducts.includes(p)?(p.id && (Store.get('sales')||[]).filter(s=>String(s.productId)===String(p.id)).sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0]?.date||'لا يوجد'):'-'}</td></tr>`))}</section></div>`;
+    return;
+  }
+  if(mode==='expenses'){
+    const ex=[...d.expenseTypes.entries()].sort((a,b)=>b[1]-a[1]);const max=ex.length?ex[0][1]:1;body.innerHTML=`<div class="rep-two"><section class="rep-panel"><div class="rep-panel-head"><h3>💸 المصروفات حسب النوع</h3><small>الفترة المحددة</small></div>${matgaryReportTable(['النوع','الإجمالي','النسبة'],ex.map(([k,v])=>`<tr><td>${matgaryReportEsc(k)}</td><td>${matgaryReportMoney(v)}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="rep-progress"><span style="width:${Math.min(100,(v/max)*100)}%"></span></div>${d.totalExpenses>0?(v/d.totalExpenses*100).toFixed(1):'0.0'}%</div></td></tr>`))}</section><section class="rep-panel"><div class="rep-panel-head"><h3>🧾 مصروفات الفترة</h3><small>${d.expenses.length} حركة</small></div>${matgaryReportTable(['التاريخ','النوع','المبلغ','ملاحظة'],d.expenses.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(e=>`<tr><td>${matgaryReportDateLabel(e.date)}</td><td>${matgaryReportEsc(e.type||'أخرى')}</td><td class="rep-num">${matgaryReportMoney(e.amount)}</td><td class="rep-muted">${matgaryReportEsc(e.note||'-')}</td></tr>`))}</section></div>`;
+    return;
+  }
+  if(mode==='debts'){
+    body.innerHTML=`<div class="rep-two"><section class="rep-panel"><div class="rep-panel-head"><h3>📥 لنا</h3><small>المتبقي على العملاء</small></div>${matgaryReportTable(['الحساب','المتبقي','المتأخر'],debtRows.filter(x=>x.type==='لنا').map(x=>`<tr><td>${matgaryReportEsc(x.name)}</td><td class="rep-num">${matgaryReportMoney(x.remaining)}</td><td class="${x.overdue>0?'rep-neg':''}">${matgaryReportMoney(x.overdue)}</td></tr>`))}</section><section class="rep-panel"><div class="rep-panel-head"><h3>📤 علينا</h3><small>المتبقي للموردين/الآخرين</small></div>${matgaryReportTable(['الحساب','المتبقي','المتأخر'],debtRows.filter(x=>x.type==='علينا').map(x=>`<tr><td>${matgaryReportEsc(x.name)}</td><td class="rep-num">${matgaryReportMoney(x.remaining)}</td><td class="${x.overdue>0?'rep-neg':''}">${matgaryReportMoney(x.overdue)}</td></tr>`))}</section></div><section class="rep-panel"><div class="rep-panel-head"><h3>📌 إجمالي وضع الديون</h3><small>الرصيد النشط الحالي</small></div>${(()=>{const us=debtRows.filter(x=>x.type==='لنا').reduce((n,x)=>n+x.remaining,0),them=debtRows.filter(x=>x.type==='علينا').reduce((n,x)=>n+x.remaining,0);return matgaryReportTable(['المؤشر','القيمة'],[`<tr><td>إجمالي لنا</td><td class="rep-pos">${matgaryReportMoney(us)}</td></tr>`,`<tr><td>إجمالي علينا</td><td class="rep-neg">${matgaryReportMoney(them)}</td></tr>`,`<tr><td>الصافي (لنا − علينا)</td><td class="${us-them>=0?'rep-pos':'rep-neg'}">${matgaryReportMoney(us-them)}</td></tr>`])})()}</section>`;
+  }
 }
 
 // ==================== المزيد ====================
