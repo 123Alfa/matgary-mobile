@@ -3699,7 +3699,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <!-- WhatsApp invoice V19: fixed-pack classification + slogan correction -->
 
 <style id="matgary-reports-v31-css">
-/* ==================== متجري v1.8.37 — تحليل الأصناف والمخللات ==================== */
+/* ==================== متجري v1.8.39 — تحليل الأصناف والمخللات ==================== */
 .reports-v31{display:flex;flex-direction:column;gap:14px}
 .rep-hero{background:linear-gradient(135deg,#0f766e 0%,#0b5f58 58%,#c99a22 150%);color:#fff;border-radius:22px;padding:19px 18px;box-shadow:0 12px 30px rgba(15,118,110,.16);position:relative;overflow:hidden}
 .rep-hero:after{content:'';position:absolute;inset:auto -60px -90px auto;width:210px;height:210px;border-radius:50%;background:rgba(255,255,255,.08)}
@@ -3711,7 +3711,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 .rep-periods{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.rep-periods button{border:1px solid var(--border);background:#f8faf9;color:var(--text-light);border-radius:999px;padding:7px 10px;font:inherit;font-size:.62rem;font-weight:900;cursor:pointer}.rep-periods button.active,.rep-periods button:hover{background:#eaf7f3;color:var(--primary);border-color:#b9ddd3}
 .rep-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.rep-kpi{background:#fff;border:1px solid var(--border);border-radius:16px;padding:13px;box-shadow:var(--shadow);min-width:0}.rep-kpi .kicon{width:34px;height:34px;border-radius:11px;background:#edf8f4;color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.9rem;margin-bottom:7px}.rep-kpi span{display:block;color:var(--text-muted);font-size:.62rem;font-weight:800}.rep-kpi strong{display:block;margin-top:4px;font-size:1rem;font-weight:950;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rep-kpi em{display:block;font-style:normal;color:var(--text-light);font-size:.58rem;margin-top:2px}
 .rep-alerts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.rep-alert{background:#fff;border:1px solid var(--border);border-radius:14px;padding:10px;display:flex;align-items:center;gap:9px}.rep-alert .aicon{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:0 0 34px}.rep-alert.warn .aicon{background:#fff7e8;color:#b36c00}.rep-alert.danger .aicon{background:#fff0f0;color:#b42318}.rep-alert.info .aicon{background:#eef5ff;color:#315db7}.rep-alert.ok .aicon{background:#eaf8f1;color:#087443}.rep-alert b{display:block;font-size:.7rem;font-weight:950}.rep-alert span{display:block;font-size:.58rem;color:var(--text-muted);margin-top:2px}
-.rep-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:7px;box-shadow:var(--shadow)}.rep-nav button{border:0;background:transparent;color:var(--text-muted);padding:10px 6px;border-radius:11px;font:inherit;font-size:.63rem;font-weight:900;cursor:pointer}.rep-nav button.active{background:#eaf7f3;color:var(--primary);box-shadow:inset 0 0 0 1px #c7e4dc}
+.rep-nav{display:grid;position:relative;z-index:30;isolation:isolate;touch-action:manipulation;grid-template-columns:repeat(4,1fr);gap:7px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:7px;box-shadow:var(--shadow)}.rep-nav button{position:relative;z-index:31;pointer-events:auto;touch-action:manipulation;border:0;background:transparent;color:var(--text-muted);padding:10px 6px;border-radius:11px;font:inherit;font-size:.63rem;font-weight:900;cursor:pointer}.rep-nav button.active{background:#eaf7f3;color:var(--primary);box-shadow:inset 0 0 0 1px #c7e4dc}
 .rep-panel{background:#fff;border:1px solid var(--border);border-radius:18px;padding:13px;box-shadow:var(--shadow)}.rep-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}.rep-panel-head h3{font-size:.83rem;font-weight:950;color:var(--text)}.rep-panel-head small{font-size:.58rem;color:var(--text-muted)}
 .rep-chart{position:relative;height:245px}.rep-chart.tall{height:290px}
 .rep-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.rep-mini-note{background:#f7faf9;border:1px solid #e2ebe7;border-radius:12px;padding:9px 10px;font-size:.6rem;color:var(--text-light);line-height:1.7;margin-top:9px}
@@ -10584,7 +10584,7 @@ function renderReportsPage(container){
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   container.innerHTML=`<div class="fade-in reports-v31">
     <section class="rep-hero">
-      <div class="rep-hero-top"><div><div style="font-size:.64rem;color:rgba(255,255,255,.72);font-weight:800">متجري • v1.8.37</div><h2><i class="fas fa-chart-line"></i> مركز التقارير والمتابعة</h2><p>تحليل المبيعات والربحية والأصناف والعملاء والمخزون والمصروفات والديون في شاشة واحدة.</p></div><div class="rep-hero-badge" id="repRangeBadge">${esc(existingFrom)} → ${esc(existingTo)}</div></div>
+      <div class="rep-hero-top"><div><div style="font-size:.64rem;color:rgba(255,255,255,.72);font-weight:800">متجري • v1.8.39</div><h2><i class="fas fa-chart-line"></i> مركز التقارير والمتابعة</h2><p>تحليل المبيعات والربحية والأصناف والعملاء والمخزون والمصروفات والديون في شاشة واحدة.</p></div><div class="rep-hero-badge" id="repRangeBadge">${esc(existingFrom)} → ${esc(existingTo)}</div></div>
     </section>
     <section class="rep-toolbar no-print">
       <div class="rep-toolbar-grid">
@@ -10606,7 +10606,7 @@ function renderReportsPage(container){
     </section>
     <div id="repKpis"></div><div id="repAlerts"></div>
     <section class="rep-nav no-print" id="repNav">
-      ${[['overview','الأداء'],['sales','المبيعات'],['products','الأصناف'],['product-analysis','تحليل الأصناف'],['profit','الربحية'],['channels','جملة/قطاعي'],['customers','العملاء'],['inventory','المخزون'],['expenses','المصروفات'],['debts','الديون']].map(x=>`<button data-rep-nav="${x[0]}" onclick="setMatgaryReportMode('${x[0]}')">${x[1]}</button>`).join('')}
+      ${[['overview','الأداء'],['sales','المبيعات'],['products','الأصناف'],['product-analysis','تحليل الأصناف'],['profit','الربحية'],['channels','جملة/قطاعي'],['customers','العملاء'],['inventory','المخزون'],['expenses','المصروفات'],['debts','الديون']].map(x=>`<button type="button" data-rep-nav="${x[0]}" onclick="window.matgaryOpenReportTab('${x[0]}');return false;">${x[1]}</button>`).join('')}
     </section>
     <div id="repBody"></div>
   </div>`;
@@ -10650,24 +10650,40 @@ function matgaryReportData(from,to){
   return {sales,purchases,expenses,withdrawals,allProducts,customers,suppliers,invoices,products,byDay,byMonth,byChannel,expenseTypes,customerRows,debtRows,totalSales,totalProfit,totalDiscount,totalExpenses,totalPurchases,totalWithdrawals,costBase,netProfit,margin,returns,returnQty,inventoryValue,retailValue,lowStock,outStock,stale};
 }
 function matgaryReportsEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+function matgaryReportTabError(message){
+  const body=document.getElementById('repBody');
+  if(body) body.innerHTML=`<section class="rep-panel"><div class="rep-panel-head"><h3>⚠️ تعذر فتح هذا التقرير</h3></div><div class="rep-mini-note">${matgaryReportsEsc(message||'خطأ غير معروف')}</div></section>`;
+}
+window.matgaryOpenReportTab=function(mode){
+  try{
+    window.matgaryReportMode=String(mode||'overview');
+    const s=document.getElementById('repSelect'); if(s) s.value=window.matgaryReportMode;
+    document.querySelectorAll('[data-rep-nav]').forEach(b=>b.classList.toggle('active',b.dataset.repNav===window.matgaryReportMode));
+    loadMatgaryReports();
+  }catch(e){
+    console.error('فتح تبويب التقرير:',e);
+    matgaryReportTabError(e?.message||e);
+  }
+};
 function setMatgaryReportMode(mode){
   window.matgaryReportMode=mode||'overview';
   const s=document.getElementById('repSelect');if(s)s.value=window.matgaryReportMode;
   document.querySelectorAll('[data-rep-nav]').forEach(b=>b.classList.toggle('active',b.dataset.repNav===window.matgaryReportMode));
-  if(window.matgaryReportMode==='product-analysis'){
-    const k=document.getElementById('repKpis');if(k)k.innerHTML='';
-    const a=document.getElementById('repAlerts');if(a)a.innerHTML='';
-    try{renderMatgaryProductAnalysis();}
-    catch(e){
-      console.error('تحليل الأصناف:',e);
-      const body=document.getElementById('repBody');
-      if(body)body.innerHTML=`<section class="rep-panel"><div class="rep-panel-head"><h3>⚠️ تعذر فتح تحليل الأصناف</h3></div><div class="rep-mini-note">${matgaryReportEsc(e?.message||e||'خطأ غير معروف')}</div><button class="btn btn-primary btn-sm" type="button" onclick="setMatgaryReportMode('product-analysis')">إعادة فتح التحليل</button></section>`;
+  try{
+    if(window.matgaryReportMode==='product-analysis'){
+      const k=document.getElementById('repKpis');if(k)k.innerHTML='';
+      const a=document.getElementById('repAlerts');if(a)a.innerHTML='';
+      renderMatgaryProductAnalysis();
+      setTimeout(()=>document.getElementById('repBody')?.scrollIntoView({behavior:'smooth',block:'start'}),30);
+      return;
     }
-    setTimeout(()=>document.getElementById('repBody')?.scrollIntoView({behavior:'smooth',block:'start'}),30);
-    return;
+    loadMatgaryReports();
+  }catch(e){
+    console.error('تقرير متجري:',e);
+    matgaryReportTabError(e?.message||e);
   }
-  loadMatgaryReports();
 }
+
 function setMatgaryReportPeriod(key){const from=document.getElementById('repFrom'),to=document.getElementById('repTo');if(!from||!to)return;const t=today();let f=t;if(key==='today')f=t;else if(key==='week')f=matgaryReportDaysAgo(6);else if(key==='month')f=t.slice(0,7)+'-01';else if(key==='prevmonth'){const d=new Date(t.slice(0,7)+'-01T00:00:00');d.setDate(0);to.value=d.toISOString().slice(0,10);d.setDate(1);f=d.toISOString().slice(0,10);from.value=f;document.querySelectorAll('[data-rep-p]').forEach(x=>x.classList.toggle('active',x.dataset.repP===key));loadMatgaryReports();return;}else if(key==='90')f=matgaryReportDaysAgo(89);from.value=f;to.value=t;document.querySelectorAll('[data-rep-p]').forEach(x=>x.classList.toggle('active',x.dataset.repP===key));loadMatgaryReports();}
 function loadMatgaryReports(){
   const from=document.getElementById('repFrom')?.value||((today()||'').slice(0,7)+'-01'),to=document.getElementById('repTo')?.value||today();
@@ -10709,7 +10725,9 @@ function matgaryAnalysisTypeOfProduct(p){
   const savedType=String(p?.type||'other').toLowerCase();
   const name=String(p?.name||'').trim().toLowerCase();
   if(/جبنة|جبن|موزاريلا|براميلي|رومي|كيري/.test(name)) return 'cheese';
-  if(/لانشون|لنشون|استربس|اسكالوب|بانيه|برجر|كفتة|شاورما|كبدة|ممبار|أجنحة|اجنحة|دجاج|فراخ/.test(name)) return 'frozen';
+  // اللانشون يُصنف يدويًا ضمن «أخرى» في تحليل الأصناف، حتى لو كانت بياناته القديمة محفوظة كمجمدات.
+  if(/لانشون|لنشون|لانشون/.test(name)) return 'other';
+  if(/استربس|اسكالوب|بانيه|برجر|كفتة|شاورما|كبدة|ممبار|أجنحة|اجنحة|دجاج|فراخ/.test(name)) return 'frozen';
   if(/فلفل\s*مكسيكي|مخلل|مخللات|زيتون\s*(مخلل|تفاحي)|ليمون\s*مخلل/.test(name)) return 'pickles';
   return ['cheese','frozen','pickles','other'].includes(savedType)?savedType:'other';
 }
@@ -10894,7 +10912,7 @@ function renderMatgaryProductAnalysis(){
       </div>
       <div class="mpa-shortcuts"><button type="button" class="btn btn-accent btn-sm" onclick="matgaryAnalysisSetType('pickles')">🥒 كل المخللات</button>${navButtons}</div>
       <div class="mpa-check-list">${groupedHtml||'<div class="rep-empty"><i class="fas fa-filter-circle-xmark"></i>لا توجد أصناف مطابقة.</div>'}</div>
-      <div class="mpa-tip">💡 تقدر تختار صنفًا واحدًا أو عدة أصناف. التصنيف هنا ذكي: الجبن البراميلي يظل مع الجبن حتى لو كان اسمه يحتوي على فلفل، والفلفل المكسيكي مع المخللات، والمجمدات مثل اللانشون مع المجمدات.</div>
+      <div class="mpa-tip">💡 تقدر تختار صنفًا واحدًا أو عدة أصناف. التصنيف هنا ذكي: الجبن البراميلي يظل مع الجبن حتى لو كان اسمه يحتوي على فلفل، والفلفل المكسيكي مع المخللات، واللانشون يُصنف ضمن «أخرى» وليس مع المجمدات.</div>
     </section>
     <div class="mpa-kpis"><div><span>الأصناف المحددة</span><strong>${selected.length}</strong></div><div><span>إجمالي المشتريات</span><strong>${qty(totals.purchaseQty)}</strong></div><div><span>إجمالي المباع</span><strong>${qty(totals.saleQty)}</strong></div><div><span>صافي المباع</span><strong>${qty(Math.max(0,totals.saleQty-totals.returnQty))}</strong></div><div><span>المرتجع</span><strong>${qty(totals.returnQty)}</strong></div><div><span>قيمة المبيعات</span><strong>${money(totals.sales)}</strong></div><div><span>إجمالي الربح</span><strong>${money(totals.profit)}</strong></div><div><span>رصيد المخزون</span><strong>${qty(totals.stock)}</strong></div></div>
     <section class="rep-panel"><div class="rep-panel-head"><div><h3>📊 ملخص الأصناف المحددة</h3><small>${rows.length} صنف</small></div></div>${matgaryReportTable(['الصنف','المشتريات','تكلفة الشراء','متوسط الشراء','المباع','المرتجع','صافي المباع','قيمة المبيعات','الربح','الهامش','المخزون','تفاصيل'],rows.map(x=>`<tr><td><b>${safeEsc(x.name)}</b><br><small class="rep-muted">${safeEsc(x.type)}</small></td><td>${qty(x.purchaseQty)} ${safeEsc(x.unit)}</td><td>${money(x.purchaseCost)}</td><td>${money(x.purchaseAvg)}</td><td>${qty(x.saleQty)} ${safeEsc(x.unit)}</td><td class="${x.returnQty>0?'rep-neg':''}">${qty(x.returnQty)}</td><td>${qty(x.netQty)}</td><td>${money(x.sales)}</td><td class="rep-pos">${money(x.profit)}</td><td>${x.margin.toFixed(1)}%</td><td>${qty(x.currentQty)} ${safeEsc(x.unit)}</td><td><button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisFocusProduct('${safeEsc(x.id)}')">عرضه فقط</button></td></tr>`))}</section>
