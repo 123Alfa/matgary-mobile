@@ -647,37 +647,55 @@ tr:hover td{background:rgba(15,118,110,.045)}
 /* ===== الخزنة - v1.5.45 ===== */
 .cashbox-page{max-width:980px!important}.cashbox-hero{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:20px;margin-bottom:14px;border-radius:22px;color:#fff;background:linear-gradient(135deg,#075e54,#0f8f78 55%,#d6a928);box-shadow:0 12px 28px rgba(8,121,109,.18)}.cashbox-hero h2{margin:4px 0;font-size:1.35rem}.cashbox-hero p{margin:0;color:rgba(255,255,255,.82);font-size:.72rem}.cashbox-hero-icon{width:58px;height:58px;border-radius:18px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-size:1.55rem}.cashbox-balance{background:#fff;border:1px solid #dce9e4;border-radius:20px;padding:18px;margin-bottom:12px;text-align:center;box-shadow:0 8px 22px rgba(20,70,55,.05)}.cashbox-balance small{display:block;color:#7b888c;font-weight:800}.cashbox-balance strong{display:block;margin:5px 0;color:#08796d;font-size:1.85rem;font-weight:950}.cashbox-balance span{font-size:.66rem;color:#96a1a4}.cashbox-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}.cashbox-stat{background:#fff;border:1px solid #e1ebe7;border-radius:17px;padding:13px;display:flex;align-items:center;gap:10px;box-shadow:0 5px 16px rgba(20,70,55,.04)}.cashbox-stat>i{width:40px;height:40px;border-radius:12px;display:grid;place-items:center}.cashbox-stat small{display:block;color:#7b878c;font-size:.62rem;font-weight:800}.cashbox-stat b{display:block;margin-top:3px;font-size:.95rem}.cashbox-stat.in>i{background:#eaf8f1;color:#08796d}.cashbox-stat.in b{color:#08796d}.cashbox-stat.out>i{background:#fff0f0;color:#c53b45}.cashbox-stat.out b{color:#c53b45}.cashbox-stat.net>i{background:#eef3ff;color:#4b5fc5}.cashbox-stat.net b{color:#4b5fc5}.cashbox-filter{background:#fff;border:1px solid #e1ebe7;border-radius:18px;padding:12px;margin-bottom:12px}.cashbox-filter-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}.cashbox-filter label{display:block;color:#77848a;font-size:.64rem;font-weight:800;margin-bottom:5px}.cashbox-filter input{width:100%;box-sizing:border-box;padding:10px;border:1px solid #dce7e3;border-radius:11px;font:inherit;font-weight:800;background:#fbfdfc}.cashbox-filter button{height:42px;border:0;border-radius:11px;padding:0 15px;background:#eef7f3;color:#08796d;font:inherit;font-weight:900;cursor:pointer}.cashbox-section{background:#fff;border:1px solid #e1ebe7;border-radius:20px;overflow:hidden;box-shadow:0 7px 20px rgba(20,70,55,.04)}.cashbox-section-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #edf2ef}.cashbox-section-head h3{margin:0;font-size:.95rem}.cashbox-section-head small{color:#8b979b;font-size:.62rem}.cashbox-movement{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f0f3f2}.cashbox-movement:last-child{border-bottom:0}.cashbox-movement-icon{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto}.cashbox-movement.in .cashbox-movement-icon{background:#eaf8f1;color:#08796d}.cashbox-movement.out .cashbox-movement-icon{background:#fff0f0;color:#c53b45}.cashbox-movement-main{min-width:0;flex:1}.cashbox-movement-main strong{display:block;font-size:.72rem}.cashbox-movement-main small{display:block;color:#8b969a;font-size:.57rem;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cashbox-movement-amount{font-weight:950;font-size:.72rem;white-space:nowrap}.cashbox-movement.in .cashbox-movement-amount{color:#08796d}.cashbox-movement.out .cashbox-movement-amount{color:#c53b45}.cashbox-empty{text-align:center;padding:28px;color:#9aa5a8;font-size:.72rem}@media(max-width:600px){.cashbox-stats{grid-template-columns:1fr}.cashbox-filter-row{grid-template-columns:1fr 1fr}.cashbox-filter-row button{grid-column:1/-1}.cashbox-hero{padding:16px}.cashbox-hero h2{font-size:1.15rem}.cashbox-balance strong{font-size:1.6rem}}
 
-/* ==================== v1.8.33 تحليل الأصناف والمخللات ==================== */
-.matgary-product-analysis{display:grid;gap:12px}
-.mpa-controls{background:linear-gradient(180deg,#ffffff,#fbfefd)}
+/* ==================== v1.8.38 تحليل الأصناف — تنسيق وتصنيف محسن ==================== */
+.matgary-product-analysis{display:grid;gap:12px;width:100%;min-width:0}
+.matgary-product-analysis .rep-panel{width:100%;min-width:0;overflow:hidden}
+.mpa-controls{background:linear-gradient(180deg,#ffffff,#fbfefd);padding:15px}
 .mpa-controls .rep-panel-head{align-items:flex-start}
 .mpa-selected-badge{background:#eaf7f3;color:#08796d;border:1px solid #c9e6dd;border-radius:999px;padding:7px 10px;font-size:.66rem;font-weight:950;white-space:nowrap}
-.mpa-filter-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:10px;margin-bottom:10px}
-.mpa-filter-grid label{display:flex;flex-direction:column;gap:5px;color:var(--text-light);font-size:.68rem;font-weight:900}
-.mpa-filter-grid select,.mpa-filter-grid input{height:44px;border:2px solid var(--border);border-radius:12px;background:#fff;color:var(--text);font:inherit;font-size:.76rem;padding:0 11px}
+.mpa-filter-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:10px;margin-bottom:10px}
+.mpa-filter-grid label{display:flex;flex-direction:column;gap:5px;color:var(--text-light);font-size:.68rem;font-weight:900;min-width:0}
+.mpa-filter-grid select,.mpa-filter-grid input{width:100%;height:44px;border:2px solid var(--border);border-radius:12px;background:#fff;color:var(--text);font:inherit;font-size:.76rem;padding:0 11px;min-width:0}
 .mpa-filter-grid select:focus,.mpa-filter-grid input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(15,118,110,.10)}
-.mpa-shortcuts{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
-.mpa-shortcuts .btn{font-size:.66rem;padding:8px 10px}
-.mpa-check-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:310px;overflow:auto;padding:2px}
-.mpa-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:8px;width:100%;}
-.mpa-group-head{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:11px;background:linear-gradient(90deg,#eef8f5,#fffaf0);border:1px solid #d8e9e2;color:#0f766e;font-size:.68rem;font-weight:950;position:sticky;top:0;z-index:2;}
-.mpa-group-head small{color:#81908b;font-size:.56rem;font-weight:800;}
-@media(max-width:800px){.mpa-group{grid-template-columns:1fr;}}
-.mpa-check{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;min-width:0}
+.mpa-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:10px}
+.mpa-shortcuts .btn{font-size:.66rem;padding:9px 8px;width:100%;min-width:0}
+.mpa-check-list{display:block;max-height:330px;overflow-y:auto;overflow-x:hidden;padding:2px}
+.mpa-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:0 0 9px;width:100%}
+.mpa-group:last-child{margin-bottom:0}
+.mpa-group-head{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:11px;background:linear-gradient(90deg,#eef8f5,#fffaf0);border:1px solid #d8e9e2;color:#0f766e;font-size:.68rem;font-weight:950;position:sticky;top:0;z-index:2}
+.mpa-group-head small{color:#81908b;font-size:.56rem;font-weight:800}
+.mpa-check{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;min-width:0;width:100%}
 .mpa-check.active{border-color:#71bdb0;background:#effaf7;box-shadow:inset 0 0 0 1px rgba(15,118,110,.12)}
-.mpa-check input{accent-color:#0f766e;flex:0 0 auto}
+.mpa-check input{accent-color:#0f766e;flex:0 0 auto;margin:0}
 .mpa-check-icon{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:#f2f7f5;flex:0 0 32px}
-.mpa-check-text{min-width:0}
+.mpa-check-text{min-width:0;flex:1}
 .mpa-check-text b{display:block;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
 .mpa-check-text small{display:block;margin-top:2px;color:var(--text-muted);font-size:.57rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mpa-tip{margin-top:9px;padding:9px 10px;border-radius:11px;background:#fff8e8;border:1px solid #ead9a8;color:#6d5b2a;font-size:.62rem;line-height:1.7}
-.mpa-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.mpa-kpis>div{background:#fff;border:1px solid var(--border);border-radius:14px;padding:11px;text-align:center;box-shadow:var(--shadow)}
+.mpa-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:100%;min-width:0}
+.mpa-kpis>div{background:#fff;border:1px solid var(--border);border-radius:14px;padding:11px;text-align:center;box-shadow:var(--shadow);min-width:0}
 .mpa-kpis span{display:block;font-size:.58rem;color:var(--text-muted);font-weight:800}
 .mpa-kpis strong{display:block;margin-top:4px;font-size:.92rem;color:var(--primary);font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rep-table small{font-size:.57rem}
-@media(max-width:800px){.mpa-filter-grid{grid-template-columns:1fr}.mpa-check-list{grid-template-columns:1fr}.mpa-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:520px){.mpa-kpis{gap:6px}.mpa-kpis>div{padding:9px 6px}.mpa-kpis strong{font-size:.82rem}.mpa-selected-badge{font-size:.58rem;padding:6px 8px}.mpa-shortcuts .btn{flex:1;min-width:0}}
+@media(max-width:800px){
+  .mpa-controls{padding:12px}
+  .mpa-filter-grid{grid-template-columns:1fr;gap:8px}
+  .mpa-shortcuts{grid-template-columns:1fr 1fr}
+  .mpa-shortcuts .btn:first-child{grid-column:1/-1}
+  .mpa-check-list{max-height:360px}
+  .mpa-group{grid-template-columns:1fr}
+  .mpa-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px){
+  .mpa-controls .rep-panel-head{flex-direction:column;gap:7px}
+  .mpa-selected-badge{align-self:flex-start;font-size:.58rem;padding:6px 9px}
+  .mpa-shortcuts{grid-template-columns:1fr 1fr}
+  .mpa-shortcuts .btn{font-size:.62rem;padding:9px 6px}
+  .mpa-shortcuts .btn:first-child{grid-column:1/-1}
+  .mpa-kpis{gap:6px}
+  .mpa-kpis>div{padding:9px 6px}
+  .mpa-kpis strong{font-size:.82rem}
+}
 @media print{.mpa-controls,.mpa-kpis{break-inside:avoid}.matgary-product-analysis .rep-panel{break-inside:avoid}}
 </style>
 <link rel="manifest" href="manifest.json">
@@ -3775,9 +3793,9 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.37';
+const APP_VERSION='v1.8.38';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "24 سبتمبر 2026 — تحليل الأصناف والمخللات وتفاصيل الحركة";
+const APP_BUILD_DATE = "24 سبتمبر 2026 — تحسين تنسيق تحليل الأصناف وتصحيح تجميع المجموعات";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -10687,17 +10705,28 @@ function matgaryAnalysisState(){
   window.matgaryAnalysisSearch=String(window.matgaryAnalysisSearch||'');
   return window.matgaryAnalysisSelected;
 }
-function matgaryAnalysisIsPickle(p){
-  const type=String(p?.type||'').toLowerCase();
-  const name=String(p?.name||'').toLowerCase();
-  return type==='pickles'||/مخلل|مخللات|زيتون|ليمون|فلفل/.test(name);
+function matgaryAnalysisTypeOfProduct(p){
+  const savedType=String(p?.type||'other').toLowerCase();
+  const name=String(p?.name||'').trim().toLowerCase();
+  if(/جبنة|جبن|موزاريلا|براميلي|رومي|كيري/.test(name)) return 'cheese';
+  if(/لانشون|لنشون|استربس|اسكالوب|بانيه|برجر|كفتة|شاورما|كبدة|ممبار|أجنحة|اجنحة|دجاج|فراخ/.test(name)) return 'frozen';
+  if(/فلفل\s*مكسيكي|مخلل|مخللات|زيتون\s*(مخلل|تفاحي)|ليمون\s*مخلل/.test(name)) return 'pickles';
+  return ['cheese','frozen','pickles','other'].includes(savedType)?savedType:'other';
 }
+function matgaryAnalysisIsPickle(p){return matgaryAnalysisTypeOfProduct(p)==='pickles';}
 function matgaryAnalysisMatchesType(p,type){
   if(!type||type==='all')return true;
-  if(type==='pickles')return matgaryAnalysisIsPickle(p);
-  return String(p?.type||'other')===type;
+  return matgaryAnalysisTypeOfProduct(p)===type;
 }
-function matgaryAnalysisProducts(d){return (d.allProducts||[]).slice().filter(p=>matgaryAnalysisMatchesType(p,window.matgaryAnalysisType||'pickles'));}
+function matgaryAnalysisProducts(d){
+  return (d.allProducts||[]).slice()
+    .filter(p=>matgaryAnalysisMatchesType(p,window.matgaryAnalysisType||'pickles'))
+    .sort((a,b)=>{
+      const order={pickles:1,frozen:2,cheese:3,other:4};
+      const oa=order[matgaryAnalysisTypeOfProduct(a)]||9, ob=order[matgaryAnalysisTypeOfProduct(b)]||9;
+      return oa-ob || String(a?.name||'').localeCompare(String(b?.name||''),'ar');
+    });
+}
 function matgaryAnalysisEnsureSelection(d){
   const all=matgaryAnalysisProducts(d).map(p=>String(p.id));
   const selected=matgaryAnalysisState();
@@ -10781,20 +10810,31 @@ function renderMatgaryProductAnalysis(){
   window.matgaryAnalysisSearch=String(window.matgaryAnalysisSearch||'');
   window.matgaryAnalysisSelected=Array.isArray(window.matgaryAnalysisSelected)?window.matgaryAnalysisSelected.map(String):[];
   const allProducts=Array.isArray(d.allProducts)?d.allProducts:[];
-  const isPickle=p=>{
-    const t=String(p?.type||'other').toLowerCase();
-    const n=String(p?.name||'').toLowerCase();
-    if(t==='pickles')return true;
-    if(t==='cheese'||t==='frozen')return false;
-    return /مخلل|مخللات|زيتون|ليمون|فلفل/.test(n);
-  };
+  /* تصنيف ذكي داخل التحليل فقط — لا يغيّر نوع الصنف المحفوظ في البيانات. */
   const analysisGroupType=p=>{
-    const t=String(p?.type||'other').toLowerCase();
-    if(t==='cheese'||t==='frozen'||t==='pickles')return t;
-    return isPickle(p)?'pickles':'other';
+    const savedType=String(p?.type||'other').toLowerCase();
+    const n=String(p?.name||'').trim().toLowerCase();
+
+    /* الجبن البراميلي وأي جبن يحتوي في اسمه على فلفل يظل جبنًا. */
+    if(/جبنة|جبن|موزاريلا|براميلي|رومي|كيري/.test(n)) return 'cheese';
+
+    /* المجمدات مثل اللانشون لا تدخل المخللات بسبب وجود كلمة فلفل في الاسم. */
+    if(/لانشون|لنشون|استربس|اسكالوب|بانيه|برجر|كفتة|شاورما|كبدة|ممبار|أجنحة|اجنحة|دجاج|فراخ/.test(n)) return 'frozen';
+
+    /* الفلفل المكسيكي والمخللات الصريحة ضمن المخللات. */
+    if(/فلفل\s*مكسيكي|مخلل|مخللات|زيتون\s*(مخلل|تفاحي)|ليمون\s*مخلل/.test(n)) return 'pickles';
+
+    return ['cheese','frozen','pickles','other'].includes(savedType)?savedType:'other';
   };
-  const matchesType=(p,t)=>!t||t==='all'||(t==='pickles'?isPickle(p):String(p?.type||'other')===t);
-  const products=allProducts.filter(p=>matchesType(p,window.matgaryAnalysisType));
+  const isPickle=p=>analysisGroupType(p)==='pickles';
+  const matchesType=(p,t)=>!t||t==='all'||analysisGroupType(p)===t;
+  const products=allProducts
+    .filter(p=>matchesType(p,window.matgaryAnalysisType))
+    .sort((a,b)=>{
+      const order={pickles:1,frozen:2,cheese:3,other:4};
+      const oa=order[analysisGroupType(a)]||9, ob=order[analysisGroupType(b)]||9;
+      return oa-ob || String(a?.name||'').localeCompare(String(b?.name||''),'ar');
+    });
   const search=window.matgaryAnalysisSearch.trim().toLowerCase();
   const filtered=products.filter(p=>!search||String(p?.name||'').toLowerCase().includes(search));
   const groupedTypeOrder=['pickles','frozen','cheese','other'];
@@ -10832,7 +10872,7 @@ function renderMatgaryProductAnalysis(){
     const margin=sales>0?profit/sales*100:0;
     const suppliers=[...new Set(prs.map(x=>String(x?.supplierName||'بائع/مورد')).filter(Boolean))];
     const customers=[...new Set(sls.map(x=>String(x?.customerName||'عميل عادي')).filter(Boolean))];
-    rows.push({id:pid,name:p?.name||'صنف',type:p?.type||'other',unit:unit(p),purchaseQty,purchaseCost,purchaseAvg,saleQty,returnQty,netQty,sales,returnValue,profit,margin,currentQty,currentCost,saleAvg,suppliers,customers,purchaseInvoices:new Set(prs.map(x=>String(x?.purchaseBatchId||x?.invoiceNo||x?.id||''))).size,saleInvoices:new Set(sls.map(x=>String(x?.saleBatchId||x?.invoiceNo||x?.id||''))).size});
+    rows.push({id:pid,name:p?.name||'صنف',type:matgaryAnalysisTypeOfProduct(p),unit:unit(p),purchaseQty,purchaseCost,purchaseAvg,saleQty,returnQty,netQty,sales,returnValue,profit,margin,currentQty,currentCost,saleAvg,suppliers,customers,purchaseInvoices:new Set(prs.map(x=>String(x?.purchaseBatchId||x?.invoiceNo||x?.id||''))).size,saleInvoices:new Set(sls.map(x=>String(x?.saleBatchId||x?.invoiceNo||x?.id||''))).size});
     totals.purchaseQty+=purchaseQty;totals.purchaseCost+=purchaseCost;totals.saleQty+=saleQty;totals.returnQty+=returnQty;totals.sales+=sales;totals.returnValue+=returnValue;totals.profit+=profit;totals.stock+=currentQty;totals.stockCost+=currentCost;
   });
   const detail=[];
@@ -10854,7 +10894,7 @@ function renderMatgaryProductAnalysis(){
       </div>
       <div class="mpa-shortcuts"><button type="button" class="btn btn-accent btn-sm" onclick="matgaryAnalysisSetType('pickles')">🥒 كل المخللات</button>${navButtons}</div>
       <div class="mpa-check-list">${groupedHtml||'<div class="rep-empty"><i class="fas fa-filter-circle-xmark"></i>لا توجد أصناف مطابقة.</div>'}</div>
-      <div class="mpa-tip">💡 الاختيار يدوي. تقدر تختار صنفًا واحدًا أو عدة أصناف، وتحليل «المخللات» يبحث أيضًا بالاسم للتعامل مع الأصناف القديمة التي لم تُصنف كـمخللات.</div>
+      <div class="mpa-tip">💡 تقدر تختار صنفًا واحدًا أو عدة أصناف. التصنيف هنا ذكي: الجبن البراميلي يظل مع الجبن حتى لو كان اسمه يحتوي على فلفل، والفلفل المكسيكي مع المخللات، والمجمدات مثل اللانشون مع المجمدات.</div>
     </section>
     <div class="mpa-kpis"><div><span>الأصناف المحددة</span><strong>${selected.length}</strong></div><div><span>إجمالي المشتريات</span><strong>${qty(totals.purchaseQty)}</strong></div><div><span>إجمالي المباع</span><strong>${qty(totals.saleQty)}</strong></div><div><span>صافي المباع</span><strong>${qty(Math.max(0,totals.saleQty-totals.returnQty))}</strong></div><div><span>المرتجع</span><strong>${qty(totals.returnQty)}</strong></div><div><span>قيمة المبيعات</span><strong>${money(totals.sales)}</strong></div><div><span>إجمالي الربح</span><strong>${money(totals.profit)}</strong></div><div><span>رصيد المخزون</span><strong>${qty(totals.stock)}</strong></div></div>
     <section class="rep-panel"><div class="rep-panel-head"><div><h3>📊 ملخص الأصناف المحددة</h3><small>${rows.length} صنف</small></div></div>${matgaryReportTable(['الصنف','المشتريات','تكلفة الشراء','متوسط الشراء','المباع','المرتجع','صافي المباع','قيمة المبيعات','الربح','الهامش','المخزون','تفاصيل'],rows.map(x=>`<tr><td><b>${safeEsc(x.name)}</b><br><small class="rep-muted">${safeEsc(x.type)}</small></td><td>${qty(x.purchaseQty)} ${safeEsc(x.unit)}</td><td>${money(x.purchaseCost)}</td><td>${money(x.purchaseAvg)}</td><td>${qty(x.saleQty)} ${safeEsc(x.unit)}</td><td class="${x.returnQty>0?'rep-neg':''}">${qty(x.returnQty)}</td><td>${qty(x.netQty)}</td><td>${money(x.sales)}</td><td class="rep-pos">${money(x.profit)}</td><td>${x.margin.toFixed(1)}%</td><td>${qty(x.currentQty)} ${safeEsc(x.unit)}</td><td><button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisFocusProduct('${safeEsc(x.id)}')">عرضه فقط</button></td></tr>`))}</section>
