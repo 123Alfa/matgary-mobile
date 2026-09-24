@@ -3648,7 +3648,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <!-- WhatsApp invoice V19: fixed-pack classification + slogan correction -->
 
 <style id="matgary-reports-v31-css">
-/* ==================== متجري v1.8.31 — التقارير والمتابعة ==================== */
+/* ==================== متجري v1.8.32 — التقارير والمتابعة ==================== */
 .reports-v31{display:flex;flex-direction:column;gap:14px}
 .rep-hero{background:linear-gradient(135deg,#0f766e 0%,#0b5f58 58%,#c99a22 150%);color:#fff;border-radius:22px;padding:19px 18px;box-shadow:0 12px 30px rgba(15,118,110,.16);position:relative;overflow:hidden}
 .rep-hero:after{content:'';position:absolute;inset:auto -60px -90px auto;width:210px;height:210px;border-radius:50%;background:rgba(255,255,255,.08)}
@@ -3741,10 +3741,10 @@ html[data-theme="dark"] .sales-summary-card .value{
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-// متجري v1.8.31 — مركز التقارير والمتابعة الاحترافي
+// متجري v1.8.32 — توحيد وحدات البيع والتقارير والمتابعة
 const APP_VERSION='v1.8.32';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "18 سبتمبر 2026 — تحسين شامل ودقيق للوضع الداكن وتوحيد الألوان";
+const APP_BUILD_DATE = "24 سبتمبر 2026 — توحيد وحدات البيع والأوزان والعبوات";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -4848,10 +4848,10 @@ function renderProductsPage(container){
         <div class="form-group"><label>النوع</label><select id="pType"><option value="cheese">🧀 جبن</option><option value="frozen">❄️ مجمدات</option><option value="pickles">🥒 مخللات</option><option value="other">📦 أخرى</option></select></div>
         <div class="form-group" style="grid-column:1/-1"><label>صورة المنتج</label><label class="product-image-upload" for="pImage"><div class="product-image-preview" id="pImagePreview">🧀</div><div class="product-image-upload-text">اضغط لاختيار صورة المنتج<small>JPG / PNG — يتم ضغط الصورة تلقائيًا</small></div><input type="file" id="pImage" accept="image/*" style="display:none" onchange="previewProductImage(this)"></label></div>
         <div class="form-group"><label>سعر الشراء</label><input type="number" id="pPurchase" placeholder="0.00" step="0.01" inputmode="decimal" oninput="calcProductProfit()"></div>
-        <div class="form-group"><label>سعر الجملة</label><input type="number" id="pWholesale" placeholder="0.00" step="0.01" inputmode="decimal"><div class="pos-value-hint">للأصناف الوزنية: هذا سعر الكيلو. لسعر اتفاق ثابت (مثل 1040 ج.م لـ 9 كجم) استخدم «🧾 إجمالي» من السلة.</div></div>
+        <div class="form-group"><label>سعر الجملة</label><input type="number" id="pWholesale" placeholder="0.00" step="0.01" inputmode="decimal"><div class="pos-value-hint">للأصناف الوزنية: هذا سعر الكيلو. لسعر اتفاق ثابت (مثل 1040 ج.م لبستلتين (4.5 كجم للبستلة) = 9 كجم) استخدم «🧾 إجمالي» من السلة.</div></div>
         <div class="form-group"><label>سعر القطاعي</label><input type="number" id="pRetail" placeholder="0.00" step="0.01" inputmode="decimal" oninput="calcProductProfit()"></div>
         <div class="form-group"><label>الكمية الحالية</label><input type="number" id="pQty" placeholder="0" step="0.01" inputmode="decimal"></div>
-        <div class="form-group"><label>الوحدة</label><select id="pUnit"><option>كجم</option><option>عبوة</option><option>كيس</option><option>لفة</option><option>قطعة</option><option>كرتونة</option></select></div>
+        <div class="form-group"><label>الوحدة</label><select id="pUnit"><option>كجم</option><option>عبوة</option><option>علبة</option><option>كيس</option><option>لفة</option><option>قطعة</option><option>كرتونة</option><option>باكت</option><option>برطمان</option></select></div>
         <div class="form-group"><label>حد التنبيه</label><input type="number" id="pMinStock" placeholder="5" value="5" step="1" inputmode="numeric"></div>
         <div class="form-group"><label>ربح القطاعي</label><input type="number" id="pExpectedProfit" class="profit-input" readonly></div><div class="form-group"><label>نسبة الربح</label><input type="text" id="pProfitPercent" class="profit-input" readonly></div>
       </div><button class="btn btn-primary btn-block" onclick="addProduct()"><i class="fas fa-save"></i> حفظ الصنف</button>
@@ -5108,7 +5108,7 @@ function editProduct(id){
       <div class="form-group"><label>الجملة</label><input type="number" id="epWholesale" value="${p.wholesale||0}" step="0.01"><div class="pos-value-hint">هذا سعر الكيلو للأصناف الوزنية. سعر الاتفاق الإجمالي يُضبط من السلة.</div></div>
       <div class="form-group"><label>القطاعي</label><input type="number" id="epRetail" value="${p.retail||0}" step="0.01"></div>
       <div class="form-group"><label>الكمية</label><input type="number" id="epQty" value="${p.qty||0}" step="0.01"></div>
-      <div class="form-group"><label>الوحدة</label><select id="epUnit"><option ${p.unit==='كجم'?'selected':''}>كجم</option><option ${p.unit==='عبوة'?'selected':''}>عبوة</option><option ${p.unit==='كيس'?'selected':''}>كيس</option><option ${p.unit==='لفة'?'selected':''}>لفة</option><option ${p.unit==='علبة'?'selected':''}>علبة</option><option ${p.unit==='قطعة'?'selected':''}>قطعة</option><option ${p.unit==='كرتونة'?'selected':''}>كرتونة</option></select></div>
+      <div class="form-group"><label>الوحدة</label><select id="epUnit"><option ${p.unit==='كجم'?'selected':''}>كجم</option><option ${p.unit==='عبوة'?'selected':''}>عبوة</option><option ${p.unit==='علبة'?'selected':''}>علبة</option><option ${p.unit==='كيس'?'selected':''}>كيس</option><option ${p.unit==='لفة'?'selected':''}>لفة</option><option ${p.unit==='قطعة'?'selected':''}>قطعة</option><option ${p.unit==='كرتونة'?'selected':''}>كرتونة</option><option ${p.unit==='باكت'?'selected':''}>باكت</option><option ${p.unit==='برطمان'?'selected':''}>برطمان</option></select></div>
       <div class="form-group"><label>الحد الأدنى</label><input type="number" id="epMinStock" value="${p.minStock||5}" step="1"></div>
       <div class="form-group"><label>المكسب الحالي</label><input type="text" class="profit-input" value="${fmt(profit)} (${pct}%)" readonly style="color:${profit>=0?'var(--success-light)':'var(--danger-light)'}!important"></div>
     </div>
@@ -5748,7 +5748,7 @@ function openPOSLineTotalEditor(index){
   const weight=isKgProduct(p)?Math.max(0.001,Number(item.weight||1)):1;
   const divisor=qty*weight;
   const current=roundPOSMoney(price*divisor);
-  const value=window.prompt(isKgProduct(p)?'إجمالي الاتفاق للصنف (مثال: 1040 لبستلتين = 9 كجم)':'إجمالي الاتفاق للصنف',String(current));
+  const value=window.prompt(isKgProduct(p)?'إجمالي الاتفاق للصنف (مثال: 1040 لبستلتين (4.5 كجم للبستلة) = 9 كجم)':'إجمالي الاتفاق للصنف',String(current));
   if(value===null)return;
   const total=Number(value);
   if(!Number.isFinite(total)||total<0)return showToast('أدخل إجماليًا صحيحًا','warning');
@@ -10533,7 +10533,7 @@ function renderReportsPage(container){
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   container.innerHTML=`<div class="fade-in reports-v31">
     <section class="rep-hero">
-      <div class="rep-hero-top"><div><div style="font-size:.64rem;color:rgba(255,255,255,.72);font-weight:800">متجري • v1.8.31</div><h2><i class="fas fa-chart-line"></i> مركز التقارير والمتابعة</h2><p>تحليل المبيعات والربحية والأصناف والعملاء والمخزون والمصروفات والديون في شاشة واحدة.</p></div><div class="rep-hero-badge" id="repRangeBadge">${esc(existingFrom)} → ${esc(existingTo)}</div></div>
+      <div class="rep-hero-top"><div><div style="font-size:.64rem;color:rgba(255,255,255,.72);font-weight:800">متجري • v1.8.32</div><h2><i class="fas fa-chart-line"></i> مركز التقارير والمتابعة</h2><p>تحليل المبيعات والربحية والأصناف والعملاء والمخزون والمصروفات والديون في شاشة واحدة.</p></div><div class="rep-hero-badge" id="repRangeBadge">${esc(existingFrom)} → ${esc(existingTo)}</div></div>
     </section>
     <section class="rep-toolbar no-print">
       <div class="rep-toolbar-grid">
@@ -15851,6 +15851,125 @@ setTimeout(()=>{
   .sale-ref-payment-discount.matgary-discount-panel>.matgary-discount-hint{grid-column:1!important}
 }
 </style>
+
+
+<script id="matgary-unified-sale-units-v1832">
+(function(){
+  'use strict';
+
+  // سياسة موحّدة ونهائية لوحدة البيع:
+  // كجم = بيع بالوزن، وما عدا ذلك = وحدة ثابتة.
+  // أي وزن مكتوب داخل اسم العبوة (مثل 400 جم / 900 جم / 1 كجم)
+  // يعتبر حجم عبوة ثابتة، باستثناء الموزاريلا التي تظل موزونة.
+  const WEIGHT_UNITS = new Set(['كجم','كيلو','كغ','kg','كيلوجرام']);
+  const PACK_UNITS = new Set(['عبوة','علبة','كيس','لفة','قطعة','كرتونة','باكت','برطمان']);
+
+  function nameOf(p,s){
+    return String(s?.productName || s?.name || p?.name || '').trim().toLowerCase();
+  }
+
+  function unitOf(p,s){
+    return String(s?.sellUnit || p?.sellUnit || p?.unit || '').trim().toLowerCase();
+  }
+
+  function isMozzarella(p,s){
+    return /موزاريلا|موتزاريلا|mozzarella/.test(nameOf(p,s));
+  }
+
+  function hasFixedPackSize(name){
+    // لا نستخدم حدود كلمات \b هنا لأن الحروف العربية لا تتصرف معها JavaScript كحدود كلمات موثوقة.
+    return /\d+(?:[.,]\d+)?\s*(?:جم|جرام|غرام|كجم|ك|كيلو|كغ|kg)/i.test(String(name||''));
+  }
+
+  function isWeightProduct(p,s){
+    if(!p && !s) return false;
+    const n=nameOf(p,s);
+    if(isMozzarella(p,s)) return true;
+    if(hasFixedPackSize(n)) return false;
+
+    const u=unitOf(p,s);
+    if(PACK_UNITS.has(u)) return false;
+    if(WEIGHT_UNITS.has(u)) return true;
+
+    if(p?.sellByWeight===true || p?.isWeightSale===true || s?.sellByWeight===true || s?.isWeightSale===true) return true;
+    return false;
+  }
+
+  function fmtWeight(kg){
+    const n=Number(kg);
+    if(!Number.isFinite(n)) return '0 كجم';
+    if(Math.abs(n-0.25)<0.000001) return '250 جم';
+    if(Math.abs(n-0.5)<0.000001) return 'نصف كيلو';
+    if(Math.abs(n-0.75)<0.000001) return '750 جم';
+    if(Math.abs(n-1)<0.000001) return '1 كجم';
+    if(Math.abs(n-Math.round(n))<0.000001) return `${Math.round(n)} كجم`;
+    const grams=Math.abs(n)<1 ? Math.round(n*1000) : 0;
+    if(grams>0 && grams%50===0) return `${grams} جم`;
+    return `${n.toFixed(3).replace(/0+$/,'').replace(/\.$/,'')} كجم`;
+  }
+
+  function unitDisplay(p,s){
+    const n=nameOf(p,s);
+    const wholesaleBramili=/براميلي|براميل/.test(n) && String(s?.type||s?.saleType||'').toLowerCase()==='wholesale' && Number(s?.packages||0)>0 && Number(s?.weight||0)>0;
+    if(wholesaleBramili) return 'بستلة';
+    if(isWeightProduct(p,s)) return 'كجم';
+
+    const stored=String(s?.sellUnit || p?.sellUnit || p?.unit || '').trim();
+    if(PACK_UNITS.has(stored.toLowerCase())) return stored;
+
+    if(/لانشون|luncheon/.test(n)) return 'لفة';
+    if(/برجر|برغر|burger|كفتة|كفته|kofta|kofte/.test(n)) return 'عبوة';
+    if(/كبدة|كبده|كبد|liver|رومي|رومى|romy|قشطة|قشطه|cream/.test(n)) return 'علبة';
+    return stored || 'عبوة';
+  }
+
+  function quantityLabel(p,packs,weight){
+    const q=Math.max(1,Number(packs||1));
+    const w=Math.max(0.001,Number(weight||1));
+    if(!isWeightProduct(p,{weight:w})) return `${q} ${unitDisplay(p,{})}`;
+
+    const totalKg=q*w;
+    const total=fmtWeight(totalKg);
+    if(Math.abs(w-0.5)<0.000001) return `${total} • ${q} أنصاف كيلو`;
+    if(Math.abs(w-0.25)<0.000001) return `${total} • ${q} أرباع كيلو`;
+    if(Math.abs(w-1)<0.000001) return `${total} • ${q} × 1 كجم`;
+    return `${total} • ${q} × ${fmtWeight(w)}`;
+  }
+
+  // الوحدة المركزية لكل الشاشات والفواتير والتقارير.
+  window.matgaryInvoiceUnit=function(p,s){ return unitDisplay(p,s); };
+  window.productSaleUnitLabel=function(p,s){ return unitDisplay(p,s); };
+  window.matgaryUnitLabel=function(p,s){ return unitDisplay(p,s); };
+  window.isKgProduct=function(p){ return isWeightProduct(p,{}); };
+  window.isWeightSaleLine=function(s,p){ return isWeightProduct(p,s); };
+
+  window.saleQuantityLabel=function(p,qty,weight){
+    return quantityLabel(p,qty,weight);
+  };
+
+  window.invoiceSaleQuantityLabel=function(s,p){
+    const packs=Math.max(1,Number(s?.packages||1));
+    const w=typeof rawSaleWeight==='function' ? Number(rawSaleWeight(s)||1) : Number(s?.weight||1);
+    return quantityLabel(p||{},packs,w);
+  };
+
+  window.invoiceSaleDetailLabel=function(s,p){
+    return window.invoiceSaleQuantityLabel(s,p);
+  };
+
+  // اقتراح الوحدة للصنف الجديد/المعدل بدون إجبار المستخدم على تغيير اختياره اليدوي.
+  window.getPreferredProductUnit=function(name,current){
+    const n=String(name||'').trim().toLowerCase();
+    const cur=String(current||'').trim();
+    if(/موزاريلا|موتزاريلا|mozzarella/.test(n)) return 'كجم';
+    if(hasFixedPackSize(n)) return PACK_UNITS.has(cur.toLowerCase()) ? cur : 'عبوة';
+    if(WEIGHT_UNITS.has(cur.toLowerCase())) return cur || 'كجم';
+    return cur || 'عبوة';
+  };
+
+  window.__MATGARY_UNIFIED_UNITS_VERSION='v1.8.32';
+})();
+</script>
 
 </body>
   </html>
