@@ -3677,7 +3677,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <!-- WhatsApp invoice V19: fixed-pack classification + slogan correction -->
 
 <style id="matgary-reports-v31-css">
-/* ==================== متجري v1.8.35 — تحليل الأصناف والمخللات ==================== */
+/* ==================== متجري v1.8.36 — تحليل الأصناف والمخللات ==================== */
 .reports-v31{display:flex;flex-direction:column;gap:14px}
 .rep-hero{background:linear-gradient(135deg,#0f766e 0%,#0b5f58 58%,#c99a22 150%);color:#fff;border-radius:22px;padding:19px 18px;box-shadow:0 12px 30px rgba(15,118,110,.16);position:relative;overflow:hidden}
 .rep-hero:after{content:'';position:absolute;inset:auto -60px -90px auto;width:210px;height:210px;border-radius:50%;background:rgba(255,255,255,.08)}
@@ -3771,7 +3771,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.35';
+const APP_VERSION='v1.8.36';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "24 سبتمبر 2026 — تحليل الأصناف والمخللات وتفاصيل الحركة";
 
@@ -10562,7 +10562,7 @@ function renderReportsPage(container){
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   container.innerHTML=`<div class="fade-in reports-v31">
     <section class="rep-hero">
-      <div class="rep-hero-top"><div><div style="font-size:.64rem;color:rgba(255,255,255,.72);font-weight:800">متجري • v1.8.35</div><h2><i class="fas fa-chart-line"></i> مركز التقارير والمتابعة</h2><p>تحليل المبيعات والربحية والأصناف والعملاء والمخزون والمصروفات والديون في شاشة واحدة.</p></div><div class="rep-hero-badge" id="repRangeBadge">${esc(existingFrom)} → ${esc(existingTo)}</div></div>
+      <div class="rep-hero-top"><div><div style="font-size:.64rem;color:rgba(255,255,255,.72);font-weight:800">متجري • v1.8.36</div><h2><i class="fas fa-chart-line"></i> مركز التقارير والمتابعة</h2><p>تحليل المبيعات والربحية والأصناف والعملاء والمخزون والمصروفات والديون في شاشة واحدة.</p></div><div class="rep-hero-badge" id="repRangeBadge">${esc(existingFrom)} → ${esc(existingTo)}</div></div>
     </section>
     <section class="rep-toolbar no-print">
       <div class="rep-toolbar-grid">
@@ -10628,7 +10628,24 @@ function matgaryReportData(from,to){
   return {sales,purchases,expenses,withdrawals,allProducts,customers,suppliers,invoices,products,byDay,byMonth,byChannel,expenseTypes,customerRows,debtRows,totalSales,totalProfit,totalDiscount,totalExpenses,totalPurchases,totalWithdrawals,costBase,netProfit,margin,returns,returnQty,inventoryValue,retailValue,lowStock,outStock,stale};
 }
 function matgaryReportsEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
-function setMatgaryReportMode(mode){window.matgaryReportMode=mode||'overview';const s=document.getElementById('repSelect');if(s)s.value=window.matgaryReportMode;loadMatgaryReports();}
+function setMatgaryReportMode(mode){
+  window.matgaryReportMode=mode||'overview';
+  const s=document.getElementById('repSelect');if(s)s.value=window.matgaryReportMode;
+  document.querySelectorAll('[data-rep-nav]').forEach(b=>b.classList.toggle('active',b.dataset.repNav===window.matgaryReportMode));
+  if(window.matgaryReportMode==='product-analysis'){
+    const k=document.getElementById('repKpis');if(k)k.innerHTML='';
+    const a=document.getElementById('repAlerts');if(a)a.innerHTML='';
+    try{renderMatgaryProductAnalysis();}
+    catch(e){
+      console.error('تحليل الأصناف:',e);
+      const body=document.getElementById('repBody');
+      if(body)body.innerHTML=`<section class="rep-panel"><div class="rep-panel-head"><h3>⚠️ تعذر فتح تحليل الأصناف</h3></div><div class="rep-mini-note">${matgaryReportEsc(e?.message||e||'خطأ غير معروف')}</div><button class="btn btn-primary btn-sm" type="button" onclick="setMatgaryReportMode('product-analysis')">إعادة فتح التحليل</button></section>`;
+    }
+    setTimeout(()=>document.getElementById('repBody')?.scrollIntoView({behavior:'smooth',block:'start'}),30);
+    return;
+  }
+  loadMatgaryReports();
+}
 function setMatgaryReportPeriod(key){const from=document.getElementById('repFrom'),to=document.getElementById('repTo');if(!from||!to)return;const t=today();let f=t;if(key==='today')f=t;else if(key==='week')f=matgaryReportDaysAgo(6);else if(key==='month')f=t.slice(0,7)+'-01';else if(key==='prevmonth'){const d=new Date(t.slice(0,7)+'-01T00:00:00');d.setDate(0);to.value=d.toISOString().slice(0,10);d.setDate(1);f=d.toISOString().slice(0,10);from.value=f;document.querySelectorAll('[data-rep-p]').forEach(x=>x.classList.toggle('active',x.dataset.repP===key));loadMatgaryReports();return;}else if(key==='90')f=matgaryReportDaysAgo(89);from.value=f;to.value=t;document.querySelectorAll('[data-rep-p]').forEach(x=>x.classList.toggle('active',x.dataset.repP===key));loadMatgaryReports();}
 function loadMatgaryReports(){
   const from=document.getElementById('repFrom')?.value||((today()||'').slice(0,7)+'-01'),to=document.getElementById('repTo')?.value||today();
@@ -10738,51 +10755,100 @@ function matgaryAnalysisRows(d,ids){
   return {rows,totalPurchaseQty,totalPurchaseCost,totalSaleQty,totalReturnQty,totalSales,totalReturnValue,totalProfit,totalStock,totalStockCost};
 }
 function renderMatgaryProductAnalysis(){
-  const body=document.getElementById('repBody');if(!body)return;
-  const from=document.getElementById('repFrom')?.value||((today()||'').slice(0,7)+'-01'),to=document.getElementById('repTo')?.value||today();
-  const d=matgaryReportData(from,to);matgaryAnalysisEnsureSelection(d);const products=matgaryAnalysisProducts(d);const selected=matgaryAnalysisState();
-  const q=String(window.matgaryAnalysisSearch||'').trim().toLowerCase();const filtered=products.filter(p=>!q||String(p.name||'').toLowerCase().includes(q));
-  const analysis=matgaryAnalysisRows(d,selected);const unitFor=x=>matgaryReportEsc(x.unit||'وحدة');
+  const body=document.getElementById('repBody');
+  if(!body)return;
+  const safeEsc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  const money=v=>{
+    const n=Number(v);const x=Number.isFinite(n)?n:0;
+    try{return typeof fmt==='function'?fmt(x):x.toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2})+' ج.م';}
+    catch(_){return x.toFixed(2)+' ج.م';}
+  };
+  const qty=v=>{
+    const n=Number(v);return (Number.isFinite(n)?n:0).toLocaleString('ar-EG',{maximumFractionDigits:3});
+  };
+  const dateLabel=d=>{
+    if(!d)return '-';
+    try{return new Date(String(d)+'T00:00:00').toLocaleDateString('ar-EG',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(_){return String(d);}
+  };
+  const from=document.getElementById('repFrom')?.value||((today()||'').slice(0,7)+'-01');
+  const to=document.getElementById('repTo')?.value||today();
+  const d=matgaryReportData(from,to);
+  window.matgaryAnalysisType=window.matgaryAnalysisType||'pickles';
+  window.matgaryAnalysisSearch=String(window.matgaryAnalysisSearch||'');
+  window.matgaryAnalysisSelected=Array.isArray(window.matgaryAnalysisSelected)?window.matgaryAnalysisSelected.map(String):[];
+  const allProducts=Array.isArray(d.allProducts)?d.allProducts:[];
+  const isPickle=p=>{
+    const t=String(p?.type||'').toLowerCase();
+    const n=String(p?.name||'').toLowerCase();
+    return t==='pickles'||/مخلل|مخللات|زيتون|ليمون|فلفل/.test(n);
+  };
+  const matchesType=(p,t)=>!t||t==='all'||(t==='pickles'?isPickle(p):String(p?.type||'other')===t);
+  const products=allProducts.filter(p=>matchesType(p,window.matgaryAnalysisType));
+  const search=window.matgaryAnalysisSearch.trim().toLowerCase();
+  const filtered=products.filter(p=>!search||String(p?.name||'').toLowerCase().includes(search));
+  const validIds=products.map(p=>String(p.id));
+  window.matgaryAnalysisSelected=window.matgaryAnalysisSelected.filter(id=>validIds.includes(id));
+  if(!window.matgaryAnalysisSelected.length && window.matgaryAnalysisType==='pickles')window.matgaryAnalysisSelected=validIds.slice();
+  const selected=window.matgaryAnalysisSelected.slice();
   const selectedSet=new Set(selected);
   const selectedProducts=products.filter(p=>selectedSet.has(String(p.id)));
-  const details=[];
+  const icon=t=>t==='cheese'?'🧀':t==='frozen'?'❄️':t==='pickles'?'🥒':'📦';
+  const unit=p=>String(p?.unit||'كجم');
+  const rows=[];let totals={purchaseQty:0,purchaseCost:0,saleQty:0,returnQty:0,sales:0,returnValue:0,profit:0,stock:0,stockCost:0};
   selectedProducts.forEach(p=>{
-    (d.purchases||[]).filter(x=>String(x.productId)===String(p.id)).forEach(x=>details.push({date:x.date||'',time:x.createdAt||'',kind:'شراء',icon:'fa-arrow-down',cls:'in',product:p.name,invoice:x.invoiceNo||x.purchaseBatchId||'-',party:x.supplierName||'بائع/مورد',qty:matgaryReportNum(x.qty),unit:unitFor(p),price:matgaryReportNum(x.price),total:matgaryReportNum(x.total??(matgaryReportNum(x.qty)*matgaryReportNum(x.price))),returnQty:0,profit:null}));
-    (d.sales||[]).filter(x=>String(x.productId)===String(p.id)).forEach(x=>details.push({date:x.date||'',time:x.time||'',kind:'بيع',icon:'fa-arrow-up',cls:'out',product:p.name,invoice:x.invoiceNo||x.saleBatchId||'-',party:x.customerName||'عميل عادي',qty:matgaryReportNum(x.qty),unit:unitFor(p),price:matgaryReportNum(x.price||x.unitPrice),total:matgaryReportNum(x.total),returnQty:Math.max(0,matgaryReportNum(x.returnedQty)),profit:matgaryReportNum(x.profit)}));
+    const pid=String(p.id);
+    const prs=(d.purchases||[]).filter(x=>String(x?.productId)===pid);
+    const sls=(d.sales||[]).filter(x=>String(x?.productId)===pid);
+    const purchaseQty=prs.reduce((n,x)=>n+Math.max(0,Number(x?.qty)||0),0);
+    const purchaseCost=prs.reduce((n,x)=>n+Math.max(0,Number(x?.total??((Number(x?.qty)||0)*(Number(x?.price)||0)))||0),0);
+    const returnQty=sls.reduce((n,x)=>n+Math.max(0,Number(x?.returnedQty)||0),0);
+    const saleQty=sls.reduce((n,x)=>n+Math.max(0,Number(x?.qty)||0)+Math.max(0,Number(x?.returnedQty)||0),0);
+    const netQty=Math.max(0,saleQty-returnQty);
+    const sales=sls.reduce((n,x)=>n+Math.max(0,Number(x?.total)||0),0);
+    const returnValue=sls.reduce((n,x)=>n+Math.max(0,Number(x?.returnedAmount)||0),0);
+    const profit=sls.reduce((n,x)=>n+(Number.isFinite(Number(x?.profit))?Number(x.profit):0),0);
+    const currentQty=Math.max(0,Number(p?.qty)||0);
+    const currentCost=currentQty*Math.max(0,Number(p?.purchase)||0);
+    const purchaseAvg=purchaseQty>0?purchaseCost/purchaseQty:Math.max(0,Number(p?.purchase)||0);
+    const saleAvg=netQty>0?sales/netQty:0;
+    const margin=sales>0?profit/sales*100:0;
+    const suppliers=[...new Set(prs.map(x=>String(x?.supplierName||'بائع/مورد')).filter(Boolean))];
+    const customers=[...new Set(sls.map(x=>String(x?.customerName||'عميل عادي')).filter(Boolean))];
+    rows.push({id:pid,name:p?.name||'صنف',type:p?.type||'other',unit:unit(p),purchaseQty,purchaseCost,purchaseAvg,saleQty,returnQty,netQty,sales,returnValue,profit,margin,currentQty,currentCost,saleAvg,suppliers,customers,purchaseInvoices:new Set(prs.map(x=>String(x?.purchaseBatchId||x?.invoiceNo||x?.id||''))).size,saleInvoices:new Set(sls.map(x=>String(x?.saleBatchId||x?.invoiceNo||x?.id||''))).size});
+    totals.purchaseQty+=purchaseQty;totals.purchaseCost+=purchaseCost;totals.saleQty+=saleQty;totals.returnQty+=returnQty;totals.sales+=sales;totals.returnValue+=returnValue;totals.profit+=profit;totals.stock+=currentQty;totals.stockCost+=currentCost;
   });
-  details.sort((a,b)=>((String(b.date).localeCompare(String(a.date)))||(String(b.time).localeCompare(String(a.time)))));
-  const shown=details.slice(0,250);
+  const detail=[];
+  selectedProducts.forEach(p=>{
+    const pid=String(p.id);
+    (d.purchases||[]).filter(x=>String(x?.productId)===pid).forEach(x=>detail.push({date:x?.date||'',time:x?.createdAt||'',kind:'شراء',cls:'in',product:p?.name||'صنف',invoice:x?.invoiceNo||x?.purchaseBatchId||'-',party:x?.supplierName||'بائع/مورد',qty:Number(x?.qty)||0,unit:unit(p),price:Number(x?.price)||0,total:Number(x?.total??((Number(x?.qty)||0)*(Number(x?.price)||0)))||0,ret:0,profit:null}));
+    (d.sales||[]).filter(x=>String(x?.productId)===pid).forEach(x=>detail.push({date:x?.date||'',time:x?.time||'',kind:'بيع',cls:'out',product:p?.name||'صنف',invoice:x?.invoiceNo||x?.saleBatchId||'-',party:x?.customerName||'عميل عادي',qty:Number(x?.qty)||0,unit:unit(p),price:Number(x?.price??x?.unitPrice)||0,total:Number(x?.total)||0,ret:Number(x?.returnedQty)||0,profit:Number(x?.profit)||0}));
+  });
+  detail.sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.time).localeCompare(String(a.time)));
+  const shown=detail.slice(0,250);
+  const typeOptions=[['pickles','🥒 المخللات'],['cheese','🧀 الجبن'],['frozen','❄️ المجمدات'],['other','📦 أخرى'],['all','كل الأصناف']];
+  const navButtons=products.length?`<button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisSelectAll()">تحديد الكل</button><button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisClear()">إلغاء التحديد</button>`:'';
   body.innerHTML=`<div class="matgary-product-analysis">
     <section class="rep-panel mpa-controls">
-      <div class="rep-panel-head"><div><h3>🧾 تحليل صنف / مجموعة أصناف</h3><small>اختر صنفًا واحدًا أو عدة أصناف للحصول على شراء + بيع + مرتجع + مخزون + ربح + حركة تفصيلية.</small></div><span class="mpa-selected-badge">${selected.length} محدد</span></div>
+      <div class="rep-panel-head"><div><h3>🧾 تحليل صنف / مجموعة أصناف</h3><small>${dateLabel(from)} → ${dateLabel(to)} • شراء + بيع + مرتجع + مخزون + ربح + تفاصيل</small></div><span class="mpa-selected-badge">${selected.length} محدد</span></div>
       <div class="mpa-filter-grid">
-        <label><span>نوع الأصناف</span><select onchange="matgaryAnalysisSetType(this.value)"><option value="pickles" ${window.matgaryAnalysisType==='pickles'?'selected':''}>🥒 المخللات</option><option value="cheese" ${window.matgaryAnalysisType==='cheese'?'selected':''}>🧀 الجبن</option><option value="frozen" ${window.matgaryAnalysisType==='frozen'?'selected':''}>❄️ المجمدات</option><option value="other" ${window.matgaryAnalysisType==='other'?'selected':''}>📦 أخرى</option><option value="all" ${window.matgaryAnalysisType==='all'?'selected':''}>كل الأصناف</option></select></label>
-        <label><span>بحث في الأصناف</span><input type="search" value="${matgaryReportEsc(window.matgaryAnalysisSearch)}" oninput="matgaryAnalysisSearchInput(this.value)" placeholder="مثال: زيتون أو ليمون أو فلفل"></label>
+        <label><span>نوع الأصناف</span><select onchange="matgaryAnalysisSetType(this.value)">${typeOptions.map(o=>`<option value="${o[0]}" ${window.matgaryAnalysisType===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></label>
+        <label><span>بحث في الأصناف</span><input type="search" value="${safeEsc(search)}" oninput="matgaryAnalysisSearchInput(this.value)" placeholder="مثال: زيتون أو ليمون أو فلفل"></label>
       </div>
-      <div class="mpa-shortcuts"><button type="button" class="btn btn-accent btn-sm" onclick="matgaryAnalysisSetType('pickles')">🥒 كل المخللات</button><button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisSelectAll()">تحديد الكل</button><button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisClear()">إلغاء التحديد</button></div>
-      <div class="mpa-check-list">${filtered.map(p=>{const sid=String(p.id);return `<label class="mpa-check ${selectedSet.has(sid)?'active':''}"><input type="checkbox" ${selectedSet.has(sid)?'checked':''} onchange="matgaryAnalysisToggle('${matgaryReportEsc(sid)}')"><span class="mpa-check-icon">${getProductTypeIcon(p.type)}</span><span class="mpa-check-text"><b>${matgaryReportEsc(p.name||'صنف')}</b><small>الرصيد الحالي: ${matgaryAnalysisQty(p.qty)} ${matgaryReportEsc(p.unit||'كجم')}</small></span></label>`;}).join('')||'<div class="rep-empty"><i class="fas fa-filter-circle-xmark"></i>لا توجد أصناف مطابقة للبحث.</div>'}</div>
-      <div class="mpa-tip">💡 عند اختيار «المخللات» يتم التعامل معها ككل، ويمكن بعد ذلك إزالة أي صنف أو اختيار صنف واحد فقط مثل زيتون مخلل.</div>
+      <div class="mpa-shortcuts"><button type="button" class="btn btn-accent btn-sm" onclick="matgaryAnalysisSetType('pickles')">🥒 كل المخللات</button>${navButtons}</div>
+      <div class="mpa-check-list">${filtered.map(p=>{const sid=String(p.id);return `<label class="mpa-check ${selectedSet.has(sid)?'active':''}"><input type="checkbox" ${selectedSet.has(sid)?'checked':''} onchange="matgaryAnalysisToggle('${safeEsc(sid)}')"><span class="mpa-check-icon">${icon(p.type)}</span><span class="mpa-check-text"><b>${safeEsc(p.name||'صنف')}</b><small>الرصيد الحالي: ${qty(p.qty)} ${safeEsc(unit(p))}</small></span></label>`;}).join('')||'<div class="rep-empty"><i class="fas fa-filter-circle-xmark"></i>لا توجد أصناف مطابقة.</div>'}</div>
+      <div class="mpa-tip">💡 الاختيار يدوي. تقدر تختار صنفًا واحدًا أو عدة أصناف، وتحليل «المخللات» يبحث أيضًا بالاسم للتعامل مع الأصناف القديمة التي لم تُصنف كـمخللات.</div>
     </section>
-    <div class="mpa-kpis">
-      <div><span>الأصناف المحددة</span><strong>${selected.length}</strong></div>
-      <div><span>إجمالي المشتريات</span><strong>${matgaryAnalysisQty(analysis.totalPurchaseQty)}</strong></div>
-      <div><span>إجمالي المبيعات</span><strong>${matgaryAnalysisQty(analysis.totalSaleQty)}</strong></div>
-      <div><span>صافي المباع</span><strong>${matgaryAnalysisQty(Math.max(0,analysis.totalSaleQty-analysis.totalReturnQty))}</strong></div>
-      <div><span>المرتجع</span><strong>${matgaryAnalysisQty(analysis.totalReturnQty)}</strong></div>
-      <div><span>قيمة المبيعات</span><strong>${matgaryReportMoney(analysis.totalSales)}</strong></div>
-      <div><span>إجمالي الربح</span><strong>${matgaryReportMoney(analysis.totalProfit)}</strong></div>
-      <div><span>رصيد المخزون</span><strong>${matgaryAnalysisQty(analysis.totalStock)}</strong></div>
-    </div>
-    <section class="rep-panel"><div class="rep-panel-head"><div><h3>📊 ملخص كل صنف محدد</h3><small>${matgaryReportDateLabel(from)} → ${matgaryReportDateLabel(to)} • البيانات حسب السجلات المحفوظة</small></div></div>${matgaryReportTable(['الصنف','المشتريات','تكلفة الشراء','متوسط الشراء','المبيعات','المرتجع','صافي المباع','قيمة المبيعات','الربح','هامش','المخزون','تفاصيل'],analysis.rows.map(x=>`<tr><td><b>${matgaryReportEsc(x.name)}</b><br><small class="rep-muted">${matgaryReportEsc(x.typeLabel)}</small></td><td>${matgaryAnalysisQty(x.purchaseQty)} ${unitFor(x)}</td><td>${matgaryReportMoney(x.purchaseCost)}</td><td>${matgaryReportMoney(x.purchaseAvg)}</td><td>${matgaryAnalysisQty(x.saleQty)} ${unitFor(x)}</td><td class="${x.returnQty>0?'rep-neg':''}">${matgaryAnalysisQty(x.returnQty)}</td><td>${matgaryAnalysisQty(x.netQty)}</td><td>${matgaryReportMoney(x.salesValue)}</td><td class="rep-pos">${matgaryReportMoney(x.profit)}</td><td>${x.margin.toFixed(1)}%</td><td>${matgaryAnalysisQty(x.currentQty)} ${unitFor(x)}</td><td><button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisFocusProduct('${matgaryReportEsc(x.id)}')">عرضه فقط</button></td></tr>`))}</section>
-    <section class="rep-panel"><div class="rep-panel-head"><div><h3>💰 ملخص مالي وكمي</h3><small>لجميع الأصناف المحددة معًا</small></div></div>${matgaryReportTable(['المؤشر','القيمة'],[
-      `<tr><td>إجمالي تكلفة المشتريات</td><td class="rep-num">${matgaryReportMoney(analysis.totalPurchaseCost)}</td></tr>`,
-      `<tr><td>متوسط تكلفة الشراء المرجح</td><td class="rep-num">${matgaryReportMoney(analysis.totalPurchaseQty>0?analysis.totalPurchaseCost/analysis.totalPurchaseQty:0)}</td></tr>`,
-      `<tr><td>إجمالي قيمة المرتجعات المسجلة</td><td class="rep-num">${matgaryReportMoney(analysis.totalReturnValue)}</td></tr>`,
-      `<tr><td>إجمالي قيمة المبيعات</td><td class="rep-num">${matgaryReportMoney(analysis.totalSales)}</td></tr>`,
-      `<tr><td>إجمالي الربح المسجل</td><td class="rep-pos">${matgaryReportMoney(analysis.totalProfit)}</td></tr>`,
-      `<tr><td>قيمة مخزون التكلفة الحالي</td><td class="rep-num">${matgaryReportMoney(analysis.totalStockCost)}</td></tr>`
+    <div class="mpa-kpis"><div><span>الأصناف المحددة</span><strong>${selected.length}</strong></div><div><span>إجمالي المشتريات</span><strong>${qty(totals.purchaseQty)}</strong></div><div><span>إجمالي المباع</span><strong>${qty(totals.saleQty)}</strong></div><div><span>صافي المباع</span><strong>${qty(Math.max(0,totals.saleQty-totals.returnQty))}</strong></div><div><span>المرتجع</span><strong>${qty(totals.returnQty)}</strong></div><div><span>قيمة المبيعات</span><strong>${money(totals.sales)}</strong></div><div><span>إجمالي الربح</span><strong>${money(totals.profit)}</strong></div><div><span>رصيد المخزون</span><strong>${qty(totals.stock)}</strong></div></div>
+    <section class="rep-panel"><div class="rep-panel-head"><div><h3>📊 ملخص الأصناف المحددة</h3><small>${rows.length} صنف</small></div></div>${matgaryReportTable(['الصنف','المشتريات','تكلفة الشراء','متوسط الشراء','المباع','المرتجع','صافي المباع','قيمة المبيعات','الربح','الهامش','المخزون','تفاصيل'],rows.map(x=>`<tr><td><b>${safeEsc(x.name)}</b><br><small class="rep-muted">${safeEsc(x.type)}</small></td><td>${qty(x.purchaseQty)} ${safeEsc(x.unit)}</td><td>${money(x.purchaseCost)}</td><td>${money(x.purchaseAvg)}</td><td>${qty(x.saleQty)} ${safeEsc(x.unit)}</td><td class="${x.returnQty>0?'rep-neg':''}">${qty(x.returnQty)}</td><td>${qty(x.netQty)}</td><td>${money(x.sales)}</td><td class="rep-pos">${money(x.profit)}</td><td>${x.margin.toFixed(1)}%</td><td>${qty(x.currentQty)} ${safeEsc(x.unit)}</td><td><button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisFocusProduct('${safeEsc(x.id)}')">عرضه فقط</button></td></tr>`))}</section>
+    <section class="rep-panel"><div class="rep-panel-head"><div><h3>💰 الملخص المالي والكمي</h3><small>لجميع الأصناف المحددة</small></div></div>${matgaryReportTable(['المؤشر','القيمة'],[
+      `<tr><td>إجمالي تكلفة المشتريات</td><td class="rep-num">${money(totals.purchaseCost)}</td></tr>`,
+      `<tr><td>متوسط تكلفة الشراء المرجح</td><td class="rep-num">${money(totals.purchaseQty?totals.purchaseCost/totals.purchaseQty:0)}</td></tr>`,
+      `<tr><td>إجمالي قيمة المرتجعات</td><td class="rep-num">${money(totals.returnValue)}</td></tr>`,
+      `<tr><td>إجمالي قيمة المبيعات</td><td class="rep-num">${money(totals.sales)}</td></tr>`,
+      `<tr><td>إجمالي الربح المسجل</td><td class="rep-pos">${money(totals.profit)}</td></tr>`,
+      `<tr><td>قيمة مخزون التكلفة الحالي</td><td class="rep-num">${money(totals.stockCost)}</td></tr>`
     ])}</section>
-    <section class="rep-panel"><div class="rep-panel-head"><div><h3>🔎 تفاصيل حركة الأصناف المحددة</h3><small>يعرض حتى 250 حركة — شراء وبيع، مع المورد/العميل والفاتورة والمرتجع</small></div><span class="rep-filter-tip">${details.length} حركة</span></div>${matgaryReportTable(['التاريخ','الحركة','الصنف','الفاتورة','المورد / العميل','الكمية','سعر الوحدة','الإجمالي','المرتجع','الربح'],shown.map(x=>`<tr><td>${matgaryReportDateLabel(x.date)}${x.time?`<br><small class="rep-muted">${matgaryReportEsc(String(x.time).slice(0,8))}</small>`:''}</td><td class="${x.cls==='in'?'rep-pos':''}">${x.kind}</td><td><b>${matgaryReportEsc(x.product)}</b></td><td>${matgaryReportEsc(x.invoice)}</td><td>${matgaryReportEsc(x.party)}</td><td>${matgaryAnalysisQty(x.qty)} ${x.unit}</td><td>${matgaryReportMoney(x.price)}</td><td>${matgaryReportMoney(x.total)}</td><td class="${x.returnQty>0?'rep-neg':''}">${x.returnQty>0?matgaryAnalysisQty(x.returnQty):'-'}</td><td>${x.profit===null?'-':`<span class="rep-pos">${matgaryReportMoney(x.profit)}</span>`}</td></tr>`),details.length>250?'تم إظهار أول 250 حركة فقط.':'لا توجد حركات للصنف/الأصناف المحددة')}</section>
+    <section class="rep-panel"><div class="rep-panel-head"><div><h3>🔎 تفاصيل الحركة</h3><small>${detail.length} حركة • المعروض حتى 250 حركة</small></div></div>${matgaryReportTable(['التاريخ','الحركة','الصنف','الفاتورة','المورد / العميل','الكمية','سعر الوحدة','الإجمالي','المرتجع','الربح'],shown.map(x=>`<tr><td>${dateLabel(x.date)}${x.time?`<br><small class="rep-muted">${safeEsc(String(x.time).slice(0,8))}</small>`:''}</td><td>${x.kind}</td><td><b>${safeEsc(x.product)}</b></td><td>${safeEsc(x.invoice)}</td><td>${safeEsc(x.party)}</td><td>${qty(x.qty)} ${safeEsc(x.unit)}</td><td>${money(x.price)}</td><td>${money(x.total)}</td><td class="${x.ret>0?'rep-neg':''}">${x.ret>0?qty(x.ret):'-'}</td><td>${x.profit===null?'-':`<span class="rep-pos">${money(x.profit)}</span>`}</td></tr>`),detail.length>250?'تم إظهار أول 250 حركة فقط.':'لا توجد حركات مسجلة للفترة المحددة.')}</section>
   </div>`;
 }
 
@@ -16135,7 +16201,7 @@ setTimeout(()=>{
     return cur || 'عبوة';
   };
 
-  window.__MATGARY_UNIFIED_UNITS_VERSION='v1.8.35';
+  window.__MATGARY_UNIFIED_UNITS_VERSION='v1.8.36';
 })();
 </script>
 
