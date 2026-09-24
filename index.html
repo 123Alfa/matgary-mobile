@@ -659,6 +659,10 @@ tr:hover td{background:rgba(15,118,110,.045)}
 .mpa-shortcuts{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
 .mpa-shortcuts .btn{font-size:.66rem;padding:8px 10px}
 .mpa-check-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:310px;overflow:auto;padding:2px}
+.mpa-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:8px;width:100%;}
+.mpa-group-head{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:11px;background:linear-gradient(90deg,#eef8f5,#fffaf0);border:1px solid #d8e9e2;color:#0f766e;font-size:.68rem;font-weight:950;position:sticky;top:0;z-index:2;}
+.mpa-group-head small{color:#81908b;font-size:.56rem;font-weight:800;}
+@media(max-width:800px){.mpa-group{grid-template-columns:1fr;}}
 .mpa-check{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;min-width:0}
 .mpa-check.active{border-color:#71bdb0;background:#effaf7;box-shadow:inset 0 0 0 1px rgba(15,118,110,.12)}
 .mpa-check input{accent-color:#0f766e;flex:0 0 auto}
@@ -3677,7 +3681,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <!-- WhatsApp invoice V19: fixed-pack classification + slogan correction -->
 
 <style id="matgary-reports-v31-css">
-/* ==================== متجري v1.8.36 — تحليل الأصناف والمخللات ==================== */
+/* ==================== متجري v1.8.37 — تحليل الأصناف والمخللات ==================== */
 .reports-v31{display:flex;flex-direction:column;gap:14px}
 .rep-hero{background:linear-gradient(135deg,#0f766e 0%,#0b5f58 58%,#c99a22 150%);color:#fff;border-radius:22px;padding:19px 18px;box-shadow:0 12px 30px rgba(15,118,110,.16);position:relative;overflow:hidden}
 .rep-hero:after{content:'';position:absolute;inset:auto -60px -90px auto;width:210px;height:210px;border-radius:50%;background:rgba(255,255,255,.08)}
@@ -3771,7 +3775,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.36';
+const APP_VERSION='v1.8.37';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "24 سبتمبر 2026 — تحليل الأصناف والمخللات وتفاصيل الحركة";
 
@@ -10562,7 +10566,7 @@ function renderReportsPage(container){
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   container.innerHTML=`<div class="fade-in reports-v31">
     <section class="rep-hero">
-      <div class="rep-hero-top"><div><div style="font-size:.64rem;color:rgba(255,255,255,.72);font-weight:800">متجري • v1.8.36</div><h2><i class="fas fa-chart-line"></i> مركز التقارير والمتابعة</h2><p>تحليل المبيعات والربحية والأصناف والعملاء والمخزون والمصروفات والديون في شاشة واحدة.</p></div><div class="rep-hero-badge" id="repRangeBadge">${esc(existingFrom)} → ${esc(existingTo)}</div></div>
+      <div class="rep-hero-top"><div><div style="font-size:.64rem;color:rgba(255,255,255,.72);font-weight:800">متجري • v1.8.37</div><h2><i class="fas fa-chart-line"></i> مركز التقارير والمتابعة</h2><p>تحليل المبيعات والربحية والأصناف والعملاء والمخزون والمصروفات والديون في شاشة واحدة.</p></div><div class="rep-hero-badge" id="repRangeBadge">${esc(existingFrom)} → ${esc(existingTo)}</div></div>
     </section>
     <section class="rep-toolbar no-print">
       <div class="rep-toolbar-grid">
@@ -10778,14 +10782,23 @@ function renderMatgaryProductAnalysis(){
   window.matgaryAnalysisSelected=Array.isArray(window.matgaryAnalysisSelected)?window.matgaryAnalysisSelected.map(String):[];
   const allProducts=Array.isArray(d.allProducts)?d.allProducts:[];
   const isPickle=p=>{
-    const t=String(p?.type||'').toLowerCase();
+    const t=String(p?.type||'other').toLowerCase();
     const n=String(p?.name||'').toLowerCase();
-    return t==='pickles'||/مخلل|مخللات|زيتون|ليمون|فلفل/.test(n);
+    if(t==='pickles')return true;
+    if(t==='cheese'||t==='frozen')return false;
+    return /مخلل|مخللات|زيتون|ليمون|فلفل/.test(n);
+  };
+  const analysisGroupType=p=>{
+    const t=String(p?.type||'other').toLowerCase();
+    if(t==='cheese'||t==='frozen'||t==='pickles')return t;
+    return isPickle(p)?'pickles':'other';
   };
   const matchesType=(p,t)=>!t||t==='all'||(t==='pickles'?isPickle(p):String(p?.type||'other')===t);
   const products=allProducts.filter(p=>matchesType(p,window.matgaryAnalysisType));
   const search=window.matgaryAnalysisSearch.trim().toLowerCase();
   const filtered=products.filter(p=>!search||String(p?.name||'').toLowerCase().includes(search));
+  const groupedTypeOrder=['pickles','frozen','cheese','other'];
+  const groupedTypeLabels={pickles:'🥒 المخللات',frozen:'❄️ المجمدات',cheese:'🧀 الجبن',other:'📦 أخرى'};
   const validIds=products.map(p=>String(p.id));
   window.matgaryAnalysisSelected=window.matgaryAnalysisSelected.filter(id=>validIds.includes(id));
   if(!window.matgaryAnalysisSelected.length && window.matgaryAnalysisType==='pickles')window.matgaryAnalysisSelected=validIds.slice();
@@ -10794,6 +10807,11 @@ function renderMatgaryProductAnalysis(){
   const selectedProducts=products.filter(p=>selectedSet.has(String(p.id)));
   const icon=t=>t==='cheese'?'🧀':t==='frozen'?'❄️':t==='pickles'?'🥒':'📦';
   const unit=p=>String(p?.unit||'كجم');
+  const groupedHtml=groupedTypeOrder.map(groupType=>{
+    const items=filtered.filter(p=>analysisGroupType(p)===groupType).sort((a,b)=>String(a?.name||'').localeCompare(String(b?.name||''),'ar'));
+    if(!items.length)return '';
+    return `<div class="mpa-group"><div class="mpa-group-head"><span>${groupedTypeLabels[groupType]}</span><small>${items.length} صنف</small></div>${items.map(p=>{const sid=String(p.id);return `<label class="mpa-check ${selectedSet.has(sid)?'active':''}"><input type="checkbox" ${selectedSet.has(sid)?'checked':''} onchange="matgaryAnalysisToggle('${safeEsc(sid)}')"><span class="mpa-check-icon">${icon(analysisGroupType(p))}</span><span class="mpa-check-text"><b>${safeEsc(p.name||'صنف')}</b><small>الرصيد الحالي: ${qty(p.qty)} ${safeEsc(unit(p))}</small></span></label>`;}).join('')}</div>`;
+  }).join('');
   const rows=[];let totals={purchaseQty:0,purchaseCost:0,saleQty:0,returnQty:0,sales:0,returnValue:0,profit:0,stock:0,stockCost:0};
   selectedProducts.forEach(p=>{
     const pid=String(p.id);
@@ -10825,7 +10843,7 @@ function renderMatgaryProductAnalysis(){
   });
   detail.sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.time).localeCompare(String(a.time)));
   const shown=detail.slice(0,250);
-  const typeOptions=[['pickles','🥒 المخللات'],['cheese','🧀 الجبن'],['frozen','❄️ المجمدات'],['other','📦 أخرى'],['all','كل الأصناف']];
+  const typeOptions=[['pickles','🥒 المخللات'],['frozen','❄️ المجمدات'],['cheese','🧀 الجبن'],['other','📦 أخرى'],['all','كل الأصناف']];
   const navButtons=products.length?`<button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisSelectAll()">تحديد الكل</button><button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisClear()">إلغاء التحديد</button>`:'';
   body.innerHTML=`<div class="matgary-product-analysis">
     <section class="rep-panel mpa-controls">
@@ -10835,7 +10853,7 @@ function renderMatgaryProductAnalysis(){
         <label><span>بحث في الأصناف</span><input type="search" value="${safeEsc(search)}" oninput="matgaryAnalysisSearchInput(this.value)" placeholder="مثال: زيتون أو ليمون أو فلفل"></label>
       </div>
       <div class="mpa-shortcuts"><button type="button" class="btn btn-accent btn-sm" onclick="matgaryAnalysisSetType('pickles')">🥒 كل المخللات</button>${navButtons}</div>
-      <div class="mpa-check-list">${filtered.map(p=>{const sid=String(p.id);return `<label class="mpa-check ${selectedSet.has(sid)?'active':''}"><input type="checkbox" ${selectedSet.has(sid)?'checked':''} onchange="matgaryAnalysisToggle('${safeEsc(sid)}')"><span class="mpa-check-icon">${icon(p.type)}</span><span class="mpa-check-text"><b>${safeEsc(p.name||'صنف')}</b><small>الرصيد الحالي: ${qty(p.qty)} ${safeEsc(unit(p))}</small></span></label>`;}).join('')||'<div class="rep-empty"><i class="fas fa-filter-circle-xmark"></i>لا توجد أصناف مطابقة.</div>'}</div>
+      <div class="mpa-check-list">${groupedHtml||'<div class="rep-empty"><i class="fas fa-filter-circle-xmark"></i>لا توجد أصناف مطابقة.</div>'}</div>
       <div class="mpa-tip">💡 الاختيار يدوي. تقدر تختار صنفًا واحدًا أو عدة أصناف، وتحليل «المخللات» يبحث أيضًا بالاسم للتعامل مع الأصناف القديمة التي لم تُصنف كـمخللات.</div>
     </section>
     <div class="mpa-kpis"><div><span>الأصناف المحددة</span><strong>${selected.length}</strong></div><div><span>إجمالي المشتريات</span><strong>${qty(totals.purchaseQty)}</strong></div><div><span>إجمالي المباع</span><strong>${qty(totals.saleQty)}</strong></div><div><span>صافي المباع</span><strong>${qty(Math.max(0,totals.saleQty-totals.returnQty))}</strong></div><div><span>المرتجع</span><strong>${qty(totals.returnQty)}</strong></div><div><span>قيمة المبيعات</span><strong>${money(totals.sales)}</strong></div><div><span>إجمالي الربح</span><strong>${money(totals.profit)}</strong></div><div><span>رصيد المخزون</span><strong>${qty(totals.stock)}</strong></div></div>
@@ -16201,7 +16219,7 @@ setTimeout(()=>{
     return cur || 'عبوة';
   };
 
-  window.__MATGARY_UNIFIED_UNITS_VERSION='v1.8.36';
+  window.__MATGARY_UNIFIED_UNITS_VERSION='v1.8.37';
 })();
 </script>
 
