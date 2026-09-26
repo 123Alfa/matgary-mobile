@@ -3752,6 +3752,14 @@ html[data-theme="dark"] .sales-summary-card .value{
 @media(max-width:520px){.rep-toolbar-grid{grid-template-columns:1fr}.rep-kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}.rep-alerts{grid-template-columns:1fr}.rep-hero-top{flex-direction:column}.rep-nav button{font-size:.58rem;padding:9px 3px}.rep-panel{padding:10px}.rep-chart{height:220px}}
 @media print{.rep-toolbar,.rep-nav,.rep-actions,.no-print,.bottom-nav,.app-header{display:none!important}.reports-v31{gap:8px}.rep-hero{box-shadow:none}.rep-panel{break-inside:avoid;box-shadow:none}.rep-chart{height:230px}}
 </style>
+
+<style id="stock-movement-v1845">
+#contentArea .stock-movement-page .sm-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#contentArea .stock-movement-page .sm-stat.opening::after{background:#8b5cf6!important}.sm-stat.opening .sm-stat-icon{background:#f2edff!important;color:#7c3aed!important}.sm-stat.opening strong{color:#7c3aed!important}
+#contentArea .stock-movement-page .sm-stat.closing::after{background:#f59e0b!important}.sm-stat.closing .sm-stat-icon{background:#fff7e6!important;color:#d97706!important}.sm-stat.closing strong{color:#d97706!important}
+@media(max-width:760px){#contentArea .stock-movement-page .sm-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:430px){#contentArea .stock-movement-page .sm-summary{grid-template-columns:1fr!important}}
+</style>
 </head>
 <body>
 <div id="loading-screen">
@@ -3822,7 +3830,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.44';
+const APP_VERSION='v1.8.45';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "26 سبتمبر 2026 — الجرد الفعلي وحركة المخزون وتسجيل فروق الجرد";
 
@@ -8118,7 +8126,7 @@ function renderStockMovementPage(container){
   container.innerHTML=`<div class="fade-in stock-movement-page">
     <section class="sm-hero">
       <div class="sm-hero-icon"><i class="fas fa-boxes-stacked"></i></div>
-      <div class="sm-hero-copy"><span>مراقبة المخزون</span><h2>سجل حركة الصنف</h2><p>كل دخول وخروج ومرتجع وتسوية في سجل مرتب وواضح.</p></div>
+      <div class="sm-hero-copy"><span>مراقبة المخزون</span><h2>مركز حركة المخزون</h2><p>صورة كاملة لحركة الصنف: شراء وبيع ومرتجع وتسويات الجرد، مع الرصيد قبل وبعد كل حركة.</p></div>
       <button class="btn btn-outline sm-back" type="button" onclick="navigateTo('products')"><i class="fas fa-arrow-right"></i><span>الأصناف</span></button>
     </section>
     <div class="sm-summary" id="stockMovementSummary"></div>
@@ -8163,53 +8171,74 @@ function renderStockMovementData(){
   const all=getStockMovements();
   const products=Store.get('products')||[];
   const productMap=new Map(products.map(p=>[String(p.id),p]));
-  const moneyUnit=(m)=>productMap.get(String(m.productId))?.unit||'كجم';
+  const selectedProduct=productId?productMap.get(String(productId)):null;
+  const unit=selectedProduct?.unit||'كجم';
 
-  // حساب الرصيد التاريخي من كامل السجل ثم تطبيق الفلاتر على العرض.
+  // نبني الرصيد التاريخي من كامل الحركة، ثم نطبّق الفلاتر على العرض فقط.
+  // بهذا تظل خانتا «الرصيد قبل/بعد الحركة» صحيحتين حتى عند استخدام فترة زمنية.
   const initial={};
   products.forEach(p=>initial[String(p.id)]=stockMovementNum(p.qty));
   all.forEach(m=>{initial[String(m.productId)]=(initial[String(m.productId)]??0)-m.delta;});
   const chronological=[...all].sort((a,b)=>String(a.date+' '+a.time).localeCompare(String(b.date+' '+b.time)));
   const balanceMap=new Map();
   const running={...initial};
-  chronological.forEach((m,i)=>{
-    const before=running[String(m.productId)]??0;
+  chronological.forEach(m=>{
+    const key=String(m.productId);
+    const before=running[key]??0;
     const after=before+m.delta;
-    balanceMap.set(m,{before,after,index:i});
-    running[String(m.productId)]=after;
+    balanceMap.set(m,{before,after});
+    running[key]=after;
   });
 
   const filtered=all.filter(m=>(!productId||String(m.productId)===String(productId))&&(!from||m.date>=from)&&(!to||m.date<=to)&&(!type||m.kind===type));
-  const selectedProduct=productId?productMap.get(String(productId)):null;
-  const totalIn=filtered.filter(m=>m.delta>0).reduce((n,m)=>n+m.delta,0);
-  const totalOut=filtered.filter(m=>m.delta<0).reduce((n,m)=>n+Math.abs(m.delta),0);
+  const productAll=productId?all.filter(m=>String(m.productId)===String(productId)):[];
+  const inRows=filtered.filter(m=>m.delta>0);
+  const outRows=filtered.filter(m=>m.delta<0);
+  const totalIn=inRows.reduce((n,m)=>n+m.delta,0);
+  const totalOut=outRows.reduce((n,m)=>n+Math.abs(m.delta),0);
   const net=totalIn-totalOut;
+
+  // رصيد بداية الفترة = الرصيد الحالي ناقص كل ما حدث من بداية الفترة حتى الآن.
+  // ورصيد نهاية الفترة = بداية الفترة + صافي الحركة المعروضة.
+  let openingBalance=selectedProduct?stockMovementNum(selectedProduct.qty)-productAll.reduce((n,m)=>n+m.delta,0):0;
+  if(selectedProduct&&from){
+    openingBalance=stockMovementNum(selectedProduct.qty)-productAll.filter(m=>m.date>=from).reduce((n,m)=>n+m.delta,0);
+  }
+  if(selectedProduct&&to){
+    const throughTo=productAll.filter(m=>m.date<=to);
+    const latestThroughTo=throughTo.length?throughTo.reduce((n,m)=>n+m.delta,0):0;
+    if(!from)openingBalance=stockMovementNum(selectedProduct.qty)-latestThroughTo;
+  }
+  const closingBalance=selectedProduct?(openingBalance+net):null;
+
   const summary=document.getElementById('stockMovementSummary');
   if(summary)summary.innerHTML=`
-    <div class="sm-stat current"><div class="sm-stat-icon"><i class="fas fa-box"></i></div><div><span>الرصيد الحالي</span><strong>${selectedProduct?stockMovementNum(selectedProduct.qty).toFixed(2):'—'}</strong><small>${selectedProduct?stockMovementEsc(selectedProduct.unit||'كجم'):'اختر صنفًا'}</small></div></div>
-    <div class="sm-stat in"><div class="sm-stat-icon"><i class="fas fa-arrow-down"></i></div><div><span>إجمالي الدخول</span><strong>+${totalIn.toFixed(2)}</strong><small>شراء + مرتجع + زيادة</small></div></div>
-    <div class="sm-stat out"><div class="sm-stat-icon"><i class="fas fa-arrow-up"></i></div><div><span>إجمالي الخروج</span><strong>-${totalOut.toFixed(2)}</strong><small>مبيعات + نقص</small></div></div>
-    <div class="sm-stat net"><div class="sm-stat-icon"><i class="fas fa-scale-balanced"></i></div><div><span>صافي الحركة</span><strong>${net>=0?'+':''}${net.toFixed(2)}</strong><small>إجمالي الدخول − الخروج</small></div></div>`;
+    <div class="sm-stat current"><div class="sm-stat-icon"><i class="fas fa-box"></i></div><div><span>الرصيد الحالي</span><strong>${selectedProduct?stockMovementNum(selectedProduct.qty).toFixed(3):'—'}</strong><small>${selectedProduct?stockMovementEsc(unit):'اختر صنفًا'}</small></div></div>
+    <div class="sm-stat opening"><div class="sm-stat-icon"><i class="fas fa-flag"></i></div><div><span>رصيد بداية الفترة</span><strong>${selectedProduct?openingBalance.toFixed(3):'—'}</strong><small>${selectedProduct?stockMovementEsc(unit):'حسب الفترة'}</small></div></div>
+    <div class="sm-stat in"><div class="sm-stat-icon"><i class="fas fa-arrow-down"></i></div><div><span>إجمالي الدخول</span><strong>+${totalIn.toFixed(3)}</strong><small>شراء + مرتجع + زيادة</small></div></div>
+    <div class="sm-stat out"><div class="sm-stat-icon"><i class="fas fa-arrow-up"></i></div><div><span>إجمالي الخروج</span><strong>-${totalOut.toFixed(3)}</strong><small>مبيعات + نقص</small></div></div>
+    <div class="sm-stat net"><div class="sm-stat-icon"><i class="fas fa-scale-balanced"></i></div><div><span>صافي الحركة</span><strong>${net>=0?'+':''}${net.toFixed(3)}</strong><small>الدخول − الخروج</small></div></div>
+    <div class="sm-stat closing"><div class="sm-stat-icon"><i class="fas fa-flag-checkered"></i></div><div><span>رصيد نهاية الفترة</span><strong>${selectedProduct?closingBalance.toFixed(3):'—'}</strong><small>${selectedProduct?stockMovementEsc(unit):'حسب الفترة'}</small></div></div>`;
 
+  const typeLabel=m=>m.kind==='in'?'دخول / شراء':m.kind==='out'?'خروج / بيع':m.kind==='return'?'مرتجع / دخول':'تسوية جرد';
+  const icon=m=>m.kind==='in'?'fa-arrow-down':m.kind==='out'?'fa-arrow-up':m.kind==='return'?'fa-rotate-left':'fa-scale-balanced';
   const rows=filtered.map((m,index)=>{
     const bal=balanceMap.get(m)||{before:0,after:m.delta};
     const positive=m.delta>=0;
-    const typeLabel=m.kind==='in'?'دخول / شراء':m.kind==='out'?'خروج / بيع':m.kind==='return'?'مرتجع / دخول':'تسوية جرد';
-    const icon=m.kind==='in'?'fa-arrow-down':m.kind==='out'?'fa-arrow-up':m.kind==='return'?'fa-rotate-left':'fa-scale-balanced';
-    const unit=moneyUnit(m);
+    const moneyUnit=productMap.get(String(m.productId))?.unit||'كجم';
     const movementNo=all.indexOf(m)>=0?all.length-all.indexOf(m):index+1;
     const ref=m.ref||'';
     const detail=m.detail||'—';
     return `<article class="sm-movement-card ${m.kind}">
       <div class="sm-movement-top">
-        <div class="sm-movement-type"><span class="sm-movement-icon"><i class="fas ${icon}"></i></span><div><strong>${typeLabel}</strong><small>حركة رقم ${movementNo}${m.label&&m.label!==typeLabel?` • ${stockMovementEsc(m.label)}`:''}</small></div></div>
+        <div class="sm-movement-type"><span class="sm-movement-icon"><i class="fas ${icon(m)}"></i></span><div><strong>${typeLabel(m)}</strong><small>حركة رقم ${movementNo}${m.label&&m.label!==typeLabel(m)?` • ${stockMovementEsc(m.label)}`:''}</small></div></div>
         <div class="sm-movement-date"><b>${stockMovementEsc(m.date)}</b>${m.time?`<span>${stockMovementEsc(String(m.time).slice(0,5))}</span>`:''}</div>
       </div>
       <div class="sm-movement-body">
         <div class="sm-product"><span>الصنف</span><strong>${stockMovementEsc(m.productName)}</strong></div>
-        <div class="sm-balance"><span>الرصيد قبل الحركة</span><strong>${bal.before.toFixed(2)} <em>${stockMovementEsc(unit)}</em></strong></div>
-        <div class="sm-qty"><span>التغيير</span><strong class="${positive?'positive':'negative'}">${positive?'+':''}${m.delta.toFixed(2)} <em>${stockMovementEsc(unit)}</em></strong></div>
-        <div class="sm-balance"><span>الرصيد بعد الحركة</span><strong>${bal.after.toFixed(2)} <em>${stockMovementEsc(unit)}</em></strong></div>
+        <div class="sm-balance"><span>الرصيد قبل الحركة</span><strong>${bal.before.toFixed(3)} <em>${stockMovementEsc(moneyUnit)}</em></strong></div>
+        <div class="sm-qty"><span>التغيير</span><strong class="${positive?'positive':'negative'}">${positive?'+':''}${m.delta.toFixed(3)} <em>${stockMovementEsc(moneyUnit)}</em></strong></div>
+        <div class="sm-balance"><span>الرصيد بعد الحركة</span><strong>${bal.after.toFixed(3)} <em>${stockMovementEsc(moneyUnit)}</em></strong></div>
       </div>
       <div class="sm-movement-meta"><div><span>الطرف / السبب</span><strong>${stockMovementEsc(detail)}</strong></div>${ref?`<div><span>المرجع</span><strong>${stockMovementEsc(ref)}</strong></div>`:''}</div>
       ${m.kind==='adjust'?`<div class="sm-adjust-actions"><button class="sm-adjust-delete" type="button" onclick="deleteStockAdjustment('${stockMovementEsc(String(m.id||m.ref||''))}')"><i class="fas fa-trash-can"></i><span>حذف تسوية الجرد</span></button></div>`:''}
