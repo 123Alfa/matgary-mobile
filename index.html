@@ -3830,7 +3830,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.45';
+const APP_VERSION='v1.8.46';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "26 سبتمبر 2026 — الجرد الفعلي وحركة المخزون وتسجيل فروق الجرد";
 
@@ -8198,23 +8198,20 @@ function renderStockMovementData(){
   const totalOut=outRows.reduce((n,m)=>n+Math.abs(m.delta),0);
   const net=totalIn-totalOut;
 
-  // رصيد بداية الفترة = الرصيد الحالي ناقص كل ما حدث من بداية الفترة حتى الآن.
-  // ورصيد نهاية الفترة = بداية الفترة + صافي الحركة المعروضة.
-  let openingBalance=selectedProduct?stockMovementNum(selectedProduct.qty)-productAll.reduce((n,m)=>n+m.delta,0):0;
-  if(selectedProduct&&from){
-    openingBalance=stockMovementNum(selectedProduct.qty)-productAll.filter(m=>m.date>=from).reduce((n,m)=>n+m.delta,0);
-  }
-  if(selectedProduct&&to){
-    const throughTo=productAll.filter(m=>m.date<=to);
-    const latestThroughTo=throughTo.length?throughTo.reduce((n,m)=>n+m.delta,0):0;
-    if(!from)openingBalance=stockMovementNum(selectedProduct.qty)-latestThroughTo;
-  }
-  const closingBalance=selectedProduct?(openingBalance+net):null;
+  // حساب أرصدة الفترة من الرصيد الحالي مع مراعاة الحركات التي حدثت بعد نهاية الفترة.
+  // عند تحديد (من تاريخ): رصيد البداية = رصيد نهاية الفترة − صافي حركة الفترة.
+  // عند عدم تحديد (من تاريخ): لا نعرض رصيد بداية مُفترض حتى لا يظهر صفر مضلل.
+  const periodEnd=to||today();
+  const afterPeriod=selectedProduct
+    ? productAll.filter(m=>String(m.date)>String(periodEnd)).reduce((n,m)=>n+m.delta,0)
+    : 0;
+  const closingBalance=selectedProduct?stockMovementNum(selectedProduct.qty)-afterPeriod:null;
+  const openingBalance=(selectedProduct&&from)?(closingBalance-net):null;
 
   const summary=document.getElementById('stockMovementSummary');
   if(summary)summary.innerHTML=`
     <div class="sm-stat current"><div class="sm-stat-icon"><i class="fas fa-box"></i></div><div><span>الرصيد الحالي</span><strong>${selectedProduct?stockMovementNum(selectedProduct.qty).toFixed(3):'—'}</strong><small>${selectedProduct?stockMovementEsc(unit):'اختر صنفًا'}</small></div></div>
-    <div class="sm-stat opening"><div class="sm-stat-icon"><i class="fas fa-flag"></i></div><div><span>رصيد بداية الفترة</span><strong>${selectedProduct?openingBalance.toFixed(3):'—'}</strong><small>${selectedProduct?stockMovementEsc(unit):'حسب الفترة'}</small></div></div>
+    <div class="sm-stat opening"><div class="sm-stat-icon"><i class="fas fa-flag"></i></div><div><span>رصيد بداية الفترة</span><strong>${selectedProduct&&from?openingBalance.toFixed(3):'—'}</strong><small>${selectedProduct&&from?stockMovementEsc(unit):'حدد «من تاريخ» لحسابه'}</small></div></div>
     <div class="sm-stat in"><div class="sm-stat-icon"><i class="fas fa-arrow-down"></i></div><div><span>إجمالي الدخول</span><strong>+${totalIn.toFixed(3)}</strong><small>شراء + مرتجع + زيادة</small></div></div>
     <div class="sm-stat out"><div class="sm-stat-icon"><i class="fas fa-arrow-up"></i></div><div><span>إجمالي الخروج</span><strong>-${totalOut.toFixed(3)}</strong><small>مبيعات + نقص</small></div></div>
     <div class="sm-stat net"><div class="sm-stat-icon"><i class="fas fa-scale-balanced"></i></div><div><span>صافي الحركة</span><strong>${net>=0?'+':''}${net.toFixed(3)}</strong><small>الدخول − الخروج</small></div></div>
@@ -11845,7 +11842,7 @@ async function replaceCloudDataWithLocal() {
 
   window.addEventListener('load',async function(){
     try{
-      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.43',{updateViaCache:'none'});
+      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.46',{updateViaCache:'none'});
       window.matgarySWRegistration=swRegistration;
       console.log('[SW] registered:',swRegistration.scope);
 
