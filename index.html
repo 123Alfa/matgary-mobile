@@ -15945,16 +15945,89 @@ setTimeout(()=>{
   }
 
   /*
-   * نربط كل أزرار واتساب بالرسالة النصية النهائية.
-   * هذا السطر يأتي بعد كل محركات الصور القديمة، لذلك لا يمكن لمحرك الصورة
-   * أن يستبدله بعد تحميل الصفحة.
+   * متجري — المسار النهائي الآمن لمشاركة فاتورة واتساب كصورة.
+   * لا نلمس بيانات الفاتورة أو الحسابات؛ نستخدم محرك الصورة الموجود
+   * ونترك الرسالة النصية كبديل فقط إذا تعذر دعم مشاركة الملفات.
    */
+  async function shareInvoiceAsImage(key,phone){
+    const inv=typeof key==='object' ? key : resolveInvoice(key);
+    if(!inv){
+      showToast('❌ لم أتمكن من العثور على الفاتورة','error');
+      return;
+    }
+
+    if(window.__matgaryWaImageBusy)return;
+    window.__matgaryWaImageBusy=true;
+
+    try{
+      if(typeof window.prepareWhatsAppInvoiceImage!=='function')
+        throw new Error('WA_IMAGE_ENGINE_MISSING');
+
+      showToast('⏳ جاري تجهيز صورة الفاتورة...','info');
+      const blob=await window.prepareWhatsAppInvoiceImage(inv);
+      if(!(blob instanceof Blob)||blob.size<1000)
+        throw new Error('WA_IMAGE_INVALID');
+
+      const no=inv.invoiceSeq||inv.invoiceNo||'بيع';
+      const file=new File([blob],`فاتورة_${no}.png`,{type:'image/png'});
+
+      /* المشاركة الأصلية: على أندرويد يفتح شاشة المشاركة ومنها واتساب. */
+      if(typeof navigator!=='undefined' && typeof navigator.share==='function'){
+        try{
+          const canShare=!navigator.canShare || navigator.canShare({files:[file]});
+          if(canShare){
+            await navigator.share({
+              files:[file],
+              title:`فاتورة متجري رقم ${no}`
+            });
+            return;
+          }
+        }catch(e){
+          if(e?.name==='AbortError')return;
+        }
+      }
+
+      /* بديل سريع: نسخ الصورة ثم فتح واتساب. */
+      if(typeof ClipboardItem!=='undefined' && navigator.clipboard?.write){
+        try{
+          await navigator.clipboard.write([
+            new ClipboardItem({'image/png':blob})
+          ]);
+          const customerPhone=phone || inv.customerPhone || '';
+          const normalized=typeof normalizeWhatsAppPhone==='function'
+            ? normalizeWhatsAppPhone(customerPhone) : '';
+          if(normalized) window.open('https://wa.me/'+normalized,'_blank');
+          else if(typeof openWhatsApp==='function') openWhatsApp(customerPhone,'');
+          showToast('📋 صورة الفاتورة اتنسخت — الصقها في واتساب','success');
+          return;
+        }catch(e){}
+      }
+
+      /* آخر بديل: تنزيل PNG بدل فقدان الفاتورة. */
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=file.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),5000);
+      showToast('✅ تم تجهيز صورة الفاتورة PNG','success');
+    }catch(e){
+      console.error('MATGARY FINAL WA IMAGE:',e);
+      showToast('❌ تعذر تجهيز صورة الفاتورة: '+(e?.message||'خطأ غير معروف'),'error');
+    }finally{
+      window.__matgaryWaImageBusy=false;
+    }
+  }
+
+  /* كل أزرار واتساب تستخدم الصورة الآن. */
   window.shareInvoicePro=function(key){
-    sendInvoice(key,'');
+    return shareInvoiceAsImage(key,'');
   };
 
   window.shareInvoiceImagePro=function(key,phone){
-    sendInvoice(key,phone||'');
+    return shareInvoiceAsImage(key,phone||'');
   };
 
   window.sharePOSOnWhatsApp=function(){
@@ -15973,7 +16046,7 @@ setTimeout(()=>{
     if(!inv)
       return showToast('❌ لم أتمكن من العثور على الفاتورة','error');
 
-    openWhatsApp(raw.customerPhone||inv.customerPhone,buildWhatsAppText(inv));
+    return shareInvoiceAsImage(inv,raw.customerPhone||inv.customerPhone||'');
   };
 
   /*
