@@ -3830,7 +3830,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.49';
+const APP_VERSION='v1.8.50';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "26 سبتمبر 2026 — الجرد الفعلي وحركة المخزون وتسجيل فروق الجرد";
 
@@ -10804,7 +10804,14 @@ function renderReportsPage(container){
 }
 
 function matgaryReportNum(v){const n=Number(v);return Number.isFinite(n)?n:0;}
-function matgaryReportMoney(v){return typeof fmt==='function'?fmt(v):matgaryReportNum(v).toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2})+' ج.م';}
+function matgaryReportMoney(v){
+  const n=matgaryReportNum(v);
+  try{
+    const raw=typeof fmt==='function'?String(fmt(n)):n.toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const clean=raw.replace(/\s*ج\.م\s*$/u,'').trim();
+    return clean+' ج.م';
+  }catch(_){return n.toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2})+' ج.م';}
+}
 function matgaryReportDateLabel(d){if(!d)return '-';try{return new Date(d+'T00:00:00').toLocaleDateString('ar-EG',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(_){return d;}}
 function matgaryReportDaysAgo(n){const d=new Date((today()||'2026-01-01')+'T00:00:00');d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
 function matgaryReportPrevRange(from,to){const a=new Date(from+'T00:00:00'),b=new Date(to+'T00:00:00');const days=Math.max(1,Math.round((b-a)/86400000)+1);const pTo=new Date(a);pTo.setDate(pTo.getDate()-1);const pFrom=new Date(pTo);pFrom.setDate(pFrom.getDate()-days+1);return [pFrom.toISOString().slice(0,10),pTo.toISOString().slice(0,10)];}
@@ -11187,7 +11194,39 @@ function renderMatgaryProductAnalysis(){
   detail.sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.time).localeCompare(String(a.time)));
   const shown=detail.slice(0,250);
   const typeOptions=[['pickles','🥒 المخللات'],['frozen','❄️ المجمدات'],['cheese','🧀 الجبن'],['other','📦 أخرى'],['all','كل الأصناف']];
-  /* v1.8.49 — لوحة ربحية ومخزون تحليلية فقط: لا تغيّر أي بيانات محفوظة. */
+  /* v1.8.50 — لوحة ربحية ومخزون محسّنة للموبايل + تنسيق عملة موحّد. */
+  /* v1.8.50 — mobile cards for profitability/inventory analysis */
+  const v1850MobileCss = `
+    <style id="matgary-v1850-mobile">
+      .v1849-profitability .rep-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+      @media (max-width:700px){
+        .v1849-profitability .rep-two{display:block}
+        .v1849-profitability .rep-two>.rep-panel{margin-bottom:14px}
+        .v1849-profitability .rep-table-wrap{overflow:visible}
+        .v1849-profitability table.rep-table,
+        .v1849-profitability table.rep-table thead,
+        .v1849-profitability table.rep-table tbody,
+        .v1849-profitability table.rep-table tr,
+        .v1849-profitability table.rep-table td{display:block;width:100%;box-sizing:border-box}
+        .v1849-profitability table.rep-table thead{display:none}
+        .v1849-profitability table.rep-table tbody tr{background:var(--card-bg,#fff);border:1px solid rgba(0,0,0,.08);border-radius:14px;margin:0 0 10px;padding:8px 10px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+        .v1849-profitability table.rep-table tbody td{border:0!important;border-bottom:1px dashed rgba(0,0,0,.08)!important;padding:8px 2px!important;text-align:right!important;display:flex!important;justify-content:space-between;gap:10px;align-items:center;min-height:34px}
+        .v1849-profitability table.rep-table tbody td:last-child{border-bottom:0!important}
+        .v1849-profitability table.rep-table tbody td::before{font-weight:700;color:var(--muted,#777);font-size:.82rem;flex:0 0 auto}
+        .v1849-profitability table.rep-table tbody td:nth-child(1)::before{content:'الصنف'}
+        .v1849-profitability table.rep-table tbody td:nth-child(2)::before{content:'صافي المبيعات'}
+        .v1849-profitability table.rep-table tbody td:nth-child(3)::before{content:'الربح التقديري'}
+        .v1849-profitability table.rep-table tbody td:nth-child(4)::before{content:'الهامش'}
+        .v1849-profitability table.rep-table tbody tr td[colspan]{display:block!important;text-align:center!important}
+        .v1849-profitability table.rep-table tbody tr td[colspan]::before{content:''}
+        .v1849-profitability .rep-two:nth-of-type(2) table.rep-table tbody td:nth-child(2)::before{content:'الرصيد'}
+        .v1849-profitability .rep-two:nth-of-type(2) table.rep-table tbody td:nth-child(3)::before{content:'متوسط التكلفة'}
+        .v1849-profitability .rep-two:nth-of-type(2) table.rep-table tbody td:nth-child(4)::before{content:'قيمة المخزون'}
+        .v1849-profitability .rep-two:nth-of-type(2) table.rep-table tbody td:nth-child(1)::before{content:'الصنف'}
+      }
+    </style>`;
+  document.head.insertAdjacentHTML('beforeend',v1850MobileCss);
+
   const profitabilityRows=allProducts.map(p=>{
     const pid=String(p?.id);
     const prsAll=(Store.get('purchases')||[]).filter(x=>String(x?.productId)===pid);
@@ -11215,7 +11254,7 @@ function renderMatgaryProductAnalysis(){
   const stockValueRank=profitabilityRows.filter(x=>x.currentQty>0).sort((a,b)=>b.stockValue-a.stockValue);
   const stagnantValue=stagnant.reduce((n,x)=>n+x.stockValue,0);
   const stagnantQty=stagnant.reduce((n,x)=>n+x.currentQty,0);
-  const profitMoney=v=>money(v);
+  const profitMoney=v=>matgaryReportMoney(v);
 
   const navButtons=products.length?`<button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisSelectAll()">تحديد الكل</button><button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisClear()">إلغاء التحديد</button>`:'';
   body.innerHTML=`<div class="matgary-product-analysis">
@@ -11245,7 +11284,7 @@ function renderMatgaryProductAnalysis(){
     ])}</section>
     <section class="rep-panel"><div class="rep-panel-head"><div><h3>📦 تكلفة وربحية كل صنف</h3><small>التكلفة والربح التقديريان للعرض فقط</small></div></div>${matgaryReportTable(['الصنف','متوسط التكلفة','قيمة المخزون','صافي المبيعات','تكلفة البضاعة المباعة','الربح التقديري','الهامش التقديري'],rows.map(x=>`<tr><td><b>${safeEsc(x.name)}</b></td><td>${money(x.purchaseAvg)}</td><td>${money(x.currentCost)}</td><td>${money(x.netSales)}</td><td>${money(x.estimatedCogs)}</td><td class="${x.estimatedProfit>=0?'rep-pos':'rep-neg'}">${money(x.estimatedProfit)}</td><td>${x.estimatedMargin.toFixed(1)}%</td></tr>`))}</section>
     <section class="rep-panel"><div class="rep-panel-head"><div><h3>🔎 تفاصيل الحركة</h3><small>${detail.length} حركة • المعروض حتى 250 حركة</small></div></div>${matgaryReportTable(['التاريخ','الحركة','الصنف','الفاتورة','المورد / العميل','الكمية','سعر الوحدة','الإجمالي','المرتجع','الربح'],shown.map(x=>`<tr><td>${dateLabel(x.date)}${x.time?`<br><small class="rep-muted">${safeEsc(String(x.time).slice(0,8))}</small>`:''}</td><td>${x.kind}</td><td><b>${safeEsc(x.product)}</b></td><td>${safeEsc(x.invoice)}</td><td>${safeEsc(x.party)}</td><td>${qty(x.qty)} ${safeEsc(x.unit)}</td><td>${money(x.price)}</td><td>${money(x.total)}</td><td class="${x.ret>0?'rep-neg':''}">${x.ret>0?qty(x.ret):'-'}</td><td>${x.profit===null?'-':`<span class="rep-pos">${money(x.profit)}</span>`}</td></tr>`),detail.length>250?'تم إظهار أول 250 حركة فقط.':'لا توجد حركات مسجلة للفترة المحددة.')}</section>
-    <section class="rep-panel v1849-profitability"><div class="rep-panel-head"><div><h3>🏆 لوحة الربحية والمخزون</h3><small>تحليل جميع الأصناف داخل الفترة — للعرض فقط</small></div></div>
+    <section class="rep-panel v1849-profitability v1850-profitability"><div class="rep-panel-head"><div><h3>🏆 لوحة الربحية والمخزون</h3><small>تحليل جميع الأصناف داخل الفترة — للعرض فقط</small></div></div>
       <div class="mpa-kpis">
         <div><span>أصناف لها مبيعات</span><strong>${rankedProfit.length}</strong></div>
         <div><span>مخزون بدون مبيعات</span><strong>${stagnant.length}</strong></div>
