@@ -3699,7 +3699,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <!-- WhatsApp invoice V19: fixed-pack classification + slogan correction -->
 
 <style id="matgary-reports-v31-css">
-/* ==================== متجري v1.8.39 — تحليل الأصناف والمخللات ==================== */
+/* ==================== متجري v1.8.42 — مركز التقارير والمتابعة ==================== */
 .reports-v31{display:flex;flex-direction:column;gap:14px}
 .rep-hero{background:linear-gradient(135deg,#0f766e 0%,#0b5f58 58%,#c99a22 150%);color:#fff;border-radius:22px;padding:19px 18px;box-shadow:0 12px 30px rgba(15,118,110,.16);position:relative;overflow:hidden}
 .rep-hero:after{content:'';position:absolute;inset:auto -60px -90px auto;width:210px;height:210px;border-radius:50%;background:rgba(255,255,255,.08)}
@@ -3793,9 +3793,9 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.40';
+const APP_VERSION='v1.8.42';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "24 سبتمبر 2026 — تحسين تنسيق تحليل الأصناف وتصحيح تجميع المجموعات";
+const APP_BUILD_DATE = "26 سبتمبر 2026 — إصلاح تقرير العملاء وتجميع العميل الواحد ومنع ظهور المديونية المدفوعة";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -10618,7 +10618,7 @@ function renderReportsPage(container){
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   container.innerHTML=`<div class="fade-in reports-v31">
     <section class="rep-hero">
-      <div class="rep-hero-top"><div><div style="font-size:.64rem;color:rgba(255,255,255,.72);font-weight:800">متجري • v1.8.39</div><h2><i class="fas fa-chart-line"></i> مركز التقارير والمتابعة</h2><p>تحليل المبيعات والربحية والأصناف والعملاء والمخزون والمصروفات والديون في شاشة واحدة.</p></div><div class="rep-hero-badge" id="repRangeBadge">${esc(existingFrom)} → ${esc(existingTo)}</div></div>
+      <div class="rep-hero-top"><div><div style="font-size:.64rem;color:rgba(255,255,255,.72);font-weight:800">متجري • ${typeof APP_VERSION!=='undefined'?APP_VERSION:'v1.8.42'}</div><h2><i class="fas fa-chart-line"></i> مركز التقارير والمتابعة</h2><p>تحليل المبيعات والربحية والأصناف والعملاء والمخزون والمصروفات والديون في شاشة واحدة.</p></div><div class="rep-hero-badge" id="repRangeBadge">${esc(existingFrom)} → ${esc(existingTo)}</div></div>
     </section>
     <section class="rep-toolbar no-print">
       <div class="rep-toolbar-grid">
@@ -10658,6 +10658,21 @@ function matgaryReportInvoiceKey(s){return String(s?.saleBatchId||s?.invoiceNo||
 function matgaryReportSaleMode(s){return String(s?.type||s?.saleType||'retail').toLowerCase()==='wholesale'?'wholesale':'retail';}
 function matgaryReportUnit(s,p){try{return typeof window.matgaryInvoiceUnit==='function'?window.matgaryInvoiceUnit(p||{},s||{}):(s?.sellUnit||p?.unit||'وحدة');}catch(_){return s?.sellUnit||p?.unit||'وحدة';}}
 function matgaryReportRemainingDebt(d){try{if(typeof getDebtRemaining==='function')return matgaryReportNum(getDebtRemaining(d));}catch(_){}return d?.paid?0:Math.max(0,matgaryReportNum(d?.amount)-matgaryReportNum(d?.paidAmount));}
+
+// مفتاح موحّد للعميل داخل مركز التقارير: لا نفرّق بين نفس العميل بسبب
+// اختلاف customerId بين فاتورة قديمة وفاتورة جديدة، طالما الاسم نفسه.
+function matgaryReportCustomerKey(name,id){
+  const raw=String(name||'').trim();
+  if(raw){
+    return raw.toLowerCase()
+      .replace(/[إأآٱ]/g,'ا')
+      .replace(/ى/g,'ي')
+      .replace(/ة/g,'ه')
+      .replace(/[ًٌٍَُِّْـ]/g,'')
+      .replace(/\s+/g,' ');
+  }
+  return id?('id:'+String(id)):'عميل عادي';
+}
 function matgaryReportData(from,to){
   const sales=(Store.get('sales')||[]).filter(s=>matgaryReportInRange(s.date,from,to));
   const purchases=(Store.get('purchases')||[]).filter(p=>matgaryReportInRange(p.date,from,to));
@@ -10674,7 +10689,19 @@ function matgaryReportData(from,to){
   sales.forEach(s=>{const day=String(s.date||'غير محدد');const month=day.slice(0,7)||'غير محدد';if(!byDay.has(day))byDay.set(day,{sales:0,profit:0,discount:0,invoices:new Set()});const d=byDay.get(day);d.sales+=matgaryReportNum(s.total);d.profit+=matgaryReportNum(s.profit);d.discount+=Math.max(0,matgaryReportNum(s.discountAmount));d.invoices.add(matgaryReportInvoiceKey(s));if(!byMonth.has(month))byMonth.set(month,{sales:0,profit:0,expense:0});const m=byMonth.get(month);m.sales+=matgaryReportNum(s.total);m.profit+=matgaryReportNum(s.profit);const c=byChannel[matgaryReportSaleMode(s)];c.sales+=matgaryReportNum(s.total);c.profit+=matgaryReportNum(s.profit);c.discount+=Math.max(0,matgaryReportNum(s.discountAmount));c.invoices.add(matgaryReportInvoiceKey(s));});
   expenses.forEach(e=>{const m=String(e.date||'').slice(0,7)||'غير محدد';if(!byMonth.has(m))byMonth.set(m,{sales:0,profit:0,expense:0});byMonth.get(m).expense+=matgaryReportNum(e.amount);});
   const expenseTypes=new Map();expenses.forEach(e=>expenseTypes.set(e.type||'أخرى',(expenseTypes.get(e.type||'أخرى')||0)+matgaryReportNum(e.amount)));
-  const customerRows=new Map();sales.forEach(s=>{const key=String(s.customerId||s.customerName||'عميل عادي');if(!customerRows.has(key))customerRows.set(key,{id:key,name:s.customerName||'عميل عادي',sales:0,profit:0,invoices:new Set(),qty:0});const g=customerRows.get(key);g.sales+=matgaryReportNum(s.total);g.profit+=matgaryReportNum(s.profit);g.invoices.add(matgaryReportInvoiceKey(s));g.qty+=matgaryReportNum(s.qty);});
+  const customerRows=new Map();
+sales.forEach(s=>{
+  const displayName=String(s.customerName||'عميل عادي').trim()||'عميل عادي';
+  const key=matgaryReportCustomerKey(displayName,s.customerId);
+  if(!customerRows.has(key))customerRows.set(key,{id:key,name:displayName,sales:0,profit:0,invoices:new Set(),qty:0});
+  const g=customerRows.get(key);
+  // عند وجود اختلاف بسيط في كتابة الاسم نحتفظ بالاسم الفعلي لأول سجل،
+  // لكن كل الفواتير تظل مجمعة في صف عميل واحد.
+  g.sales+=matgaryReportNum(s.total);
+  g.profit+=matgaryReportNum(s.profit);
+  g.invoices.add(matgaryReportInvoiceKey(s));
+  g.qty+=matgaryReportNum(s.qty);
+});
   // مديونية التقارير: مصدر الحقيقة لفواتير البيع هو سجل المبيعات الحالي.
   // لا نعتمد على سجل debts وحده حتى لا تظهر فاتورة مدفوعة/محذوفة كمديونية.
   const debtRows=new Map();
@@ -11062,7 +11089,12 @@ function renderMatgaryReportBody(mode,d,pd,from,to){
     return;
   }
   if(mode==='customers'){
-    const debtByPerson={};[...d.debtRows.values()].forEach(x=>{const key=String(x.name||'').trim().toLowerCase();debtByPerson[key]=(debtByPerson[key]||0)+(x.type==='لنا'?x.remaining:0);});body.innerHTML=`<section class="rep-panel"><div class="rep-panel-head"><h3>👥 تقرير العملاء</h3><small>ترتيب حسب قيمة المبيعات</small></div>${matgaryReportTable(['العميل','الفواتير','المبيعات','الربح','متوسط الفاتورة','مديونية لنا'],customerRows.map(x=>`<tr><td class="rep-num">${matgaryReportEsc(x.name)}</td><td>${x.invoices.size}</td><td>${matgaryReportMoney(x.sales)}</td><td class="rep-pos">${matgaryReportMoney(x.profit)}</td><td>${matgaryReportMoney(x.invoices.size?x.sales/x.invoices.size:0)}</td><td>${matgaryReportMoney(debtByPerson[String(x.name||'').trim().toLowerCase()]||0)}</td></tr>`))}</section>`;
+    const debtByPerson={};
+[...d.debtRows.values()].forEach(x=>{
+  const key=matgaryReportCustomerKey(x.name);
+  debtByPerson[key]=(debtByPerson[key]||0)+(x.type==='لنا'?x.remaining:0);
+});
+body.innerHTML=`<section class="rep-panel"><div class="rep-panel-head"><h3>👥 تقرير العملاء</h3><small>العميل الواحد يظهر في صف واحد حتى لو اختلف customerId بين الفواتير</small></div>${matgaryReportTable(['العميل','الفواتير','المبيعات','الربح','متوسط الفاتورة','مديونية لنا'],customerRows.map(x=>`<tr><td class="rep-num">${matgaryReportEsc(x.name)}</td><td>${x.invoices.size}</td><td>${matgaryReportMoney(x.sales)}</td><td class="rep-pos">${matgaryReportMoney(x.profit)}</td><td>${matgaryReportMoney(x.invoices.size?x.sales/x.invoices.size:0)}</td><td>${matgaryReportMoney(debtByPerson[matgaryReportCustomerKey(x.name)]||0)}</td></tr>`))}</section>`;
     return;
   }
   if(mode==='inventory'){
