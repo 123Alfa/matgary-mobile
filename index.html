@@ -3830,7 +3830,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.47';
+const APP_VERSION='v1.8.48';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "26 سبتمبر 2026 — الجرد الفعلي وحركة المخزون وتسجيل فروق الجرد";
 
@@ -11147,7 +11147,7 @@ function renderMatgaryProductAnalysis(){
     if(!items.length)return '';
     return `<div class="mpa-group"><div class="mpa-group-head"><span>${groupedTypeLabels[groupType]}</span><small>${items.length} صنف</small></div>${items.map(p=>{const sid=String(p.id);return `<label class="mpa-check ${selectedSet.has(sid)?'active':''}"><input type="checkbox" ${selectedSet.has(sid)?'checked':''} onchange="matgaryAnalysisToggle('${safeEsc(sid)}')"><span class="mpa-check-icon">${icon(analysisGroupType(p))}</span><span class="mpa-check-text"><b>${safeEsc(p.name||'صنف')}</b><small>الرصيد الحالي: ${qty(p.qty)} ${safeEsc(unit(p))}</small></span></label>`;}).join('')}</div>`;
   }).join('');
-  const rows=[];let totals={purchaseQty:0,purchaseCost:0,saleQty:0,returnQty:0,sales:0,returnValue:0,profit:0,stock:0,stockCost:0};
+  const rows=[];let totals={purchaseQty:0,purchaseCost:0,saleQty:0,returnQty:0,sales:0,returnValue:0,profit:0,stock:0,stockCost:0,estimatedCogs:0,netSales:0,estimatedProfit:0};
   selectedProducts.forEach(p=>{
     const pid=String(p.id);
     const prs=(d.purchases||[]).filter(x=>String(x?.productId)===pid);
@@ -11168,14 +11168,15 @@ function renderMatgaryProductAnalysis(){
     const purchaseAvg=lifetimePurchaseQty>0?lifetimePurchaseCost/lifetimePurchaseQty:(purchaseQty>0?purchaseCost/purchaseQty:Math.max(0,Number(p?.purchase)||0));
     const currentCost=currentQty*purchaseAvg;
     const estimatedCogs=netQty*purchaseAvg;
-    const estimatedProfit=sales-estimatedCogs;
-    const estimatedMargin=sales>0?(estimatedProfit/sales)*100:0;
+    const netSales=sales-returnValue;
+    const estimatedProfit=netSales-estimatedCogs;
+    const estimatedMargin=netSales>0?(estimatedProfit/netSales)*100:0;
     const saleAvg=netQty>0?sales/netQty:0;
     const margin=sales>0?profit/sales*100:0;
     const suppliers=[...new Set(prs.map(x=>String(x?.supplierName||'بائع/مورد')).filter(Boolean))];
     const customers=[...new Set(sls.map(x=>String(x?.customerName||'عميل عادي')).filter(Boolean))];
-    rows.push({id:pid,name:p?.name||'صنف',type:matgaryAnalysisTypeOfProduct(p),unit:unit(p),purchaseQty,purchaseCost,purchaseAvg,saleQty,returnQty,netQty,sales,returnValue,profit,margin,currentQty,currentCost,estimatedCogs,estimatedProfit,estimatedMargin,saleAvg,suppliers,customers,purchaseInvoices:new Set(prs.map(x=>String(x?.purchaseBatchId||x?.invoiceNo||x?.id||''))).size,saleInvoices:new Set(sls.map(x=>String(x?.saleBatchId||x?.invoiceNo||x?.id||''))).size});
-    totals.purchaseQty+=purchaseQty;totals.purchaseCost+=purchaseCost;totals.saleQty+=saleQty;totals.returnQty+=returnQty;totals.sales+=sales;totals.returnValue+=returnValue;totals.profit+=profit;totals.stock+=currentQty;totals.stockCost+=currentCost;
+    rows.push({id:pid,name:p?.name||'صنف',type:matgaryAnalysisTypeOfProduct(p),unit:unit(p),purchaseQty,purchaseCost,purchaseAvg,saleQty,returnQty,netQty,sales,returnValue,netSales,profit,margin,currentQty,currentCost,estimatedCogs,estimatedProfit,estimatedMargin,saleAvg,suppliers,customers,purchaseInvoices:new Set(prs.map(x=>String(x?.purchaseBatchId||x?.invoiceNo||x?.id||''))).size,saleInvoices:new Set(sls.map(x=>String(x?.saleBatchId||x?.invoiceNo||x?.id||''))).size});
+    totals.purchaseQty+=purchaseQty;totals.purchaseCost+=purchaseCost;totals.saleQty+=saleQty;totals.returnQty+=returnQty;totals.sales+=sales;totals.returnValue+=returnValue;totals.profit+=profit;totals.stock+=currentQty;totals.stockCost+=currentCost;totals.estimatedCogs+=estimatedCogs;totals.netSales+=netSales;totals.estimatedProfit+=estimatedProfit;
   });
   const detail=[];
   selectedProducts.forEach(p=>{
@@ -11198,17 +11199,21 @@ function renderMatgaryProductAnalysis(){
       <div class="mpa-check-list">${groupedHtml||'<div class="rep-empty"><i class="fas fa-filter-circle-xmark"></i>لا توجد أصناف مطابقة.</div>'}</div>
       <div class="mpa-tip">💡 تقدر تختار صنفًا واحدًا أو عدة أصناف. التصنيف هنا ذكي: الجبن البراميلي يظل مع الجبن حتى لو كان اسمه يحتوي على فلفل، والفلفل المكسيكي مع المخللات، واللانشون يُصنف ضمن «أخرى» وليس مع المجمدات.</div>
     </section>
-    <div class="mpa-kpis"><div><span>الأصناف المحددة</span><strong>${selected.length}</strong></div><div><span>إجمالي المشتريات</span><strong>${qty(totals.purchaseQty)}</strong></div><div><span>إجمالي المباع</span><strong>${qty(totals.saleQty)}</strong></div><div><span>صافي المباع</span><strong>${qty(Math.max(0,totals.saleQty-totals.returnQty))}</strong></div><div><span>المرتجع</span><strong>${qty(totals.returnQty)}</strong></div><div><span>قيمة المبيعات</span><strong>${money(totals.sales)}</strong></div><div><span>إجمالي الربح المسجل</span><strong>${money(totals.profit)}</strong></div><div><span>قيمة المخزون بالتكلفة</span><strong>${money(totals.stockCost)}</strong></div></div>
+    <div class="mpa-kpis"><div><span>الأصناف المحددة</span><strong>${selected.length}</strong></div><div><span>إجمالي المشتريات</span><strong>${qty(totals.purchaseQty)}</strong></div><div><span>إجمالي المباع</span><strong>${qty(totals.saleQty)}</strong></div><div><span>صافي المباع</span><strong>${qty(Math.max(0,totals.saleQty-totals.returnQty))}</strong></div><div><span>المرتجع</span><strong>${qty(totals.returnQty)}</strong></div><div><span>قيمة المبيعات</span><strong>${money(totals.sales)}</strong></div><div><span>إجمالي الربح المسجل</span><strong>${money(totals.profit)}</strong></div><div><span>تكلفة البضاعة المباعة</span><strong>${money(totals.estimatedCogs)}</strong></div><div><span>الربح التقديري</span><strong>${money(totals.estimatedProfit)}</strong></div><div><span>هامش الربح التقديري</span><strong>${(totals.netSales>0?(totals.estimatedProfit/totals.netSales*100):0).toFixed(1)}%</strong></div><div><span>قيمة المخزون بالتكلفة</span><strong>${money(totals.stockCost)}</strong></div></div>
     <section class="rep-panel"><div class="rep-panel-head"><div><h3>📊 ملخص الأصناف المحددة</h3><small>${rows.length} صنف</small></div></div>${matgaryReportTable(['الصنف','المشتريات','تكلفة الشراء','متوسط الشراء','المباع','المرتجع','صافي المباع','قيمة المبيعات','الربح','الهامش','المخزون','تفاصيل'],rows.map(x=>`<tr><td><b>${safeEsc(x.name)}</b><br><small class="rep-muted">${safeEsc(x.type)}</small></td><td>${qty(x.purchaseQty)} ${safeEsc(x.unit)}</td><td>${money(x.purchaseCost)}</td><td>${money(x.purchaseAvg)}</td><td>${qty(x.saleQty)} ${safeEsc(x.unit)}</td><td class="${x.returnQty>0?'rep-neg':''}">${qty(x.returnQty)}</td><td>${qty(x.netQty)}</td><td>${money(x.sales)}</td><td class="rep-pos">${money(x.profit)}</td><td>${x.margin.toFixed(1)}%</td><td>${qty(x.currentQty)} ${safeEsc(x.unit)}</td><td><button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisFocusProduct('${safeEsc(x.id)}')">عرضه فقط</button></td></tr>`))}</section>
     <section class="rep-panel"><div class="rep-panel-head"><div><h3>💰 مركز التكلفة والربحية</h3><small>تحليل مستقل — لا يغيّر بيانات البيع أو المخزون</small></div></div>${matgaryReportTable(['المؤشر','القيمة','التوضيح'],[
       `<tr><td>إجمالي تكلفة المشتريات</td><td class="rep-num">${money(totals.purchaseCost)}</td><td class="rep-muted">من فواتير الشراء المحددة</td></tr>`,
       `<tr><td>متوسط تكلفة الشراء المرجح</td><td class="rep-num">${money(totals.purchaseQty?totals.purchaseCost/totals.purchaseQty:0)}</td><td class="rep-muted">إجمالي التكلفة ÷ إجمالي الكمية</td></tr>`,
       `<tr><td>إجمالي قيمة المرتجعات</td><td class="rep-num">${money(totals.returnValue)}</td><td class="rep-muted">كما هو مسجل في المبيعات</td></tr>`,
-      `<tr><td>إجمالي قيمة المبيعات</td><td class="rep-num">${money(totals.sales)}</td><td class="rep-muted">القيمة المسجلة في سطور البيع</td></tr>`,
+      `<tr><td>إجمالي قيمة المبيعات</td><td class="rep-num">${money(totals.sales)}</td><td class="rep-muted">القيمة الإجمالية المسجلة في سطور البيع</td></tr>`,
+      `<tr><td>صافي المبيعات</td><td class="rep-num">${money(totals.netSales)}</td><td class="rep-muted">المبيعات − قيمة المرتجعات</td></tr>`,
+      `<tr><td>تكلفة البضاعة المباعة التقديرية</td><td class="rep-num">${money(totals.estimatedCogs)}</td><td class="rep-muted">صافي الكمية المباعة × متوسط التكلفة</td></tr>`,
+      `<tr><td>الربح التقديري</td><td class="rep-pos">${money(totals.estimatedProfit)}</td><td class="rep-muted">صافي المبيعات − تكلفة البضاعة المباعة التقديرية</td></tr>`,
+      `<tr><td>هامش الربح التقديري</td><td class="rep-pos">${(totals.netSales>0?(totals.estimatedProfit/totals.netSales*100):0).toFixed(1)}%</td><td class="rep-muted">الربح التقديري ÷ صافي المبيعات</td></tr>`,
       `<tr><td>إجمالي الربح المسجل</td><td class="rep-pos">${money(totals.profit)}</td><td class="rep-muted">الربح المحفوظ داخل فواتير البيع</td></tr>`,
       `<tr><td>قيمة المخزون الحالية بالتكلفة المرجحة</td><td class="rep-num">${money(totals.stockCost)}</td><td class="rep-muted">الرصيد الحالي × متوسط التكلفة</td></tr>`,
     ])}</section>
-    <section class="rep-panel"><div class="rep-panel-head"><div><h3>📦 تكلفة وربحية كل صنف</h3><small>التكلفة والربح التقديريان للعرض فقط</small></div></div>${matgaryReportTable(['الصنف','متوسط التكلفة','قيمة المخزون','تكلفة المباع التقديرية','الربح التقديري','الهامش التقديري'],rows.map(x=>`<tr><td><b>${safeEsc(x.name)}</b></td><td>${money(x.purchaseAvg)}</td><td>${money(x.currentCost)}</td><td>${money(x.estimatedCogs)}</td><td class="${x.estimatedProfit>=0?'rep-pos':'rep-neg'}">${money(x.estimatedProfit)}</td><td>${x.estimatedMargin.toFixed(1)}%</td></tr>`))}</section>
+    <section class="rep-panel"><div class="rep-panel-head"><div><h3>📦 تكلفة وربحية كل صنف</h3><small>التكلفة والربح التقديريان للعرض فقط</small></div></div>${matgaryReportTable(['الصنف','متوسط التكلفة','قيمة المخزون','صافي المبيعات','تكلفة البضاعة المباعة','الربح التقديري','الهامش التقديري'],rows.map(x=>`<tr><td><b>${safeEsc(x.name)}</b></td><td>${money(x.purchaseAvg)}</td><td>${money(x.currentCost)}</td><td>${money(x.netSales)}</td><td>${money(x.estimatedCogs)}</td><td class="${x.estimatedProfit>=0?'rep-pos':'rep-neg'}">${money(x.estimatedProfit)}</td><td>${x.estimatedMargin.toFixed(1)}%</td></tr>`))}</section>
     <section class="rep-panel"><div class="rep-panel-head"><div><h3>🔎 تفاصيل الحركة</h3><small>${detail.length} حركة • المعروض حتى 250 حركة</small></div></div>${matgaryReportTable(['التاريخ','الحركة','الصنف','الفاتورة','المورد / العميل','الكمية','سعر الوحدة','الإجمالي','المرتجع','الربح'],shown.map(x=>`<tr><td>${dateLabel(x.date)}${x.time?`<br><small class="rep-muted">${safeEsc(String(x.time).slice(0,8))}</small>`:''}</td><td>${x.kind}</td><td><b>${safeEsc(x.product)}</b></td><td>${safeEsc(x.invoice)}</td><td>${safeEsc(x.party)}</td><td>${qty(x.qty)} ${safeEsc(x.unit)}</td><td>${money(x.price)}</td><td>${money(x.total)}</td><td class="${x.ret>0?'rep-neg':''}">${x.ret>0?qty(x.ret):'-'}</td><td>${x.profit===null?'-':`<span class="rep-pos">${money(x.profit)}</span>`}</td></tr>`),detail.length>250?'تم إظهار أول 250 حركة فقط.':'لا توجد حركات مسجلة للفترة المحددة.')}</section>
   </div>`;
 }
@@ -11850,7 +11855,7 @@ async function replaceCloudDataWithLocal() {
 
   window.addEventListener('load',async function(){
     try{
-      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.47',{updateViaCache:'none'});
+      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.48',{updateViaCache:'none'});
       window.matgarySWRegistration=swRegistration;
       console.log('[SW] registered:',swRegistration.scope);
 
