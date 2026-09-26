@@ -15,6 +15,10 @@
   window.debouncedRenderDebtsList=()=>debounceCall("debtSearch",()=>window.renderDebtsList&&window.renderDebtsList(),300);
   window.debouncedFilterCustomers=()=>debounceCall("customerSearch",()=>window.filterCustomers&&window.filterCustomers(),300);
   window.debouncedFilterAudit=()=>debounceCall("auditSearch",()=>window.filterAudit&&window.filterAudit(),300);
+  window.debouncedFilterProducts=()=>debounceCall("productSearch",()=>window.filterProducts&&window.filterProducts(),220);
+  window.debouncedRenderSaleProductGrid=()=>debounceCall("saleProductSearch",()=>window.renderSaleProductGrid&&window.renderSaleProductGrid(),180);
+  window.debouncedFilterSuppliers=()=>debounceCall("supplierSearch",()=>window.filterSuppliers&&window.filterSuppliers(),220);
+  window.debouncedMatgaryAnalysisSearch=()=>debounceCall("productAnalysisSearch",()=>window.renderMatgaryProductAnalysis&&window.renderMatgaryProductAnalysis(),220);
 })();
 </script>
 
@@ -2564,6 +2568,12 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 .pos-invoice-date input{border:0;background:#fff;border-radius:10px;padding:8px 10px;font-weight:800;color:#263238;font-family:inherit;min-width:135px;outline:none}
 @media(max-width:700px){.pos-invoice-date{width:100%;justify-content:space-between;margin-top:8px}.pos-invoice-date input{flex:1;max-width:180px}.pos-advanced-toolbar{flex-wrap:wrap}}
 </style>
+
+<style id="stock-count-v1844">
+.stock-count-page{max-width:1100px;margin:0 auto;padding:12px 10px 110px;direction:rtl}
+.stock-count-hero{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px;border-radius:22px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;margin-bottom:12px}
+.stock-count-hero h2{margin:3px 0 5px;font-size:1.35rem}.stock-count-hero p{margin:0;opacity:.88;font-size:.78rem;line-height:1.7}.stock-count-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.stock-count-toolbar{padding:14px;margin-bottom:12px}.stock-count-toolbar-row{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:10px}.stock-count-toolbar input,.stock-count-toolbar select{width:100%;height:46px;border-radius:13px;padding:0 12px;font:inherit;box-sizing:border-box}.stock-count-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:12px}.sc-stat{padding:12px;border-radius:17px;background:var(--card);border:1px solid var(--border);min-width:0}.sc-stat span,.sc-stat small{display:block;color:var(--text-light);font-size:.7rem}.sc-stat strong{display:block;margin:3px 0;font-size:1.05rem}.sc-list{display:grid;gap:9px}.sc-row{display:grid;grid-template-columns:minmax(0,1.7fr) 130px 130px 130px 120px;gap:10px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:17px;background:var(--card)}.sc-product strong,.sc-product small{display:block}.sc-product small{font-size:.7rem;color:var(--text-light);margin-top:3px}.sc-input{width:100%;height:44px;border:1px solid var(--border);border-radius:12px;padding:0 10px;font:inherit;box-sizing:border-box;text-align:center}.sc-diff{font-weight:900;text-align:center}.sc-diff.positive{color:var(--success)}.sc-diff.negative{color:var(--danger)}.sc-diff.zero{color:var(--text-light)}.sc-value{text-align:center;font-weight:800;font-size:.78rem}.sc-head{display:grid;grid-template-columns:minmax(0,1.7fr) 130px 130px 130px 120px;gap:10px;padding:0 12px 7px;color:var(--text-light);font-size:.68rem;font-weight:900}.sc-empty{text-align:center;padding:35px;color:var(--text-light)}@media(max-width:760px){.stock-count-hero{align-items:flex-start;flex-direction:column}.stock-count-actions{width:100%}.stock-count-actions .btn{flex:1;min-width:130px}.stock-count-toolbar-row{grid-template-columns:1fr}.stock-count-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.sc-head{display:none}.sc-row{grid-template-columns:1fr 1fr;gap:9px}.sc-product{grid-column:1/-1}.sc-diff{padding:10px 0}.sc-value{padding:10px 0}.sc-row .sc-label{display:block;font-size:.65rem;color:var(--text-light);margin-bottom:3px}.sc-input{height:46px}}
+</style>
 <style id="stock-movement-adjust-delete">
 #contentArea .stock-movement-page .sm-adjust-delete{margin-top:10px;width:100%;min-height:40px;border:1px solid #efb5b9;border-radius:12px;background:#fff5f5;color:#c53b45;font:inherit;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
 #contentArea .stock-movement-page .sm-adjust-delete:active{transform:scale(.99)}
@@ -3812,9 +3822,9 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.42';
+const APP_VERSION='v1.8.44';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "26 سبتمبر 2026 — إصلاح تقرير العملاء وتجميع العميل الواحد ومنع ظهور المديونية المدفوعة";
+const APP_BUILD_DATE = "26 سبتمبر 2026 — الجرد الفعلي وحركة المخزون وتسجيل فروق الجرد";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -4300,7 +4310,7 @@ window.addEventListener('visibilitychange',()=>{
   }
 });
 
-function getBackupCollections(){return ['products','sales','purchases','expenses','withdrawals','debts','customers','suppliers','offers','auditLog','returns'];}
+function getBackupCollections(){return ['products','sales','purchases','expenses','withdrawals','debts','customers','suppliers','offers','auditLog','returns','stockMovements','stockCounts'];}
 
 // =====================================================
 // 📦 نظام التخزين المتقدم (محلي + سحابة)
@@ -4328,10 +4338,12 @@ function clearSessionCart(){
 */
 const IDB_DB_NAME='MatgaryDB';
 const IDB_DB_VERSION=1;
+// إصدار داخلي لبيانات المبيعات: يتيح إعادة استخدام تجميع الفواتير بأمان حتى تتغير البيانات.
+let __matgarySalesDataVersion=0;
 const IDB_STORE_NAME='collections';
 const IDB_COLLECTIONS=[
   'products','sales','purchases','expenses','withdrawals','debts',
-  'customers','suppliers','offers','auditLog','returns'
+  'customers','suppliers','offers','auditLog','returns','stockMovements','stockCounts'
 ];
 let matgaryDB=null;
 let idbReady=false;
@@ -4445,6 +4457,9 @@ const Store={
         }
       }else{
         localStorage.setItem('bm_'+key,JSON.stringify(val));
+      }
+      if(key==='sales'){
+        __matgarySalesDataVersion++;
       }
       if(typeof getBackupCollections==='function' && Array.isArray(getBackupCollections()) && getBackupCollections().includes(key)) scheduleDriveBackup();
       return true;
@@ -4787,6 +4802,7 @@ function navigateTo(tab){
       case 'suppliers':renderSuppliersPage(content);break;
       case 'audit':renderAuditPage(content);break;
       case 'stock-movement':renderStockMovementPage(content);break;
+      case 'stock-count':renderStockCountPage(content);break;
       case 'offers':renderOffersPage(content);break;
     }
   }catch(error){
@@ -4909,7 +4925,7 @@ function renderProductsPage(container){
   const out=products.filter(p=>Number(p.qty||0)<=0);
   const value=products.reduce((sum,p)=>sum+Number(p.qty||0)*Number(p.purchase||0),0);
   container.innerHTML=`<div class="fade-in products-v2">
-    <div class="products-hero"><div><span>إدارة المخزون</span><h2>الأصناف والمنتجات 📦</h2><p>تحكم في الأسعار والكميات والصور وحالة المخزون من مكان واحد.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-outline" type="button" onclick="navigateTo('stock-movement')"><i class="fas fa-arrow-right-arrow-left"></i> حركة الصنف</button><button class="btn btn-primary" onclick="document.getElementById('pName')?.focus()"><i class="fas fa-plus"></i> إضافة صنف</button></div></div>
+    <div class="products-hero"><div><span>إدارة المخزون</span><h2>الأصناف والمنتجات 📦</h2><p>تحكم في الأسعار والكميات والصور وحالة المخزون من مكان واحد.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-outline" type="button" onclick="navigateTo('stock-movement')"><i class="fas fa-arrow-right-arrow-left"></i> حركة الصنف</button><button class="btn btn-accent" type="button" onclick="navigateTo('stock-count')"><i class="fas fa-clipboard-check"></i> جرد فعلي</button><button class="btn btn-primary" onclick="document.getElementById('pName')?.focus()"><i class="fas fa-plus"></i> إضافة صنف</button></div></div>
     <div class="products-kpis"><div><i class="fas fa-boxes-stacked"></i><b>${products.length}</b><span>إجمالي الأصناف</span></div><div class="warning"><i class="fas fa-triangle-exclamation"></i><b>${low.length}</b><span>مخزون منخفض</span></div><div class="danger"><i class="fas fa-circle-xmark"></i><b>${out.length}</b><span>نافد</span></div><div class="success"><i class="fas fa-sack-dollar"></i><b>${fmt(value)}</b><span>قيمة المخزون</span></div></div>
     <div class="card products-add-card"><div class="card-title"><i class="fas fa-circle-plus"></i> إضافة صنف جديد</div>
       <div class="form-grid">
@@ -4927,7 +4943,7 @@ function renderProductsPage(container){
       </div><button class="btn btn-primary btn-block" onclick="addProduct()"><i class="fas fa-save"></i> حفظ الصنف</button>
     </div>
     <div class="card products-list-card"><div class="products-list-head"><div><h3><i class="fas fa-layer-group"></i> قائمة الأصناف</h3><small id="productsResultCount">${products.length} صنف</small></div><div class="products-view-tools"><button class="active" type="button" onclick="setProductsView('grid',this)"><i class="fas fa-grid-2"></i></button><button type="button" onclick="setProductsView('list',this)"><i class="fas fa-list"></i></button></div></div>
-      <div class="products-filters"><div class="products-search"><i class="fas fa-search"></i><input type="text" id="productSearch" placeholder="ابحث باسم الصنف..." oninput="filterProducts()"></div><div class="products-filter-buttons"><button class="active" data-filter="all" onclick="setProductFilter('all',this)">الكل</button><button data-filter="cheese" onclick="setProductFilter('cheese',this)">🧀 جبن</button><button data-filter="frozen" onclick="setProductFilter('frozen',this)">❄️ مجمدات</button><button data-filter="pickles" onclick="setProductFilter('pickles',this)">🥒 مخللات</button><button data-filter="other" onclick="setProductFilter('other',this)">📦 أخرى</button><button data-filter="low" onclick="setProductFilter('low',this)">⚠️ منخفض</button></div><select id="productSort" onchange="filterProducts()"><option value="default">الترتيب الافتراضي</option><option value="name">الاسم</option><option value="stockLow">الأقل مخزونًا</option><option value="priceHigh">الأعلى سعرًا</option><option value="profitHigh">الأعلى ربحًا</option></select></div>
+      <div class="products-filters"><div class="products-search"><i class="fas fa-search"></i><input type="text" id="productSearch" placeholder="ابحث باسم الصنف..." oninput="debouncedFilterProducts()"></div><div class="products-filter-buttons"><button class="active" data-filter="all" onclick="setProductFilter('all',this)">الكل</button><button data-filter="cheese" onclick="setProductFilter('cheese',this)">🧀 جبن</button><button data-filter="frozen" onclick="setProductFilter('frozen',this)">❄️ مجمدات</button><button data-filter="pickles" onclick="setProductFilter('pickles',this)">🥒 مخللات</button><button data-filter="other" onclick="setProductFilter('other',this)">📦 أخرى</button><button data-filter="low" onclick="setProductFilter('low',this)">⚠️ منخفض</button></div><select id="productSort" onchange="filterProducts()"><option value="default">الترتيب الافتراضي</option><option value="name">الاسم</option><option value="stockLow">الأقل مخزونًا</option><option value="priceHigh">الأعلى سعرًا</option><option value="profitHigh">الأعلى ربحًا</option></select></div>
       <div id="productsGrid" class="product-grid products-grid-v2"></div>
     </div>
   </div>`;
@@ -5333,7 +5349,7 @@ function renderSalesPage(container){
     <section class="pos-products-panel sale-ref-products-panel">
       <div class="pos-panel-head pos-products-head"><div><h3><i class="fas fa-boxes-stacked" style="color:var(--primary);margin-left:7px"></i> إضافة أصناف للسلة</h3><small>اضغط على المنتج لإضافته، أو اختر الوزن للمنتجات التي تباع بالكيلو</small></div><div class="pos-live-dot"><span></span> جاهز للبيع</div></div>
       <div class="pos-products-body">
-        <div class="pos-search-row"><div class="pos-search-main"><i class="fas fa-search"></i><input type="text" id="saleProductSearch" placeholder="ابحث باسم المنتج أو الباركود..." oninput="renderSaleProductGrid()"></div><button class="pos-scan-btn" type="button" onclick="openPOSBarcodeScanner()"><i class="fas fa-barcode"></i><span>باركود</span></button></div>
+        <div class="pos-search-row"><div class="pos-search-main"><i class="fas fa-search"></i><input type="text" id="saleProductSearch" placeholder="ابحث باسم المنتج أو الباركود..." oninput="debouncedRenderSaleProductGrid()"></div><button class="pos-scan-btn" type="button" onclick="openPOSBarcodeScanner()"><i class="fas fa-barcode"></i><span>باركود</span></button></div>
         <div class="pos-category-row pos-category-modern"><button class="active" data-cat="all" onclick="setPOSCategory('all',this)"><i class="fas fa-border-all"></i> الكل</button><button data-cat="cheese" onclick="setPOSCategory('cheese',this)"><i class="fas fa-cheese"></i> الجبن</button><button data-cat="frozen" onclick="setPOSCategory('frozen',this)"><i class="fas fa-snowflake"></i> المجمدات</button><button data-cat="pickles" onclick="setPOSCategory('pickles',this)"><i class="fas fa-lemon"></i> المخللات</button><button data-cat="other" onclick="setPOSCategory('other',this)"><i class="fas fa-box"></i> أخرى</button><button data-cat="best" onclick="setPOSCategory('best',this)"><i class="fas fa-star"></i> الأكثر مبيعًا</button></div>
         <div class="pos-products-tools"><span id="posProductsResult">0 منتج</span><select id="saleProductSort" onchange="setPOSSort(this.value)"><option value="default">الترتيب: الافتراضي</option><option value="best">الأكثر مبيعًا</option><option value="priceLow">السعر: الأقل</option><option value="priceHigh">السعر: الأعلى</option><option value="stockLow">الأقل مخزونًا</option></select></div>
         <div id="saleProductGrid" class="sale-product-grid pos-product-grid-modern"></div>
@@ -7372,7 +7388,12 @@ function renderSaleProductGrid(){
   const cat=window.posCategory||'all';
   let products=(window.saleProducts||[]).filter(p=>{const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();return hay.includes(search)&&(cat==='all'||p.type===cat);});
   const sales=Store.get('sales')||[];
-  const soldMap={}; sales.forEach(s=>{if(s.productId)soldMap[s.productId]=(soldMap[s.productId]||0)+Number(s.qty||0);});
+  if(!window.__matgaryPOSSoldCache || window.__matgaryPOSSoldCache.version!==__matgarySalesDataVersion || window.__matgaryPOSSoldCache.source!==sales){
+    const soldMap={};
+    sales.forEach(s=>{if(s.productId)soldMap[s.productId]=(soldMap[s.productId]||0)+Number(s.qty||0);});
+    window.__matgaryPOSSoldCache={version:__matgarySalesDataVersion,source:sales,map:soldMap};
+  }
+  const soldMap=window.__matgaryPOSSoldCache.map;
   const sort=window.posSort||'default';
   if(sort==='best')products.sort((a,b)=>(soldMap[b.id]||0)-(soldMap[a.id]||0));
   else if(sort==='priceLow')products.sort((a,b)=>(Number(a.retail)||0)-(Number(b.retail)||0));
@@ -7998,6 +8019,95 @@ function deleteSale(id,productId,qty){
     console.error('فشل حذف الفاتورة وتم التراجع:',error);
     showToast('❌ تعذر حذف الفاتورة — تم التراجع عن العملية بالكامل','error');
   }
+}
+
+// ==================== الجرد الفعلي v1.8.44 ====================
+window.stockCountDraft = window.stockCountDraft || {};
+function renderStockCountPage(container){
+  const products=Store.get('products')||[];
+  const q=(window.stockCountSearch||'').trim().toLowerCase();
+  const filter=window.stockCountFilter||'all';
+  const rows=products.filter(p=>{
+    const match=!q||String(p.name||'').toLowerCase().includes(q);
+    const d=window.stockCountDraft[String(p.id)];
+    const actual=d===undefined?Number(p.qty||0):Number(d);
+    const diff=actual-Number(p.qty||0);
+    if(filter==='different') return match && Math.abs(diff)>0.000001;
+    if(filter==='zero') return match && actual<=0;
+    return match;
+  });
+  container.innerHTML=`<div class="fade-in stock-count-page">
+    <section class="stock-count-hero">
+      <div><span>مراقبة المخزون</span><h2>📋 الجرد الفعلي</h2><p>قارن الكمية الموجودة فعليًا برصيد البرنامج، ثم اعتمد الفروق مرة واحدة بأمان.</p></div>
+      <div class="stock-count-actions"><button class="btn btn-outline" type="button" onclick="navigateTo('stock-movement')"><i class="fas fa-arrow-right-arrow-left"></i> حركة المخزون</button><button class="btn btn-accent" type="button" onclick="resetStockCountDraft()"><i class="fas fa-rotate-left"></i> إعادة القيم</button></div>
+    </section>
+    <div class="stock-count-summary" id="stockCountSummary"></div>
+    <section class="card stock-count-toolbar">
+      <div class="stock-count-toolbar-row"><input id="stockCountSearch" type="search" placeholder="ابحث باسم الصنف..." value="${stockMovementEsc(window.stockCountSearch||'')}" oninput="window.stockCountSearch=this.value;applyStockCountFilters()"><select id="stockCountFilter" onchange="window.stockCountFilter=this.value;applyStockCountFilters()"><option value="all" ${filter==='all'?'selected':''}>كل الأصناف</option><option value="different" ${filter==='different'?'selected':''}>الفروقات فقط</option><option value="zero" ${filter==='zero'?'selected':''}>الكميات صفر</option></select></div>
+    </section>
+    <section class="card" style="padding:14px"><div class="sc-head"><span>الصنف</span><span>رصيد البرنامج</span><span>الفعلي</span><span>الفرق</span><span>قيمة الفرق</span></div><div class="sc-list" id="stockCountList">${rows.map(stockCountRowHtml).join('')||'<div class="sc-empty"><i class="fas fa-box-open" style="font-size:2rem"></i><p>لا توجد أصناف مطابقة.</p></div>'}</div></section>
+    <div style="position:sticky;bottom:10px;z-index:5;margin-top:12px"><button class="btn btn-primary btn-block" type="button" onclick="commitStockCount()"><i class="fas fa-clipboard-check"></i> اعتماد الجرد وتحديث المخزون</button></div>
+  </div>`;
+  updateStockCountSummary(rows);
+}
+function stockCountRowHtml(p){
+  const id=String(p.id), system=Number(p.qty||0), draft=window.stockCountDraft[id], actual=draft===undefined?system:Number(draft||0), diff=actual-system, value=diff*Number(p.purchase||0);
+  const cls=Math.abs(diff)<0.000001?'zero':diff>0?'positive':'negative';
+  return `<div class="sc-row" data-product-id="${stockMovementEsc(id)}"><div class="sc-product"><strong>${stockMovementEsc(p.name||'صنف')}</strong><small>سعر الشراء: ${fmt(p.purchase||0)} ج.م — الوحدة: ${stockMovementEsc(p.unit||'كجم')}</small></div><div><span class="sc-label">رصيد البرنامج</span><div class="sc-value">${formatProductQty(p,system)} ${stockMovementEsc(p.unit||'كجم')}</div></div><div><span class="sc-label">الفعلي</span><input class="sc-input" type="number" min="0" step="0.001" inputmode="decimal" value="${actual}" onchange="setStockCountDraft('${stockMovementEsc(id)}',this.value)"></div><div><span class="sc-label">الفرق</span><div class="sc-diff ${cls}">${diff>0?'+':''}${diff.toFixed(3)} ${stockMovementEsc(p.unit||'كجم')}</div></div><div><span class="sc-label">قيمة الفرق</span><div class="sc-value">${fmt(value)} ج.م</div></div></div>`;
+}
+function applyStockCountFilters(){
+  const q=(window.stockCountSearch||'').trim().toLowerCase();
+  const filter=window.stockCountFilter||'all';
+  document.querySelectorAll('.sc-row[data-product-id]').forEach(row=>{
+    const id=row.getAttribute('data-product-id');
+    const p=(Store.get('products')||[]).find(x=>String(x.id)===String(id));
+    if(!p){row.style.display='none';return;}
+    const system=Number(p.qty||0),d=window.stockCountDraft[String(id)],actual=d===undefined?system:Number(d||0),diff=actual-system;
+    const matchName=!q||String(p.name||'').toLowerCase().includes(q);
+    const matchFilter=filter==='all'||(filter==='different'&&Math.abs(diff)>0.000001)||(filter==='zero'&&actual<=0);
+    row.style.display=(matchName&&matchFilter)?'grid':'none';
+  });
+  const visible=[];
+  document.querySelectorAll('.sc-row[data-product-id]').forEach(row=>{if(row.style.display!=='none'){const id=row.getAttribute('data-product-id');const p=(Store.get('products')||[]).find(x=>String(x.id)===String(id));if(p)visible.push(p);}});
+  updateStockCountSummary(visible);
+}
+
+function setStockCountDraft(id,value){
+  const n=Number(value); window.stockCountDraft[String(id)]=Number.isFinite(n)&&n>=0?n:0;
+  const row=document.querySelector('.sc-row[data-product-id=\"'+CSS.escape(String(id))+'\"]');
+  if(row){
+    const p=(Store.get('products')||[]).find(x=>String(x.id)===String(id));
+    if(p){
+      const system=Number(p.qty||0),actual=window.stockCountDraft[String(id)],diff=actual-system,valueDiff=diff*Number(p.purchase||0);
+      const diffEl=row.querySelector('.sc-diff'),valueEl=row.querySelector('.sc-value:last-child');
+      if(diffEl){diffEl.className='sc-diff '+(Math.abs(diff)<0.000001?'zero':diff>0?'positive':'negative');diffEl.textContent=(diff>0?'+':'')+diff.toFixed(3)+' '+(p.unit||'كجم');}
+      if(valueEl)valueEl.textContent=fmt(valueDiff)+' ج.م';
+    }
+  }
+  updateStockCountSummary((Store.get('products')||[]).filter(p=>{const q=(window.stockCountSearch||'').trim().toLowerCase();return !q||String(p.name||'').toLowerCase().includes(q);}));
+}
+function resetStockCountDraft(){window.stockCountDraft={};renderStockCountPage(document.getElementById('contentArea'));showToast('↩️ تم إعادة كل الكميات لرصيد البرنامج','info');}
+function updateStockCountSummary(rows){
+  const products=Store.get('products')||[];let diffCount=0,up=0,down=0,value=0;
+  rows.forEach(p=>{const system=Number(p.qty||0),d=window.stockCountDraft[String(p.id)],actual=d===undefined?system:Number(d||0),diff=actual-system;if(Math.abs(diff)>0.000001){diffCount++;if(diff>0)up+=diff;else down+=Math.abs(diff);value+=diff*Number(p.purchase||0);}});
+  const el=document.getElementById('stockCountSummary');if(!el)return;
+  el.innerHTML=`<div class="sc-stat"><span>الأصناف المعروضة</span><strong>${rows.length}</strong><small>من إجمالي ${products.length}</small></div><div class="sc-stat"><span>أصناف بها فرق</span><strong>${diffCount}</strong><small>تحتاج اعتماد</small></div><div class="sc-stat"><span>زيادة فعلية</span><strong>+${up.toFixed(3)}</strong><small>بالوحدات</small></div><div class="sc-stat"><span>نقص فعلي</span><strong>-${down.toFixed(3)}</strong><small>قيمة الفرق: ${fmt(value)} ج.م</small></div>`;
+}
+function commitStockCount(){
+  const products=Store.get('products')||[];const draft=window.stockCountDraft||{};const changes=[];
+  products.forEach(p=>{if(!Object.prototype.hasOwnProperty.call(draft,String(p.id)))return;const before=Number(p.qty||0),actual=Number(draft[String(p.id)]);if(!Number.isFinite(actual)||actual<0)return;if(Math.abs(actual-before)>0.000001)changes.push({p,before,actual,diff:actual-before});});
+  if(!changes.length)return showToast('لا توجد فروقات لاعتمادها','info');
+  const reason=prompt('اكتب سبب الجرد (اختياري):','جرد فعلي')?.trim();if(reason===null)return;
+  const stamp=cairoDateTimeISO(),countId=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const snapshot={products:JSON.parse(JSON.stringify(products)),stockMovements:JSON.parse(JSON.stringify(Store.get('stockMovements')||[])),stockCounts:JSON.parse(JSON.stringify(Store.get('stockCounts')||[]))};
+  try{
+    const count={id:countId,date:stamp.slice(0,10),time:stamp.slice(11,19),reason:reason||'جرد فعلي',items:changes.map(x=>({productId:x.p.id,productName:x.p.name,before:x.before,actual:x.actual,diff:x.diff,purchase:Number(x.p.purchase||0),differenceValue:x.diff*Number(x.p.purchase||0)})),totalDifferenceValue:changes.reduce((n,x)=>n+x.diff*Number(x.p.purchase||0),0),user:currentUser?.name||'مستخدم'};
+    Store.add('stockCounts',count);
+    changes.forEach(x=>{Store.update('products',x.p.id,{qty:x.actual});Store.add('stockMovements',{date:stamp.slice(0,10),time:stamp.slice(11,19),productId:x.p.id,productName:x.p.name,delta:x.diff,label:'جرد فعلي',reason:reason||'جرد فعلي',countId,user:currentUser?.name||'مستخدم'});});
+    window.stockCountDraft={};
+    renderStockCountPage(document.getElementById('contentArea'));
+    showToast(`✅ تم اعتماد الجرد لـ ${changes.length} صنف وتسجيل الفروق في حركة المخزون`,'success');
+  }catch(e){Store.set('products',snapshot.products);Store.set('stockMovements',snapshot.stockMovements);Store.set('stockCounts',snapshot.stockCounts);console.error(e);showToast('❌ تعذر اعتماد الجرد وتم التراجع عن العملية','error');}
 }
 
 // ==================== حركة الصنف ====================
@@ -9969,7 +10079,7 @@ function renderSuppliersPage(container){
     <div class="card">
       <div class="card-title"><i class="fas fa-address-book"></i> قائمة الموردين</div>
       <div class="suppliers-pro-tools">
-        <input type="text" id="supplierSearch" placeholder="🔍 ابحث بالاسم أو الهاتف..." oninput="filterSuppliers()">
+        <input type="text" id="supplierSearch" placeholder="🔍 ابحث بالاسم أو الهاتف..." oninput="debouncedFilterSuppliers()">
         <select id="supplierBalanceFilter" onchange="filterSuppliers()">
           <option value="" selected>كل الموردين</option>
           <option value="debt">عليه متبقي</option>
@@ -10909,7 +11019,7 @@ function matgaryAnalysisToggle(id){
   window.matgaryAnalysisSelected=selected.includes(sid)?selected.filter(x=>x!==sid):selected.concat(sid);
   renderMatgaryProductAnalysis();
 }
-function matgaryAnalysisSearchInput(v){window.matgaryAnalysisSearch=String(v||'');renderMatgaryProductAnalysis();}
+function matgaryAnalysisSearchInput(v){window.matgaryAnalysisSearch=String(v||'');debouncedMatgaryAnalysisSearch();}
 function matgaryAnalysisFocusProduct(id){window.matgaryAnalysisType='all';window.matgaryAnalysisSelected=[String(id)];window.matgaryAnalysisSearch='';renderMatgaryProductAnalysis();}
 function matgaryAnalysisTypeLabel(type){return ({cheese:'جبن',frozen:'مجمدات',pickles:'مخللات',other:'أخرى'}[type])||'أخرى';}
 function matgaryAnalysisQty(v){return matgaryReportNum(v).toLocaleString('ar-EG',{maximumFractionDigits:3});}
@@ -11139,6 +11249,7 @@ function renderMorePage(container){
       <div class="menu-item-v3 featured" onclick="navigateTo('cashbox')"><div class="menu-icon"><i class="fas fa-vault"></i></div><div><b>الخزنة</b><small>الرصيد وحركة المقبوضات والمدفوعات</small></div><i class="fas fa-chevron-left arrow"></i></div>
       <div class="menu-item-v3 featured" onclick="navigateTo('purchases')"><div class="menu-icon"><i class="fas fa-cart-flatbed"></i></div><div><b>المشتريات</b><small>إضافة ومتابعة المشتريات</small></div><i class="fas fa-chevron-left arrow"></i></div>
       <div class="menu-item-v3 featured" onclick="navigateTo('stock-movement')"><div class="menu-icon"><i class="fas fa-arrow-right-arrow-left"></i></div><div><b>حركة الأصناف</b><small>دخول وخروج ومرتجعات وتسويات المخزون</small></div><i class="fas fa-chevron-left arrow"></i></div>
+      <div class="menu-item-v3 featured" onclick="navigateTo('stock-count')"><div class="menu-icon"><i class="fas fa-clipboard-check"></i></div><div><b>الجرد الفعلي</b><small>مقارنة الرصيد الفعلي برصيد البرنامج واعتماد الفروق</small></div><i class="fas fa-chevron-left arrow"></i></div>
       <div class="menu-item-v3 featured" onclick="navigateTo('expenses')"><div class="menu-icon"><i class="fas fa-receipt"></i></div><div><b>المصروفات</b><small>تسجيل ومراجعة المصروفات</small></div><i class="fas fa-chevron-left arrow"></i></div>
       <div class="menu-item-v3" onclick="navigateTo('customers')"><div class="menu-icon"><i class="fas fa-user-group"></i></div><div><b>العملاء</b><small>بيانات العملاء وحساباتهم</small></div><i class="fas fa-chevron-left arrow"></i></div>
       <div class="menu-item-v3" onclick="navigateTo('suppliers')"><div class="menu-icon"><i class="fas fa-truck-field"></i></div><div><b>الموردين</b><small>إدارة الموردين والمشتريات</small></div><i class="fas fa-chevron-left arrow"></i></div>
@@ -11682,7 +11793,7 @@ async function replaceCloudDataWithLocal() {
 
 </script>
 <script>
-/* Matgary Service Worker lifecycle — v1.8.22
+/* Matgary Service Worker lifecycle — v1.8.43
    التحديث يعتمد على waiting SW + SKIP_WAITING + controllerchange،
    مع updateViaCache:none لمنع الاحتفاظ بنسخة قديمة من sw.js. */
 (function(){
@@ -11705,7 +11816,7 @@ async function replaceCloudDataWithLocal() {
 
   window.addEventListener('load',async function(){
     try{
-      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.24',{updateViaCache:'none'});
+      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.43',{updateViaCache:'none'});
       window.matgarySWRegistration=swRegistration;
       console.log('[SW] registered:',swRegistration.scope);
 
@@ -11883,15 +11994,21 @@ function ensureLegacyInvoiceSequences(){
     return {name,unit:s.sellUnit||'علبة'};
   }
 
+  let __matgarySalesGroupCache={version:-1,source:null,result:null};
   function groupSales(){
     ensureLegacyInvoiceSequences();
+    const source=allSales();
+    const version=__matgarySalesDataVersion;
+    if(__matgarySalesGroupCache.version===version && __matgarySalesGroupCache.source===source && Array.isArray(__matgarySalesGroupCache.result)){
+      return __matgarySalesGroupCache.result;
+    }
     const map=new Map();
-    allSales().forEach(s=>{
+    source.forEach(s=>{
       const key=invoiceKey(s);
       if(!map.has(key)) map.set(key,[]);
       map.get(key).push(s);
     });
-    return [...map.values()].map(lines=>{
+    const result=[...map.values()].map(lines=>{
       const first=lines[0];
       const total=lines.reduce((n,s)=>n+money(s.total),0);
       const profit=lines.reduce((n,s)=>n+money(s.profit),0);
@@ -11906,7 +12023,10 @@ function ensureLegacyInvoiceSequences(){
       const returnStatus=returnedLines.length?(activeLines.length?'partial':'full'):'';
       return {key:invoiceKey(first),id:first.id,saleBatchId:first.saleBatchId||null,invoiceNo:first.invoiceNo||('INV-'+String(first.id||'').slice(-6)),invoiceSeq:first.invoiceSeq||null,date:first.date||'',time:first.time||'',createdAt:first.createdAt||'',customerId:first.customerId||null,customerName:first.customerName||'عميل عادي',type:first.type||'retail',paymentMethod:first.paymentMethod||'cash',note:first.note||'',total,profit,paid,remaining,returnedAmount,returnedQty,returnedLines,activeLines,returnStatus,lines};
     }).sort((a,b)=>String(b.date+' '+b.time).localeCompare(String(a.date+' '+a.time)));
+    __matgarySalesGroupCache={version,source,result};
+    return result;
   }
+
   function paymentLabel(m){return ({cash:'نقدي',credit:'آجل',transfer:'تحويل',card:'بطاقة'})[m]||m||'نقدي';}
   function paymentIcon(m){return ({cash:'fa-money-bill-wave',credit:'fa-clock',transfer:'fa-mobile-screen-button',card:'fa-credit-card'})[m]||'fa-wallet';}
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
