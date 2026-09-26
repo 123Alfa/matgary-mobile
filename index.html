@@ -3830,7 +3830,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.48';
+const APP_VERSION='v1.8.49';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "26 سبتمبر 2026 — الجرد الفعلي وحركة المخزون وتسجيل فروق الجرد";
 
@@ -11187,6 +11187,36 @@ function renderMatgaryProductAnalysis(){
   detail.sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.time).localeCompare(String(a.time)));
   const shown=detail.slice(0,250);
   const typeOptions=[['pickles','🥒 المخللات'],['frozen','❄️ المجمدات'],['cheese','🧀 الجبن'],['other','📦 أخرى'],['all','كل الأصناف']];
+  /* v1.8.49 — لوحة ربحية ومخزون تحليلية فقط: لا تغيّر أي بيانات محفوظة. */
+  const profitabilityRows=allProducts.map(p=>{
+    const pid=String(p?.id);
+    const prsAll=(Store.get('purchases')||[]).filter(x=>String(x?.productId)===pid);
+    const sls=(d.sales||[]).filter(x=>String(x?.productId)===pid);
+    const lifetimeQty=prsAll.reduce((n,x)=>n+Math.max(0,Number(x?.qty)||0),0);
+    const lifetimeCost=prsAll.reduce((n,x)=>n+Math.max(0,Number(x?.total??((Number(x?.qty)||0)*(Number(x?.price)||0)))||0),0);
+    const avgCost=lifetimeQty>0?lifetimeCost/lifetimeQty:Math.max(0,Number(p?.purchase)||0);
+    const saleQty=sls.reduce((n,x)=>n+Math.max(0,Number(x?.qty)||0)+Math.max(0,Number(x?.returnedQty)||0),0);
+    const returnQty=sls.reduce((n,x)=>n+Math.max(0,Number(x?.returnedQty)||0),0);
+    const netQty=Math.max(0,saleQty-returnQty);
+    const sales=sls.reduce((n,x)=>n+Math.max(0,Number(x?.total)||0),0);
+    const returnValue=sls.reduce((n,x)=>n+Math.max(0,Number(x?.returnedAmount)||0),0);
+    const netSales=Math.max(0,sales-returnValue);
+    const estimatedCogs=netQty*avgCost;
+    const estimatedProfit=netSales-estimatedCogs;
+    const margin=netSales>0?(estimatedProfit/netSales)*100:0;
+    const currentQty=Math.max(0,Number(p?.qty)||0);
+    const stockValue=currentQty*avgCost;
+    return {id:pid,name:p?.name||'صنف',unit:unit(p),currentQty,avgCost,stockValue,saleQty,returnQty,netQty,netSales,estimatedCogs,estimatedProfit,margin,hasSales:netQty>0};
+  });
+  const rankedProfit=profitabilityRows.filter(x=>x.netSales>0).sort((a,b)=>b.estimatedProfit-a.estimatedProfit);
+  const rankedMargin=profitabilityRows.filter(x=>x.netSales>0).sort((a,b)=>b.margin-a.margin);
+  const lowMargin=profitabilityRows.filter(x=>x.netSales>0).sort((a,b)=>a.margin-b.margin);
+  const stagnant=profitabilityRows.filter(x=>x.currentQty>0&&x.netQty===0).sort((a,b)=>b.stockValue-a.stockValue);
+  const stockValueRank=profitabilityRows.filter(x=>x.currentQty>0).sort((a,b)=>b.stockValue-a.stockValue);
+  const stagnantValue=stagnant.reduce((n,x)=>n+x.stockValue,0);
+  const stagnantQty=stagnant.reduce((n,x)=>n+x.currentQty,0);
+  const profitMoney=v=>money(v);
+
   const navButtons=products.length?`<button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisSelectAll()">تحديد الكل</button><button type="button" class="btn btn-outline btn-sm" onclick="matgaryAnalysisClear()">إلغاء التحديد</button>`:'';
   body.innerHTML=`<div class="matgary-product-analysis">
     <section class="rep-panel mpa-controls">
@@ -11215,6 +11245,22 @@ function renderMatgaryProductAnalysis(){
     ])}</section>
     <section class="rep-panel"><div class="rep-panel-head"><div><h3>📦 تكلفة وربحية كل صنف</h3><small>التكلفة والربح التقديريان للعرض فقط</small></div></div>${matgaryReportTable(['الصنف','متوسط التكلفة','قيمة المخزون','صافي المبيعات','تكلفة البضاعة المباعة','الربح التقديري','الهامش التقديري'],rows.map(x=>`<tr><td><b>${safeEsc(x.name)}</b></td><td>${money(x.purchaseAvg)}</td><td>${money(x.currentCost)}</td><td>${money(x.netSales)}</td><td>${money(x.estimatedCogs)}</td><td class="${x.estimatedProfit>=0?'rep-pos':'rep-neg'}">${money(x.estimatedProfit)}</td><td>${x.estimatedMargin.toFixed(1)}%</td></tr>`))}</section>
     <section class="rep-panel"><div class="rep-panel-head"><div><h3>🔎 تفاصيل الحركة</h3><small>${detail.length} حركة • المعروض حتى 250 حركة</small></div></div>${matgaryReportTable(['التاريخ','الحركة','الصنف','الفاتورة','المورد / العميل','الكمية','سعر الوحدة','الإجمالي','المرتجع','الربح'],shown.map(x=>`<tr><td>${dateLabel(x.date)}${x.time?`<br><small class="rep-muted">${safeEsc(String(x.time).slice(0,8))}</small>`:''}</td><td>${x.kind}</td><td><b>${safeEsc(x.product)}</b></td><td>${safeEsc(x.invoice)}</td><td>${safeEsc(x.party)}</td><td>${qty(x.qty)} ${safeEsc(x.unit)}</td><td>${money(x.price)}</td><td>${money(x.total)}</td><td class="${x.ret>0?'rep-neg':''}">${x.ret>0?qty(x.ret):'-'}</td><td>${x.profit===null?'-':`<span class="rep-pos">${money(x.profit)}</span>`}</td></tr>`),detail.length>250?'تم إظهار أول 250 حركة فقط.':'لا توجد حركات مسجلة للفترة المحددة.')}</section>
+    <section class="rep-panel v1849-profitability"><div class="rep-panel-head"><div><h3>🏆 لوحة الربحية والمخزون</h3><small>تحليل جميع الأصناف داخل الفترة — للعرض فقط</small></div></div>
+      <div class="mpa-kpis">
+        <div><span>أصناف لها مبيعات</span><strong>${rankedProfit.length}</strong></div>
+        <div><span>مخزون بدون مبيعات</span><strong>${stagnant.length}</strong></div>
+        <div><span>كمية المخزون بدون مبيعات</span><strong>${qty(stagnantQty)}</strong></div>
+        <div><span>قيمة المخزون بدون مبيعات</span><strong>${money(stagnantValue)}</strong></div>
+      </div>
+      <div class="rep-two">
+        <section class="rep-panel"><div class="rep-panel-head"><h3>🥇 الأعلى ربحًا</h3><small>حسب الربح التقديري داخل الفترة</small></div>${matgaryReportTable(['الصنف','صافي المبيعات','الربح التقديري','الهامش'],rankedProfit.slice(0,10).map(x=>`<tr><td>${safeEsc(x.name)}</td><td>${money(x.netSales)}</td><td class="rep-pos">${profitMoney(x.estimatedProfit)}</td><td>${x.margin.toFixed(1)}%</td></tr>`))}</section>
+        <section class="rep-panel"><div class="rep-panel-head"><h3>⚠️ الأقل هامشًا</h3><small>أصناف لها مبيعات فقط</small></div>${matgaryReportTable(['الصنف','صافي المبيعات','الربح التقديري','الهامش'],lowMargin.slice(0,10).map(x=>`<tr><td>${safeEsc(x.name)}</td><td>${money(x.netSales)}</td><td class="${x.estimatedProfit>=0?'rep-pos':'rep-neg'}">${profitMoney(x.estimatedProfit)}</td><td class="${x.margin<0?'rep-neg':''}">${x.margin.toFixed(1)}%</td></tr>`))}</section>
+      </div>
+      <div class="rep-two">
+        <section class="rep-panel"><div class="rep-panel-head"><h3>🧊 مخزون بدون مبيعات</h3><small>له رصيد حالي ولم يُبع خلال الفترة</small></div>${stagnant.length?matgaryReportTable(['الصنف','الرصيد','متوسط التكلفة','قيمة المخزون'],stagnant.slice(0,10).map(x=>`<tr><td>${safeEsc(x.name)}</td><td>${qty(x.currentQty)} ${safeEsc(x.unit)}</td><td>${money(x.avgCost)}</td><td class="rep-num">${money(x.stockValue)}</td></tr>`)):'<div class="rep-empty">لا توجد أصناف بهذه الحالة في الفترة المحددة.</div>'}</section>
+        <section class="rep-panel"><div class="rep-panel-head"><h3>💰 أعلى قيمة مخزون</h3><small>حسب الرصيد الحالي × متوسط التكلفة</small></div>${matgaryReportTable(['الصنف','الرصيد','متوسط التكلفة','قيمة المخزون'],stockValueRank.slice(0,10).map(x=>`<tr><td>${safeEsc(x.name)}</td><td>${qty(x.currentQty)} ${safeEsc(x.unit)}</td><td>${money(x.avgCost)}</td><td class="rep-num">${money(x.stockValue)}</td></tr>`))}</section>
+      </div>
+    </section>
   </div>`;
 }
 
@@ -11855,7 +11901,7 @@ async function replaceCloudDataWithLocal() {
 
   window.addEventListener('load',async function(){
     try{
-      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.48',{updateViaCache:'none'});
+      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.49',{updateViaCache:'none'});
       window.matgarySWRegistration=swRegistration;
       console.log('[SW] registered:',swRegistration.scope);
 
