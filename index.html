@@ -3792,10 +3792,10 @@ html[data-theme="dark"] .sales-summary-card .value{
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-// متجري v1.8.41 — إصلاح احتساب المديونية المرتبطة بالفواتير المدفوعة
-const APP_VERSION='v1.8.41';
+// متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
+const APP_VERSION='v1.8.40';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "26 سبتمبر 2026 — إصلاح المديونية وتزامن حالة الفواتير المدفوعة";
+const APP_BUILD_DATE = "24 سبتمبر 2026 — تحسين تنسيق تحليل الأصناف وتصحيح تجميع المجموعات";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -10675,7 +10675,63 @@ function matgaryReportData(from,to){
   expenses.forEach(e=>{const m=String(e.date||'').slice(0,7)||'غير محدد';if(!byMonth.has(m))byMonth.set(m,{sales:0,profit:0,expense:0});byMonth.get(m).expense+=matgaryReportNum(e.amount);});
   const expenseTypes=new Map();expenses.forEach(e=>expenseTypes.set(e.type||'أخرى',(expenseTypes.get(e.type||'أخرى')||0)+matgaryReportNum(e.amount)));
   const customerRows=new Map();sales.forEach(s=>{const key=String(s.customerId||s.customerName||'عميل عادي');if(!customerRows.has(key))customerRows.set(key,{id:key,name:s.customerName||'عميل عادي',sales:0,profit:0,invoices:new Set(),qty:0});const g=customerRows.get(key);g.sales+=matgaryReportNum(s.total);g.profit+=matgaryReportNum(s.profit);g.invoices.add(matgaryReportInvoiceKey(s));g.qty+=matgaryReportNum(s.qty);});
-  const debtRows=new Map();allDebts.forEach(d=>{const rem=matgaryReportRemainingDebt(d);if(rem<=0)return;const key=String(d.type||'')+'|'+String(d.person||'').trim().toLowerCase();if(!debtRows.has(key))debtRows.set(key,{name:d.person||'غير محدد',type:d.type||'',remaining:0,due:d.due||'',overdue:0});const g=debtRows.get(key);g.remaining+=rem;if(d.due&&d.due<=(today()||'')&&rem>0)g.overdue+=rem;if(d.due&&(!g.due||d.due<g.due))g.due=d.due;});
+  // مديونية التقارير: مصدر الحقيقة لفواتير البيع هو سجل المبيعات الحالي.
+  // لا نعتمد على سجل debts وحده حتى لا تظهر فاتورة مدفوعة/محذوفة كمديونية.
+  const debtRows=new Map();
+  const addReportDebt=(name,type,remaining,due)=>{
+    const rem=Math.max(0,matgaryReportNum(remaining));
+    if(rem<=0)return;
+    const key=String(type||'')+'|'+String(name||'').trim().toLowerCase();
+    if(!debtRows.has(key))debtRows.set(key,{name:name||'غير محدد',type:type||'',remaining:0,due:due||'',overdue:0});
+    const g=debtRows.get(key);
+    g.remaining+=rem;
+    if(due&&due<=(today()||''))g.overdue+=rem;
+    if(due&&(!g.due||due<g.due))g.due=due;
+  };
+
+  // نبني خريطة للفواتير الحالية من sales، باستخدام saleBatchId أو invoiceNo.
+  // remaining محفوظ على مستوى الفاتورة ومكرر على كل سطر، لذلك نأخذ MAX وليس SUM.
+  const saleBatches=new Map();
+  const saleInvoiceKeys=new Map();
+  allSales.forEach(s=>{
+    const canonical=String(s.saleBatchId||s.invoiceNo||s.id||'').trim();
+    if(!canonical)return;
+    if(!saleBatches.has(canonical))saleBatches.set(canonical,{name:s.customerName||'عميل عادي',remaining:0,date:s.date||'',invoiceNo:s.invoiceNo||canonical});
+    const b=saleBatches.get(canonical);
+    b.remaining=Math.max(b.remaining,Math.max(0,matgaryReportNum(s.remaining)));
+    if(s.customerName)b.name=s.customerName;
+    if(s.date)b.date=s.date;
+    if(s.invoiceNo)b.invoiceNo=s.invoiceNo;
+    if(s.saleBatchId)saleInvoiceKeys.set(String(s.saleBatchId).trim(),canonical);
+    if(s.invoiceNo)saleInvoiceKeys.set(String(s.invoiceNo).trim(),canonical);
+  });
+
+  const countedSaleInvoices=new Set();
+  allDebts.forEach(d=>{
+    if(d.type!=='لنا'){
+      addReportDebt(d.person,d.type,matgaryReportRemainingDebt(d),d.due);
+      return;
+    }
+
+    // حتى لو كان سجل الدين قديمًا أو ناقص source، إذا كان يحمل رقم فاتورة/Batch موجودة
+    // في المبيعات الحالية، نأخذ المتبقي من الفاتورة نفسها.
+    const refBatch=String(d.saleBatchId||'').trim();
+    const refInvoice=String(d.invoiceNo||'').trim();
+    const canonical=saleInvoiceKeys.get(refBatch)||saleInvoiceKeys.get(refInvoice)||'';
+    if(canonical){
+      if(countedSaleInvoices.has(canonical))return;
+      countedSaleInvoices.add(canonical);
+      const batch=saleBatches.get(canonical);
+      if(batch)addReportDebt(batch.name,'لنا',batch.remaining,d.due);
+      return;
+    }
+
+    // سجل بيع قديم بلا فاتورة حالية: لا نعيده كمديونية.
+    if(d.source==='sale')return;
+
+    // دين يدوي حقيقي غير مرتبط بفاتورة مبيعات.
+    addReportDebt(d.person,d.type,matgaryReportRemainingDebt(d),d.due);
+  });
   const returns=sales.reduce((n,s)=>n+Math.max(0,matgaryReportNum(s.returnedAmount)),0), returnQty=sales.reduce((n,s)=>n+Math.max(0,matgaryReportNum(s.returnedQty)),0);
   const inventoryValue=allProducts.reduce((n,p)=>n+Math.max(0,matgaryReportNum(p.qty))*Math.max(0,matgaryReportNum(p.purchase)),0), retailValue=allProducts.reduce((n,p)=>n+Math.max(0,matgaryReportNum(p.qty))*Math.max(0,matgaryReportNum(p.retail)),0);
   const lowStock=allProducts.filter(p=>matgaryReportNum(p.qty)>0&&matgaryReportNum(p.qty)<=Math.max(0,matgaryReportNum(p.minStock||5))); const outStock=allProducts.filter(p=>matgaryReportNum(p.qty)<=0);
