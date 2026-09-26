@@ -1,4 +1,23 @@
 <!DOCTYPE html>
+<!-- تحسين الأداء: تأخير إعادة رسم نتائج البحث أثناء الكتابة لمنع التهنيج -->
+<script>
+(function(){
+  const timers=Object.create(null);
+  window.debounceCall=function(key,fn,delay){
+    clearTimeout(timers[key]);
+    timers[key]=setTimeout(()=>{
+      delete timers[key];
+      try{fn();}catch(e){console.error("Debounced UI error:",key,e);}
+    },delay||300);
+  };
+  window.debouncedRenderSalesTable=()=>debounceCall("salesSearch",()=>window.renderSalesTable&&window.renderSalesTable(),300);
+  window.debouncedRenderPurchasesTable=()=>debounceCall("purchaseSearch",()=>window.renderPurchasesTable&&window.renderPurchasesTable(),300);
+  window.debouncedRenderDebtsList=()=>debounceCall("debtSearch",()=>window.renderDebtsList&&window.renderDebtsList(),300);
+  window.debouncedFilterCustomers=()=>debounceCall("customerSearch",()=>window.filterCustomers&&window.filterCustomers(),300);
+  window.debouncedFilterAudit=()=>debounceCall("auditSearch",()=>window.filterAudit&&window.filterAudit(),300);
+})();
+</script>
+
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -5324,7 +5343,7 @@ function renderSalesPage(container){
     <section class="sales-history-card sales-history-modern sales-history-collapsed" id="salesHistorySection" style="margin-top:18px">
       <div class="sales-history-head sales-history-toggle-head" onclick="toggleSalesHistory()"><div class="sales-history-title"><div class="sales-history-icon"><i class="fas fa-receipt"></i></div><div><h3>سجل المبيعات</h3><small>اضغط لعرض الفواتير والمبالغ والأرباح</small></div></div><div class="sales-history-head-actions"><button type="button" class="sales-refresh-btn" onclick="event.stopPropagation();renderSalesTable()" title="تحديث السجل"><i class="fas fa-rotate"></i></button><button type="button" class="sales-history-open-btn" id="salesHistoryOpenBtn" title="فتح سجل المبيعات"><i class="fas fa-chevron-down"></i></button></div></div>
       <div class="sales-history-body" id="salesHistoryBody"><div class="sales-stats-grid"><div class="sales-stat"><span class="sales-stat-icon"><i class="fas fa-file-invoice"></i></span><div><small>العمليات</small><strong id="salesStatCount">0</strong></div></div><div class="sales-stat"><span class="sales-stat-icon"><i class="fas fa-money-bill-wave"></i></span><div><small>المبيعات</small><strong id="salesStatTotal">0 ج.م</strong></div></div><div class="sales-stat"><span class="sales-stat-icon"><i class="fas fa-hand-holding-dollar"></i></span><div><small>المدفوع</small><strong id="salesStatPaid">0 ج.م</strong></div></div><div class="sales-stat"><span class="sales-stat-icon"><i class="fas fa-chart-line"></i></span><div><small>الربح</small><strong id="salesStatProfit">0 ج.م</strong></div></div></div>
-        <div class="sales-filters"><div class="sales-search-wrap"><i class="fas fa-search"></i><input type="text" id="saleSearch" placeholder="ابحث عن صنف أو عميل أو ملاحظة..." oninput="renderSalesTable()"><button type="button" onclick="document.getElementById('saleSearch').value='';renderSalesTable()"><i class="fas fa-xmark"></i></button></div><div class="sales-quick-filters"><button type="button" class="active" data-range="all" onclick="setSalesRange('all',this)">الكل</button><button type="button" data-range="today" onclick="setSalesRange('today',this)">اليوم</button><button type="button" data-range="week" onclick="setSalesRange('week',this)">هذا الأسبوع</button><button type="button" data-range="month" onclick="setSalesRange('month',this)">هذا الشهر</button></div><div class="sales-filter-row"><select id="saleTypeFilter" onchange="renderSalesTable()"><option value="">كل أنواع البيع</option><option value="retail">🛍️ قطاعي</option><option value="wholesale">📦 جملة</option></select><select id="salePaymentFilter" onchange="renderSalesTable()"><option value="">كل طرق السداد</option><option value="cash">💵 نقدي</option><option value="credit">⏳ آجل</option><option value="transfer">📱 تحويل</option><option value="card">💳 بطاقة</option></select><label class="sales-date-wrap" title="اختيار تاريخ محدد"><i class="fas fa-calendar-days"></i><span id="saleFilterDateLabel">اختر التاريخ</span><input type="date" id="saleFilterDate" onchange="setSalesRange('custom')" class="sales-date-filter" aria-label="اختيار تاريخ محدد"></label><button type="button" class="sales-clear-filters" onclick="clearSalesFilters()"><i class="fas fa-filter-circle-xmark"></i> مسح الفلاتر</button></div></div><div id="salesTable" class="sales-cards-list"></div></div>
+        <div class="sales-filters"><div class="sales-search-wrap"><i class="fas fa-search"></i><input type="text" id="saleSearch" placeholder="ابحث عن صنف أو عميل أو ملاحظة..." oninput="debouncedRenderSalesTable()"><button type="button" onclick="document.getElementById('saleSearch').value='';renderSalesTable()"><i class="fas fa-xmark"></i></button></div><div class="sales-quick-filters"><button type="button" class="active" data-range="all" onclick="setSalesRange('all',this)">الكل</button><button type="button" data-range="today" onclick="setSalesRange('today',this)">اليوم</button><button type="button" data-range="week" onclick="setSalesRange('week',this)">هذا الأسبوع</button><button type="button" data-range="month" onclick="setSalesRange('month',this)">هذا الشهر</button></div><div class="sales-filter-row"><select id="saleTypeFilter" onchange="renderSalesTable()"><option value="">كل أنواع البيع</option><option value="retail">🛍️ قطاعي</option><option value="wholesale">📦 جملة</option></select><select id="salePaymentFilter" onchange="renderSalesTable()"><option value="">كل طرق السداد</option><option value="cash">💵 نقدي</option><option value="credit">⏳ آجل</option><option value="transfer">📱 تحويل</option><option value="card">💳 بطاقة</option></select><label class="sales-date-wrap" title="اختيار تاريخ محدد"><i class="fas fa-calendar-days"></i><span id="saleFilterDateLabel">اختر التاريخ</span><input type="date" id="saleFilterDate" onchange="setSalesRange('custom')" class="sales-date-filter" aria-label="اختيار تاريخ محدد"></label><button type="button" class="sales-clear-filters" onclick="clearSalesFilters()"><i class="fas fa-filter-circle-xmark"></i> مسح الفلاتر</button></div></div><div id="salesTable" class="sales-cards-list"></div></div>
     </section>
   </div>`;
   renderSaleProductGrid();
@@ -8244,7 +8263,7 @@ function renderPurchasesPage(container){
     <section class="purchase-box-v6">
       <div class="purchase-box-title-v6"><span><i class="fas fa-clock-rotate-left"></i> سجل المشتريات</span><small>الفواتير مجمعة حسب رقم الفاتورة</small></div>
       <div class="purchase-filters-v6">
-        <div class="purchase-search-v6"><i class="fas fa-search"></i><input id="purchaseSearch" placeholder="ابحث بالصنف أو المورد أو الملاحظات أو رقم الفاتورة" oninput="renderPurchasesTable()"></div>
+        <div class="purchase-search-v6"><i class="fas fa-search"></i><input id="purchaseSearch" placeholder="ابحث بالصنف أو المورد أو الملاحظات أو رقم الفاتورة" oninput="debouncedRenderPurchasesTable()"></div>
         <input type="date" id="purchaseFrom" onchange="renderPurchasesTable()" aria-label="من تاريخ" class="sales-date-filter">
         <input type="date" id="purchaseTo" onchange="renderPurchasesTable()" aria-label="إلى تاريخ" class="sales-date-filter">
         <select id="purchaseSupplierFilter" onchange="renderPurchasesTable()"><option value="">كل الموردين</option>${supplierOpts}</select>
@@ -9123,7 +9142,7 @@ function renderDebtsPage(container){
     <div class="card">
       <div class="card-title"><i class="fas fa-list"></i> سجل الديون</div>
       <div class="debts-pro-tools">
-        <input id="debtSearch" type="text" placeholder="🔍 ابحث بالاسم..." oninput="renderDebtsList()">
+        <input id="debtSearch" type="text" placeholder="🔍 ابحث بالاسم..." oninput="debouncedRenderDebtsList()">
         <select id="debtTypeFilter" onchange="renderDebtsList()">
           <option value="">كل الديون</option><option value="لنا">📥 لنا</option><option value="علينا">📤 علينا</option>
         </select>
@@ -9755,7 +9774,7 @@ function renderCustomersPage(container){
     <div class="card">
       <div class="card-title"><i class="fas fa-address-book"></i> قائمة العملاء</div>
       <div class="customers-pro-tools">
-        <input type="text" id="customerSearch" placeholder="🔍 ابحث بالاسم أو الهاتف..." oninput="filterCustomers()">
+        <input type="text" id="customerSearch" placeholder="🔍 ابحث بالاسم أو الهاتف..." oninput="debouncedFilterCustomers()">
         <select id="customerTypeFilter" onchange="filterCustomers()">
           <option value="" selected>كل الأنواع</option><option value="retail">قطاعي</option><option value="wholesale">جملة</option>
         </select>
@@ -10476,7 +10495,7 @@ function renderAuditPage(container){
   const logs=Store.getAuditLog();
   container.innerHTML=`<div class="fade-in">
     <div class="card"><div class="card-title"><i class="fas fa-history"></i> سجل التعديلات</div>
-      <div class="search-box"><input type="text" id="auditSearch" placeholder="🔍 ابحث..." oninput="filterAudit()"></div>
+      <div class="search-box"><input type="text" id="auditSearch" placeholder="🔍 ابحث..." oninput="debouncedFilterAudit()"></div>
       <div id="auditList"></div>
     </div>
   </div>`;
