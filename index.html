@@ -9155,8 +9155,76 @@ function addDebt(){
   renderDebtsList();
 }
 
-function renderDebtsList(){
+function getCanonicalDebtRecords(){
   const allDebts=Store.get('debts')||[];
+  const allSales=Store.get('sales')||[];
+  const result=[];
+  const saleDebtGroups=new Map();
+  const salesByBatch=new Map();
+
+  // الفاتورة هي مصدر الحقيقة للمديونية الناتجة عن البيع:
+  // إذا حُذفت الفاتورة، لا يجب أن تبقى مديونيتها القديمة ظاهرة في التقارير.
+  allSales.forEach(s=>{
+    const batchId=String(s.saleBatchId||'');
+    if(!batchId)return;
+    if(!salesByBatch.has(batchId))salesByBatch.set(batchId,[]);
+    salesByBatch.get(batchId).push(s);
+  });
+
+  allDebts.forEach(d=>{
+    if(d.source==='sale' && d.saleBatchId){
+      const batchId=String(d.saleBatchId);
+      if(!saleDebtGroups.has(batchId))saleDebtGroups.set(batchId,[]);
+      saleDebtGroups.get(batchId).push(d);
+    }else{
+      // الديون اليدوية وديون المشتريات، وكذلك ديون البيع القديمة التي
+      // لا تحمل saleBatchId، تبقى كما هي ولا نغيّر معناها.
+      result.push(d);
+    }
+  });
+
+  saleDebtGroups.forEach((debts,batchId)=>{
+    const batch=salesByBatch.get(batchId)||[];
+    if(!batch.length){
+      // سجل دين تابع لفاتورة بيع محذوفة = مديونية يتيمة.
+      // لا نحسبها في الرصيد الحالي ولا في التقارير.
+      return;
+    }
+
+    const invoiceTotal=batch.reduce((n,s)=>n+Math.max(0,Number(s.total||0)),0);
+    const invoiceRemaining=Math.max(0,...batch.map(s=>Math.max(0,Number(s.remaining||0))));
+    if(invoiceRemaining<=0.0001)return;
+
+    // لو نتج أكثر من سجل دين لنفس الفاتورة، استخدم سجلًا واحدًا فقط.
+    // نفضّل السجل الذي يتوافق متبقيه مع المتبقي الحقيقي للفواتير.
+    const chosen=debts.slice().sort((a,b)=>{
+      const da=Math.abs(getDebtRemaining(a)-invoiceRemaining);
+      const db=Math.abs(getDebtRemaining(b)-invoiceRemaining);
+      if(Math.abs(da-db)>0.0001)return da-db;
+      const ah=Array.isArray(a.paymentHistory)?a.paymentHistory.length:0;
+      const bh=Array.isArray(b.paymentHistory)?b.paymentHistory.length:0;
+      return bh-ah;
+    })[0]||debts[0];
+
+    // نسخة للعرض والحساب فقط؛ لا نغيّر البيانات الأصلية.
+    const canonical={...chosen,
+      amount:invoiceTotal,
+      paidAmount:Math.max(0,invoiceTotal-invoiceRemaining),
+      paid:false,
+      saleTotal:invoiceTotal,
+      person:batch[0].customerName||chosen.person||'عميل عادي',
+      customerId:batch[0].customerId||chosen.customerId||null,
+      invoiceNo:batch[0].invoiceNo||chosen.invoiceNo,
+      date:batch[0].date||chosen.date
+    };
+    result.push(canonical);
+  });
+
+  return result;
+}
+
+function renderDebtsList(){
+  const allDebts=getCanonicalDebtRecords();
   const search=(document.getElementById('debtSearch')?.value||'').trim().toLowerCase();
   const type=(document.getElementById('debtTypeFilter')?.value||'');
   const filtered=allDebts.filter(d=>(
@@ -10647,7 +10715,7 @@ function matgaryReportData(from,to){
   expenses.forEach(e=>{const m=String(e.date||'').slice(0,7)||'غير محدد';if(!byMonth.has(m))byMonth.set(m,{sales:0,profit:0,expense:0});byMonth.get(m).expense+=matgaryReportNum(e.amount);});
   const expenseTypes=new Map();expenses.forEach(e=>expenseTypes.set(e.type||'أخرى',(expenseTypes.get(e.type||'أخرى')||0)+matgaryReportNum(e.amount)));
   const customerRows=new Map();sales.forEach(s=>{const key=String(s.customerId||s.customerName||'عميل عادي');if(!customerRows.has(key))customerRows.set(key,{id:key,name:s.customerName||'عميل عادي',sales:0,profit:0,invoices:new Set(),qty:0});const g=customerRows.get(key);g.sales+=matgaryReportNum(s.total);g.profit+=matgaryReportNum(s.profit);g.invoices.add(matgaryReportInvoiceKey(s));g.qty+=matgaryReportNum(s.qty);});
-  const debtRows=new Map();allDebts.forEach(d=>{const rem=matgaryReportRemainingDebt(d);if(rem<=0)return;const key=String(d.type||'')+'|'+String(d.person||'').trim().toLowerCase();if(!debtRows.has(key))debtRows.set(key,{name:d.person||'غير محدد',type:d.type||'',remaining:0,due:d.due||'',overdue:0});const g=debtRows.get(key);g.remaining+=rem;if(d.due&&d.due<=(today()||'')&&rem>0)g.overdue+=rem;if(d.due&&(!g.due||d.due<g.due))g.due=d.due;});
+  const debtRows=new Map();getCanonicalDebtRecords().forEach(d=>{const rem=matgaryReportRemainingDebt(d);if(rem<=0)return;const key=String(d.type||'')+'|'+String(d.person||'').trim().toLowerCase();if(!debtRows.has(key))debtRows.set(key,{name:d.person||'غير محدد',type:d.type||'',remaining:0,due:d.due||'',overdue:0});const g=debtRows.get(key);g.remaining+=rem;if(d.due&&d.due<=(today()||'')&&rem>0)g.overdue+=rem;if(d.due&&(!g.due||d.due<g.due))g.due=d.due;});
   const returns=sales.reduce((n,s)=>n+Math.max(0,matgaryReportNum(s.returnedAmount)),0), returnQty=sales.reduce((n,s)=>n+Math.max(0,matgaryReportNum(s.returnedQty)),0);
   const inventoryValue=allProducts.reduce((n,p)=>n+Math.max(0,matgaryReportNum(p.qty))*Math.max(0,matgaryReportNum(p.purchase)),0), retailValue=allProducts.reduce((n,p)=>n+Math.max(0,matgaryReportNum(p.qty))*Math.max(0,matgaryReportNum(p.retail)),0);
   const lowStock=allProducts.filter(p=>matgaryReportNum(p.qty)>0&&matgaryReportNum(p.qty)<=Math.max(0,matgaryReportNum(p.minStock||5))); const outStock=allProducts.filter(p=>matgaryReportNum(p.qty)<=0);
