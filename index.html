@@ -10696,9 +10696,13 @@ function matgaryReportData(from,to){
   allSales.forEach(s=>{
     const canonical=String(s.saleBatchId||s.invoiceNo||s.id||'').trim();
     if(!canonical)return;
-    if(!saleBatches.has(canonical))saleBatches.set(canonical,{name:s.customerName||'عميل عادي',remaining:0,date:s.date||'',invoiceNo:s.invoiceNo||canonical});
+    if(!saleBatches.has(canonical))saleBatches.set(canonical,{name:s.customerName||'عميل عادي',total:0,paid:0,remaining:0,date:s.date||'',invoiceNo:s.invoiceNo||canonical});
     const b=saleBatches.get(canonical);
-    b.remaining=Math.max(b.remaining,Math.max(0,matgaryReportNum(s.remaining)));
+    // total و paid محفوظان على مستوى الفاتورة وقد يتكرران على كل سطر.
+    // لذلك: نجمع إجماليات السطور، ونأخذ MAX للمدفوع، ثم نحسب المتبقي من الفاتورة نفسها.
+    b.total+=Math.max(0,matgaryReportNum(s.total));
+    b.paid=Math.max(b.paid,Math.max(0,matgaryReportNum(s.paid)));
+    b.remaining=Math.max(0,b.total-b.paid);
     if(s.customerName)b.name=s.customerName;
     if(s.date)b.date=s.date;
     if(s.invoiceNo)b.invoiceNo=s.invoiceNo;
