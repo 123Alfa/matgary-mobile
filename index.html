@@ -730,91 +730,227 @@ tr:hover td{background:rgba(15,118,110,.045)}
 <meta name="msapplication-TileColor" content="#0f766e">
 
 <style id="wa-invoice-final-reference">
-/* ============ متجري — فاتورة واتساب Hybrid Compact v1.8.55 ============ */
-.whatsapp-invoice-stage{position:fixed;left:-20000px;top:0;width:1024px;z-index:2147483646;direction:rtl;pointer-events:none;background:#fbfcf8;visibility:visible;opacity:0;overflow:visible}
-.wa-invoice{width:1024px;min-height:520px;background:#f1fbe9;color:#17261f;font-family:'Tajawal','Segoe UI',Arial,sans-serif;direction:rtl;position:relative;overflow:hidden;box-sizing:border-box}
+/* ============ متجري — فاتورة واتساب HTML/CSS نظيفة ============ */
+.whatsapp-invoice-stage{
+  position:fixed;left:-20000px;top:0;width:1024px;z-index:2147483646;
+  direction:rtl;pointer-events:none;background:#fbfcf8;
+  visibility:visible;opacity:0;overflow:visible;
+}
+.wa-invoice{
+  width:1024px;min-height:600px;
+  background:linear-gradient(180deg,#f8fbfa 0%,#eef6f3 100%);
+  color:#173b32;font-family:'Tajawal','Segoe UI',Arial,sans-serif;
+  direction:rtl;position:relative;overflow:hidden;box-sizing:border-box;
+}
 .wa-invoice *,.wa-invoice *::before,.wa-invoice *::after{box-sizing:border-box}
-/* ===== رأس خفيف قريب من الفاتورة القديمة ===== */
-.wa-header{background:#e8f9df;color:#17261f;padding:14px 30px 10px;display:flex;justify-content:center;align-items:center;position:relative;min-height:66px;border-bottom:2px solid #173b32}
-.wa-header-logo{display:flex;align-items:center;justify-content:center;gap:9px;position:relative;z-index:2}
-.wa-logo-box{width:30px;height:30px;border-radius:8px;background:transparent;border:0;display:grid;place-items:center;box-shadow:none;flex:0 0 30px}
-.wa-logo-box .wa-inline-icon{width:26px!important;height:26px!important;color:#17261f}
-.wa-brand-name{font-size:27px;font-weight:950;letter-spacing:.2px;line-height:1.05}
-.wa-brand-tag{display:none}
-.wa-header-badge{display:none}
-/* ===== معلومات الفاتورة: 2×2 بدل المساحات الكبيرة ===== */
-.wa-info-strip{display:grid;grid-template-columns:1fr 1fr;background:#f1fbe9;border-bottom:0}
-.wa-info-item{padding:8px 18px 7px;border-left:1px solid #a9c69f;border-bottom:1px solid #a9c69f;text-align:right;min-height:47px;display:flex;align-items:center;justify-content:flex-start;gap:7px}
-.wa-info-item:nth-child(2n){border-left:0}
-.wa-info-item:nth-last-child(-n+2){border-bottom:0}
-.wa-info-item small{display:inline-flex;align-items:center;justify-content:flex-start;gap:4px;color:#17261f;font-size:14px;font-weight:900;margin:0;white-space:nowrap}
-.wa-info-icon{font-size:17px;line-height:1;display:inline-flex;align-items:center}
-.wa-inline-icon{width:18px;height:18px;display:inline-block;vertical-align:middle;color:#173b32;flex:0 0 18px}
-.wa-info-item strong{display:inline;color:#17261f;font-size:17px;font-weight:950;line-height:1.15;overflow-wrap:anywhere}
+
+/* ===== الهيدر ===== */
+.wa-header{
+  background:linear-gradient(135deg,#075e54 0%,#0f766e 60%,#c99a22 140%);
+  color:#fff;padding:34px 40px;display:flex;justify-content:space-between;
+  align-items:center;position:relative;overflow:hidden;
+}
+.wa-header::before{
+  content:'';position:absolute;width:340px;height:340px;border-radius:50%;
+  background:rgba(255,255,255,0.06);top:-160px;left:-120px;
+}
+.wa-header::after{
+  content:'';position:absolute;width:220px;height:220px;border-radius:50%;
+  background:rgba(201,154,34,0.16);bottom:-120px;right:-80px;
+}
+.wa-header-logo{display:flex;align-items:center;gap:18px;position:relative;z-index:2}
+.wa-logo-box{
+  width:72px;height:72px;border-radius:20px;
+  background:rgba(255,255,255,0.16);
+  border:1px solid rgba(255,255,255,0.28);
+  display:grid;place-items:center;font-size:34px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.10);
+}
+.wa-brand-name{font-size:36px;font-weight:950;letter-spacing:1px;line-height:1.1}
+.wa-brand-tag{font-size:15px;color:rgba(255,255,255,0.82);margin-top:6px;font-weight:700}
+.wa-header-badge{
+  background:#e5b72c;color:#173b32;
+  padding:14px 32px;border-radius:18px;
+  font-size:26px;font-weight:950;position:relative;z-index:2;
+  box-shadow:0 8px 24px rgba(0,0,0,0.14);
+}
+
+/* ===== شريط المعلومات ===== */
+.wa-info-strip{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  background:#fff;border-bottom:1px solid #dfeae5;
+}
+.wa-info-item{padding:18px 18px;border-left:1px solid #edf2ef;text-align:center}
+.wa-info-item:last-child{border-left:0}
+.wa-info-item small{display:flex;align-items:center;justify-content:center;gap:7px;color:#667771;font-size:15px;font-weight:900;margin-bottom:7px}
+.wa-info-icon{font-family:"Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:23px;line-height:1;display:inline-block;filter:saturate(1.08);transform:translateY(1px)}
+.wa-inline-icon{width:23px;height:23px;display:inline-block;vertical-align:middle;color:#0f766e;flex:0 0 23px}.wa-customer-icon .wa-inline-icon{width:26px;height:26px;color:#0f766e}
+.wa-info-item strong{display:block;color:#173b32;font-size:21px;font-weight:950;line-height:1.25;overflow-wrap:anywhere}
+
 /* ===== العميل ===== */
-.wa-customer-strip{background:#e8f9df;padding:7px 30px 9px;display:flex;align-items:center;gap:8px;border-bottom:2px solid #173b32;min-height:46px}
-.wa-customer-icon{width:28px;height:28px;border-radius:8px;background:transparent;color:#173b32;display:grid;place-items:center;flex:0 0 28px}
-.wa-customer-icon .wa-inline-icon{width:23px!important;height:23px!important}
-.wa-customer-info{flex:1;min-width:0;display:flex;align-items:baseline;gap:7px}
-.wa-customer-info small{display:inline;color:#17261f;font-size:14px;font-weight:900;line-height:1.1}
-.wa-customer-info small .wa-inline-icon{display:none}
-.wa-customer-info strong{display:inline;font-size:18px;font-weight:950;margin:0;color:#17261f;overflow-wrap:anywhere;line-height:1.1}
-.wa-customer-phone{font-size:12px;color:#0f766e;font-weight:900;background:#e8f6f1;border:1px solid #cfe9e1;padding:4px 7px;border-radius:8px;white-space:nowrap}
+.wa-customer-strip{
+  background:#f6faf8;padding:20px 40px;
+  display:flex;align-items:center;gap:16px;
+  border-bottom:1px solid #dfeae5;
+}
+.wa-customer-icon{
+  width:52px;height:52px;border-radius:16px;background:#e0f2ec;
+  color:#0f766e;display:grid;place-items:center;font-size:22px;flex:0 0 52px;
+}
+.wa-customer-info{flex:1;min-width:0}
+.wa-customer-info small{display:block;color:#7b8984;font-size:14px;font-weight:800}
+.wa-customer-info strong{display:block;font-size:24px;font-weight:950;margin-top:2px;color:#173b32;overflow-wrap:anywhere}
+.wa-customer-phone{
+  font-size:16px;color:#0f766e;font-weight:900;
+  background:#e8f6f1;border:1px solid #cfe9e1;
+  padding:8px 14px;border-radius:12px;white-space:nowrap;
+}
+
 /* ===== عنوان القسم ===== */
-.wa-section-title{padding:10px 30px 7px;font-size:18px;font-weight:950;color:#17261f;display:flex;align-items:center;gap:7px}
-.wa-section-title .title-line{flex:1;height:1px;background:#8cab82;margin-right:5px;border-radius:2px}
-.wa-section-title .count-badge{background:transparent;color:#17261f;border:0;padding:0;font-size:12px;font-weight:900;white-space:nowrap}
-.wa-section-title>span:first-child .wa-inline-icon{width:19px!important;height:19px!important}
-/* ===== الأصناف: صف مضغوط بدل جدول عريض ===== */
-.wa-table-wrap{padding:0 30px 9px}
-.wa-table{width:100%;border-collapse:separate;border-spacing:0;border:0;border-radius:0;overflow:visible;background:transparent;table-layout:fixed}
-.wa-table thead{display:none}
-.wa-table tbody td{padding:0;border:0;text-align:right;vertical-align:middle;height:auto}
-.wa-table tbody tr{display:grid;grid-template-columns:42px 1fr;column-gap:8px;position:relative;padding:7px 0 8px;border-bottom:1px solid #91ad87;background:transparent!important}
-.wa-table tbody tr:last-child{border-bottom:0}
-.wa-table tbody td:nth-child(1){grid-column:1;grid-row:1 / span 2;display:flex;align-items:flex-start;justify-content:center;padding-top:2px}
-.wa-table tbody td:nth-child(2){grid-column:2;grid-row:1;text-align:right;padding:0}
-.wa-table tbody td:nth-child(3){grid-column:2;grid-row:2;text-align:right;padding:2px 0 0}
-.wa-table tbody td:nth-child(4){grid-column:2;grid-row:2;text-align:left;padding:2px 185px 0 0}
-.wa-table tbody td:nth-child(5){grid-column:2;grid-row:1;text-align:left;padding:0}
-.wa-num{display:inline-grid;width:28px;height:28px;border-radius:50%;background:#d7efcd;color:#173b32;place-items:center;font-weight:950;font-size:14px}
-.wa-product{display:block;min-width:0}
-.wa-product-img{display:none!important}
-.wa-product-info{min-width:0;display:block;padding-left:125px}
-.wa-product-info b{display:block;font-size:17px;font-weight:950;color:#17261f;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
-.wa-product-info .badge{display:inline-block;margin:2px 0 0;background:#dff2d8;color:#0b755b;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:900}
-/* الإجمالي في نفس سطر اسم الصنف */
-.wa-total-cell{color:#173b32;font-size:16px;font-weight:950;white-space:nowrap;background:#dff2d8;padding:3px 7px;border-radius:7px;display:inline-block}
-/* التفاصيل في سطر واحد أو سطرين */
-.wa-detail-lines{text-align:right;line-height:1.25;display:inline-flex;align-items:baseline;gap:8px;flex-wrap:wrap;max-width:100%}
-.wa-detail-lines .main{display:inline;color:#0f766e;font-size:13px;font-weight:950;margin:0;white-space:nowrap}
-.wa-detail-lines .sub{display:inline;color:#566761;font-size:11px;font-weight:800;overflow-wrap:anywhere;line-height:1.2}
-.wa-pack-prices,.wa-pack-chip{display:none!important}
-/* السعر بجانب التفاصيل */
-.wa-price-cell{display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap}
-.wa-price-cell strong{display:inline;color:#17261f;font-size:11px;font-weight:950;overflow-wrap:anywhere;line-height:1.2}
-.wa-price-cell strong.single-line{white-space:nowrap;font-size:11px}
-.wa-price-cell small{display:inline;color:#6f7f79;font-size:10px;margin:0;font-weight:800;line-height:1.2}
-/* ===== الملخص: بسيط وواضح ===== */
-.wa-summary-row{padding:0 30px 9px;display:block}
-.wa-summary{background:transparent;border:0;border-top:2px solid #173b32;border-bottom:2px solid #173b32;border-radius:0;padding:6px 0}
-.wa-sum-line{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:0;font-size:14px;gap:10px;line-height:1.15}
+.wa-section-title{
+  padding:26px 40px 14px;font-size:22px;font-weight:950;color:#0f766e;
+  display:flex;align-items:center;gap:12px;
+}
+.wa-section-title .title-line{
+  flex:1;height:2px;background:linear-gradient(90deg,#dfeae5,transparent);
+  margin-right:8px;border-radius:2px;
+}
+.wa-section-title .count-badge{
+  background:#e8f6f1;color:#0f766e;border:1px solid #cfe9e1;
+  padding:4px 12px;border-radius:999px;font-size:16px;font-weight:950;white-space:nowrap;
+}
+
+/* ===== الجدول ===== */
+.wa-table-wrap{padding:0 40px 26px}
+.wa-table{
+  width:100%;border-collapse:separate;border-spacing:0;
+  border:1px solid #d8e6e1;border-radius:18px;overflow:hidden;background:#fff;
+}
+.wa-table thead th{
+  background:linear-gradient(135deg,#0f766e,#0a5c56);color:#fff;
+  padding:18px 12px;font-size:17px;font-weight:950;text-align:center;
+  letter-spacing:0.3px;
+}
+.wa-table thead th:nth-child(2){text-align:right;padding-right:22px}
+.wa-table tbody td{
+  padding:18px 12px;border-top:1px solid #edf2ef;
+  font-size:17px;text-align:center;vertical-align:middle;
+}
+.wa-table tbody td:nth-child(2){text-align:right;padding-right:22px}
+.wa-table tbody tr:nth-child(even) td{background:#fafcfb}
+
+.wa-num{
+  display:inline-grid;width:36px;height:36px;border-radius:50%;
+  background:#e8f6f1;color:#0f766e;place-items:center;
+  font-weight:950;font-size:17px;
+}
+
+/* ===== خلية الصنف ===== */
+.wa-product{display:flex;align-items:center;gap:14px;min-width:0}
+.wa-product-img{
+  width:72px;height:72px;border-radius:14px;background:#f4f8f6;
+  display:grid;place-items:center;overflow:hidden;flex:0 0 72px;
+  border:1px solid #e4ece8;
+}
+.wa-product-img img{width:100%;height:100%;object-fit:contain;padding:4px;box-sizing:border-box;display:block}
+.wa-product-img .emoji{font-size:32px}
+.wa-product-info{min-width:0;flex:1}
+.wa-product-info b{
+  display:block;font-size:19px;font-weight:950;color:#173b32;line-height:1.3;
+  white-space:normal;overflow-wrap:anywhere;
+}
+.wa-product-info .badge{
+  display:inline-block;margin-top:5px;background:#e8f6f1;color:#0b755b;
+  padding:3px 11px;border-radius:999px;font-size:13px;font-weight:900;
+}
+
+/* ===== خلية التفاصيل ===== */
+.wa-detail-lines{text-align:right;line-height:1.55}
+.wa-detail-lines .main{
+  display:block;color:#0f766e;font-size:19px;font-weight:950;margin-bottom:3px;
+}
+.wa-detail-lines .sub{
+  display:block;color:#4b5f5a;font-size:14px;font-weight:800;overflow-wrap:anywhere;
+}
+.wa-pack-prices{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;justify-content:flex-start}
+.wa-pack-chip{
+  background:#f0f8f5;border:1px solid #d4e9e1;color:#0d6b54;
+  padding:4px 9px;border-radius:9px;font-size:13px;font-weight:900;
+  white-space:nowrap;
+}
+
+/* ===== خلية السعر والإجمالي ===== */
+.wa-price-cell strong{display:block;color:#173b32;font-size:19px;font-weight:950;overflow-wrap:anywhere}
+.wa-price-cell strong.single-line{white-space:nowrap;font-size:17px}
+.wa-price-cell small{display:block;color:#6f7f79;font-size:13px;margin-top:3px;font-weight:800;line-height:1.4}
+.wa-total-cell{color:#0f766e;font-size:22px;font-weight:950;white-space:nowrap}
+
+/* ===== ملخص الفاتورة ===== */
+.wa-summary-row{
+  padding:0 40px 26px;display:grid;
+  grid-template-columns:1.55fr 1fr;gap:18px;align-items:stretch;
+}
+.wa-summary{
+  background:#fff;border:1px solid #d8e6e1;border-radius:18px;
+  padding:8px 22px;
+}
+.wa-sum-line{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:13px 0;border-bottom:1px dashed #e0ebe7;font-size:18px;gap:14px;
+}
+.wa-sum-line:last-child{border-bottom:0}
 .wa-sum-line b{font-weight:950;white-space:nowrap}
-.wa-sum-line.discount b{color:#c73e3e}.wa-sum-line.paid b{color:#0b7f5d}
-.wa-sum-line.grand{background:transparent;color:#17261f;margin:0;padding:4px 0;border-bottom:0;font-size:17px;box-shadow:none;font-weight:950}
-.wa-sum-line.grand b{font-size:18px}
-.wa-sum-line.remaining{background:transparent;border-radius:0;padding:4px 0;margin:0;border-bottom:0;color:#9a6200;font-weight:950}
-.wa-sum-line.remaining b{color:#9a6200}.wa-sum-line.remaining.zero{background:transparent;color:#0b7f5d}.wa-sum-line.remaining.zero b{color:#0b7f5d}
-/* طريقة السداد والحالة تندمج في سطر واحد */
-.wa-payment-card{background:transparent;border:0;border-radius:0;padding:4px 0 0;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
-.wa-payment-card>small{color:#17261f;font-size:12px;font-weight:900;display:inline}.wa-payment-card>small .wa-inline-icon{display:none}
-.wa-payment-card .method{font-size:14px;font-weight:950;color:#173b32;margin:0;line-height:1.1}
-.wa-payment-card .status{padding:0;border-top:0;display:flex;align-items:center;gap:5px}.wa-payment-card .status small{display:inline;color:#17261f;font-size:11px;font-weight:900}.wa-payment-card .status small .wa-inline-icon{display:none}.wa-payment-card .status strong{display:inline;font-size:12px;font-weight:950;margin:0}.wa-payment-card .status.paid strong{color:#0b7f5d}.wa-payment-card .status.due strong{color:#b42318}
-/* ===== الملاحظة ===== */
-.wa-note{margin:0 30px 8px;background:#fff8e7;border:1px solid #ead9a8;border-radius:8px;padding:6px 9px;color:#6d5b2a;font-size:11px;font-weight:800;line-height:1.35}.wa-note b{color:#4f3f0f}
-/* ===== فوتر خفيف ===== */
-.wa-footer{background:#e8f9df;color:#17261f;padding:8px 30px 10px;display:flex;align-items:center;justify-content:center;gap:7px;border-top:0;min-height:42px;text-align:center}
-.wa-footer-brand{font-size:14px;font-weight:950;line-height:1.2}.wa-footer-brand small{display:inline;font-size:12px;font-weight:700;color:#40533e;margin:0}.wa-footer-sign,.wa-footer-note{display:none}
+.wa-sum-line.discount b{color:#dc4b4b}
+.wa-sum-line.paid b{color:#0b9b6d}
+.wa-sum-line.grand{
+  background:linear-gradient(90deg,#0f766e,#0a5c56);color:#fff;
+  margin:10px -14px;padding:16px 14px;border-radius:14px;border-bottom:0;
+  font-size:21px;box-shadow:0 6px 18px rgba(15,118,110,0.18);
+}
+.wa-sum-line.grand b{font-size:26px}
+.wa-sum-line.remaining{
+  background:#fff8e8;border-radius:12px;padding:12px 14px;
+  margin-top:8px;border-bottom:0;color:#9a6200;font-weight:950;
+}
+.wa-sum-line.remaining b{color:#9a6200}
+.wa-sum-line.remaining.zero{background:#eafaf1;color:#0b8a5e}
+.wa-sum-line.remaining.zero b{color:#0b8a5e}
+
+/* ===== كارت طريقة السداد ===== */
+.wa-payment-card{
+  background:linear-gradient(135deg,#eaf5f0,#f5fbf8);
+  border:1px solid #cfe2da;border-radius:18px;padding:24px;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.wa-payment-card > small{color:#71817b;font-size:14px;font-weight:800;display:block}
+.wa-payment-card .method{font-size:30px;font-weight:950;color:#0b654f;margin:6px 0 16px;line-height:1.15}
+.wa-payment-card .status{padding-top:14px;border-top:1px solid #d2e3dc}
+.wa-payment-card .status small{color:#71817b;font-size:13px;font-weight:800;display:block}
+.wa-payment-card .status strong{display:block;font-size:22px;font-weight:950;margin-top:4px}
+.wa-payment-card .status.paid strong{color:#0b9b6d}
+.wa-payment-card .status.due strong{color:#b42318}
+
+/* ===== ملاحظة الفاتورة ===== */
+.wa-note{
+  margin:0 40px 24px;background:#fff8e7;border:1px solid #ead9a8;
+  border-radius:14px;padding:14px 18px;color:#6d5b2a;
+  font-size:16px;font-weight:800;line-height:1.7;
+}
+.wa-note b{color:#4f3f0f}
+
+/* ===== الفوتر ===== */
+.wa-footer{
+  background:linear-gradient(135deg,#075e54,#0f766e);color:#fff;
+  padding:26px 40px;display:grid;
+  grid-template-columns:1.2fr auto 1fr;
+  align-items:center;gap:24px;
+  border-top:3px solid #e5b72c;
+}
+.wa-footer-brand{font-size:22px;font-weight:950;line-height:1.3}
+.wa-footer-brand small{display:block;font-size:13px;font-weight:700;color:rgba(255,255,255,0.75);margin-top:5px}
+.wa-footer-sign{font-size:30px;color:#e5b72c;font-style:italic;font-weight:950;text-align:center;white-space:nowrap;padding:0 12px;position:relative}
+.wa-footer-sign::before,.wa-footer-sign::after{content:'';display:block;height:2px;width:44px;background:rgba(229,183,44,0.4);margin:6px auto;border-radius:2px}
+.wa-footer-note{font-size:13px;text-align:left;color:rgba(255,255,255,0.72);line-height:1.7}
 @media(max-width:900px){.whatsapp-invoice-stage,.wa-invoice{transform-origin:top left}}
 </style>
 
@@ -3694,7 +3830,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.55';
+const APP_VERSION='v1.8.53';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "27 سبتمبر 2026 — إصلاح عرض وتحليل لوحة الربحية والمخزون وتوحيد متوسط التكلفة";
 
@@ -6265,27 +6401,28 @@ function buildWhatsAppInvoiceHTML(inv,sales){
   const rows=list.map((s,i)=>{
     const p=products.find(x=>String(x.id)===String(s.productId)) || (typeof productForSaleLine==='function' ? productForSaleLine(s) : {});
     const d=lineData(s,p);
-    const isBramili=/براميلي|براميل/i.test(String(s?.productName||p?.name||''));
+    let visual=`<span class="emoji">${typeof getProductTypeIcon==='function' ? getProductTypeIcon(p?.type) : '🧀'}</span>`;
+    if(p?.image && typeof p.image==='string' && /^data:image\//.test(p.image)){
+      visual=`<img src="${waEsc(p.image)}" alt="" crossorigin="anonymous">`;
+    }
     const badge = typeof isMozzarellaProduct==='function' && isMozzarellaProduct(p)
       ? (String(p?.name||'').includes('نباتي') ? 'نباتي' : 'طبيعي') : '';
+    const priceHtml=d.weightSale
+      ? `<strong>سعر الكيلو: ${waEsc(d.unitPrice)} ج.م</strong><small>${(inv.type==='wholesale' && isBramili)?'سعر البستلة':Math.abs(d.weight-0.25)<0.000001?'سعر الربع':Math.abs(d.weight-0.5)<0.000001?'سعر النصف':'سعر العبوة'}: ${waEsc(d.packPrice)} ج.م</small>`
+      : `<strong class="single-line">${waEsc(d.unitTitle)} ${waEsc(d.unitPrice)} ج.م</strong>`;
 
-    let detailText='';
-    if(d.weightSale){
-      const priceLabel=(inv.type==='wholesale' && isBramili)?'سعر البستلة':(Math.abs(d.weight-0.25)<0.000001?'سعر الربع':Math.abs(d.weight-0.5)<0.000001?'سعر النصف':'سعر العبوة');
-      detailText=`${d.subQty || d.qtyLabel} • ${waEsc(priceLabel)}: ${waEsc(d.packPrice)} ج.م`;
-    }else{
-      detailText=`${waEsc(d.qtyLabel)} • ${waEsc(d.unitTitle)} ${waEsc(d.unitPrice)} ج.م`;
-    }
+    const chips=d.weightSale && typeof isMozzarellaProduct==='function' && isMozzarellaProduct(p) && d.kgPrice>0
+      ? `<div class="wa-pack-prices"><span class="wa-pack-chip">1 كجم: ${waMoney(d.kgPrice)}</span><span class="wa-pack-chip">½ كجم: ${waMoney(roundPOSMoney(d.kgPrice*0.5))}</span><span class="wa-pack-chip">¼ كجم: ${waMoney(roundPOSMoney(d.kgPrice*0.25))}</span></div>`
+      : '';
 
-    const totalHtml=`<span class="wa-total-cell">${waMoney(s.total)} ج.م</span>`;
-    const nameHtml=`<div class="wa-product"><div class="wa-product-info"><b>${waEsc(s.productName||p?.name||'صنف')}</b>${badge?`<span class="badge">${waEsc(badge)}</span>`:''}</div></div>`;
+    const detailHtml=`<div class="wa-detail-lines"><span class="main">${waEsc(d.qtyLabel)}</span><span class="sub">${waEsc(d.subQty || (d.weightSale?'':'سعر ثابت للعبوة'))}</span>${chips}</div>`;
 
     return `<tr>
       <td><span class="wa-num">${i+1}</span></td>
-      <td>${nameHtml}</td>
-      <td><div class="wa-detail-lines"><span class="main">${waEsc(d.qtyLabel)}</span><span class="sub">${waEsc(detailText)}</span></div></td>
-      <td><div class="wa-price-cell">${d.weightSale?`<strong>${waEsc(d.unitPrice)} ج.م/كجم</strong>`:''}</div></td>
-      <td>${totalHtml}</td>
+      <td><div class="wa-product"><div class="wa-product-img">${visual}</div><div class="wa-product-info"><b>${waEsc(s.productName||p?.name||'صنف')}</b>${badge?`<span class="badge">${waEsc(badge)}</span>`:''}</div></div></td>
+      <td>${detailHtml}</td>
+      <td><div class="wa-price-cell">${priceHtml}</div></td>
+      <td><div class="wa-total-cell">${waMoney(s.total)} ج.م</div></td>
     </tr>`;
   }).join('');
 
@@ -6317,30 +6454,27 @@ function buildWhatsAppInvoiceHTML(inv,sales){
 
   return `<div class="wa-invoice">
     <div class="wa-header">
-      <div class="wa-header-logo"><div class="wa-logo-box">${waSvgIcon("store")}</div><div class="wa-brand-name">${waEsc(typeof getAppName==='function'?getAppName():'متجري')} — فاتورة بيع</div></div>
+      <div class="wa-header-logo"><div class="wa-logo-box">${waSvgIcon("store")}</div><div><div class="wa-brand-name">${waEsc(typeof getAppName==='function'?getAppName():'متجري')}</div><div class="wa-brand-tag">نظام إدارة المبيعات والمخزون</div></div></div>
+      <div class="wa-header-badge">فاتورة ${waEsc(typeLabel)}</div>
     </div>
     <div class="wa-info-strip">
-      <div class="wa-info-item"><small><span class="wa-info-icon">${waSvgIcon('number')}</span>رقم الفاتورة:</small><strong>${waEsc(invoiceNo)}</strong></div>
-      <div class="wa-info-item"><small><span class="wa-info-icon">${waSvgIcon('calendar')}</span>التاريخ:</small><strong>${waEsc(dateText)}</strong></div>
-      <div class="wa-info-item"><small><span class="wa-info-icon">${waSvgIcon('clock')}</span>الوقت:</small><strong>${waEsc(timeText)}</strong></div>
-      <div class="wa-info-item"><small><span class="wa-info-icon">${waSvgIcon('bag')}</span>نوع البيع:</small><strong>${waEsc(typeLabel)}</strong></div>
+      <div class="wa-info-item"><small><span class="wa-info-icon">${waSvgIcon('number')}</span>رقم الفاتورة</small><strong>${waEsc(invoiceNo)}</strong></div>
+      <div class="wa-info-item"><small><span class="wa-info-icon">${waSvgIcon('calendar')}</span>التاريخ</small><strong>${waEsc(dateText)}</strong></div>
+      <div class="wa-info-item"><small><span class="wa-info-icon">${waSvgIcon('clock')}</span>الوقت</small><strong>${waEsc(timeText)}</strong></div>
+      <div class="wa-info-item"><small><span class="wa-info-icon">${waSvgIcon('bag')}</span>نوع البيع</small><strong>${waEsc(typeLabel)}</strong></div>
     </div>
     <div class="wa-customer-strip">
       <div class="wa-customer-icon">${waSvgIcon('user')}</div>
-      <div class="wa-customer-info"><small>العميل:</small><strong>${waEsc(customerName)}</strong></div>
+      <div class="wa-customer-info"><small>${waSvgIcon("user")}العميل</small><strong>${waEsc(customerName)}</strong></div>
       ${phone?`<div class="wa-customer-phone">${waSvgIcon("phone")}${waEsc(phone)}</div>`:''}
     </div>
     <div class="wa-section-title"><span>${waSvgIcon("receipt")}</span><span>تفاصيل الأصناف</span><span class="count-badge">${list.length} ${list.length===1?'صنف':'أصناف'}</span><span class="title-line"></span></div>
     <div class="wa-table-wrap">
-      <table class="wa-table"><tbody>${rows}</tbody></table>
+      <table class="wa-table"><thead><tr><th style="width:64px">#</th><th>الصنف</th><th style="width:260px">التفاصيل</th><th style="width:170px">السعر</th><th style="width:160px">الإجمالي</th></tr></thead><tbody>${rows}</tbody></table>
     </div>
     ${noteHtml}
-    <div class="wa-summary-row">
-      <div class="wa-summary">${summaryHtml}
-        <div class="wa-payment-card"><small>السداد:</small><div class="method">${waEsc(payLabel)}</div><div class="status ${isFullyPaid?'paid':'due'}"><small>الحالة:</small><strong>${waEsc(statusText)}</strong></div></div>
-      </div>
-    </div>
-    <div class="wa-footer"><div class="wa-footer-brand">❤️ شكرًا لتعاملكم معنا <small> — متجري • أكثر من مجرد متجر 🟢</small></div></div>
+    <div class="wa-summary-row"><div class="wa-summary">${summaryHtml}</div><div class="wa-payment-card"><small>${waSvgIcon("wallet")}طريقة السداد</small><div class="method">${waEsc(payLabel)}</div><div class="status ${isFullyPaid?'paid':'due'}"><small>${waSvgIcon("check")}حالة الفاتورة</small><strong>${waEsc(statusText)}</strong></div></div></div>
+    <div class="wa-footer"><div class="wa-footer-brand">شكرًا لتعاملكم معنا 💚<small>نتمنى لكم تجربة طيبة دائمًا — نتشرف بخدمتكم مرة أخرى</small></div><div class="wa-footer-sign">Sherif Fathy</div><div class="wa-footer-note">هذه فاتورة إلكترونية صادرة من نظام متجري<br>لأي استفسار يرجى التواصل معنا في أي وقت</div></div>
   </div>`;
 }
 
@@ -11063,8 +11197,8 @@ function renderMatgaryProductAnalysis(){
   const typeOptions=[['pickles','🥒 المخللات'],['frozen','❄️ المجمدات'],['cheese','🧀 الجبن'],['other','📦 أخرى'],['all','كل الأصناف']];
   /* v1.8.50 — لوحة ربحية ومخزون محسّنة للموبايل + تنسيق عملة موحّد. */
   /* v1.8.50 — mobile cards for profitability/inventory analysis */
-  /* v1.8.55 — تصحيح بطاقات المخزون + متوسط التكلفة العام + تنسيق الموبايل. */
-  /* v1.8.55 — عرض مخصص وآمن لأقسام الربحية والمخزون على الموبايل. */
+  /* v1.8.53 — تصحيح بطاقات المخزون + متوسط التكلفة العام + تنسيق الموبايل. */
+  /* v1.8.53 — عرض مخصص وآمن لأقسام الربحية والمخزون على الموبايل. */
   const v1851MobileCss = `
     <style id="matgary-v1851-mobile">
       .v1851-profitability .rep-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -11818,7 +11952,7 @@ async function replaceCloudDataWithLocal() {
 
 </script>
 <script>
-/* Matgary Service Worker lifecycle — v1.8.55
+/* Matgary Service Worker lifecycle — v1.8.53
    التحديث يعتمد على waiting SW + SKIP_WAITING + controllerchange،
    مع updateViaCache:none لمنع الاحتفاظ بنسخة قديمة من sw.js. */
 (function(){
@@ -14944,7 +15078,6 @@ setTimeout(()=>{
 </script>
 
 <script id="wa-html-invoice-v16-final">
-<!-- v1.8.55: hybrid compact WhatsApp invoice layout; business calculation logic unchanged. -->
 /* =========================================================
    متجري V16 — مسار فاتورة واتساب النهائي
    HTML/CSS -> html2canvas -> PNG
@@ -14982,17 +15115,16 @@ setTimeout(()=>{
       }));
 
       /* ارتفاع حقيقي حسب المحتوى — يمنع نصف الصورة الفاضي */
-      const targetWidth=Math.max(600,Math.ceil(target.scrollWidth));
-      const targetHeight=Math.max(560,Math.ceil(target.scrollHeight));
+      const targetHeight=Math.max(600,Math.ceil(target.scrollHeight));
       const canvas=await html2canvas(target,{
         scale:1,
         backgroundColor:'#fbfcf8',
         useCORS:true,
         allowTaint:false,
         logging:false,
-        width:targetWidth,
+        width:1024,
         height:targetHeight,
-        windowWidth:targetWidth,
+        windowWidth:1024,
         windowHeight:targetHeight,
         imageTimeout:1500,
         removeContainer:false,
