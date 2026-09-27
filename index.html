@@ -3830,7 +3830,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.52';
+const APP_VERSION='v1.8.53';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "27 سبتمبر 2026 — إصلاح عرض وتحليل لوحة الربحية والمخزون وتوحيد متوسط التكلفة";
 
@@ -11197,8 +11197,8 @@ function renderMatgaryProductAnalysis(){
   const typeOptions=[['pickles','🥒 المخللات'],['frozen','❄️ المجمدات'],['cheese','🧀 الجبن'],['other','📦 أخرى'],['all','كل الأصناف']];
   /* v1.8.50 — لوحة ربحية ومخزون محسّنة للموبايل + تنسيق عملة موحّد. */
   /* v1.8.50 — mobile cards for profitability/inventory analysis */
-  /* v1.8.52 — تصحيح بطاقات المخزون + متوسط التكلفة العام + تنسيق الموبايل. */
-  /* v1.8.52 — عرض مخصص وآمن لأقسام الربحية والمخزون على الموبايل. */
+  /* v1.8.53 — تصحيح بطاقات المخزون + متوسط التكلفة العام + تنسيق الموبايل. */
+  /* v1.8.53 — عرض مخصص وآمن لأقسام الربحية والمخزون على الموبايل. */
   const v1851MobileCss = `
     <style id="matgary-v1851-mobile">
       .v1851-profitability .rep-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -11266,7 +11266,9 @@ function renderMatgaryProductAnalysis(){
     const sls=(d.sales||[]).filter(x=>String(x?.productId)===pid);
     const lifetimeQty=prsAll.reduce((n,x)=>n+Math.max(0,Number(x?.qty)||0),0);
     const lifetimeCost=prsAll.reduce((n,x)=>n+Math.max(0,Number(x?.total??((Number(x?.qty)||0)*(Number(x?.price)||0)))||0),0);
-    const avgCost=lifetimeQty>0?lifetimeCost/lifetimeQty:Math.max(0,Number(p?.purchase)||0);
+    const avgCostRaw=lifetimeQty>0?lifetimeCost/lifetimeQty:Math.max(0,Number(p?.purchase)||0);
+    // استخدم نفس متوسط التكلفة المعروض للمستخدم في حساب قيمة المخزون؛ حتى تتطابق المعادلة المرئية.
+    const avgCost=Math.round(avgCostRaw*100)/100;
     const saleQty=sls.reduce((n,x)=>n+Math.max(0,Number(x?.qty)||0)+Math.max(0,Number(x?.returnedQty)||0),0);
     const returnQty=sls.reduce((n,x)=>n+Math.max(0,Number(x?.returnedQty)||0),0);
     const netQty=Math.max(0,saleQty-returnQty);
@@ -11950,7 +11952,7 @@ async function replaceCloudDataWithLocal() {
 
 </script>
 <script>
-/* Matgary Service Worker lifecycle — v1.8.52
+/* Matgary Service Worker lifecycle — v1.8.53
    التحديث يعتمد على waiting SW + SKIP_WAITING + controllerchange،
    مع updateViaCache:none لمنع الاحتفاظ بنسخة قديمة من sw.js. */
 (function(){
