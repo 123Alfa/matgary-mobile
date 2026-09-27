@@ -3830,7 +3830,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.53';
+const APP_VERSION='v1.8.54';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "27 سبتمبر 2026 — إصلاح عرض وتحليل لوحة الربحية والمخزون وتوحيد متوسط التكلفة";
 
@@ -12695,6 +12695,291 @@ th,td{padding:9px 7px;border-bottom:1px solid #e6eeeb;text-align:right}
   .sale-ref-payment-discount.matgary-discount-panel>.matgary-discount-hint{grid-column:1!important}
 }
 </style>
+
+
+
+<!-- =========================================================
+     متجري v1.8.54 — فاتورة واتساب مدمجة وسريعة
+     الهدف: تقليل طول صورة الفاتورة مع الحفاظ على البيانات.
+     آخر Override في الملف حتى يغلب تجارب واتساب القديمة.
+     ========================================================= -->
+<style id="matgary-whatsapp-compact-v1854">
+  .wa-invoice{
+    width:1024px!important;
+    min-height:0!important;
+    padding:0!important;
+    background:#fbfcf8!important;
+    overflow:hidden!important;
+  }
+  .wa-header{
+    padding:20px 28px!important;
+    min-height:92px!important;
+  }
+  .wa-logo-box{
+    width:48px!important;height:48px!important;border-radius:14px!important;
+    font-size:25px!important;
+  }
+  .wa-logo-box .wa-inline-icon{width:28px!important;height:28px!important}
+  .wa-header-logo{gap:11px!important}
+  .wa-brand-name{font-size:26px!important;letter-spacing:.5px!important}
+  .wa-brand-tag{font-size:11px!important;margin-top:3px!important}
+  .wa-header-badge{
+    padding:8px 18px!important;border-radius:12px!important;font-size:17px!important;
+  }
+
+  .wa-info-strip{grid-template-columns:repeat(4,1fr)!important}
+  .wa-info-item{padding:9px 8px!important}
+  .wa-info-item small{gap:4px!important;font-size:10px!important;margin-bottom:3px!important}
+  .wa-info-icon{font-size:15px!important}
+  .wa-info-item strong{font-size:14px!important;line-height:1.15!important}
+
+  .wa-customer-strip{padding:10px 28px!important;gap:9px!important}
+  .wa-customer-icon{width:34px!important;height:34px!important;flex:0 0 34px!important;border-radius:10px!important}
+  .wa-customer-icon .wa-inline-icon{width:19px!important;height:19px!important}
+  .wa-customer-info small{font-size:10px!important}
+  .wa-customer-info strong{font-size:17px!important;margin-top:0!important}
+  .wa-customer-phone{font-size:11px!important;padding:5px 8px!important;border-radius:9px!important}
+
+  .wa-section-title{padding:12px 28px 7px!important;font-size:16px!important;gap:7px!important}
+  .wa-section-title .count-badge{font-size:11px!important;padding:3px 8px!important}
+  .wa-section-title .title-line{height:1px!important;margin-right:4px!important}
+
+  .wa-table-wrap{padding:0 28px 12px!important}
+  .wa-table{border-radius:12px!important}
+  .wa-table thead th{padding:9px 7px!important;font-size:12px!important}
+  .wa-table thead th:nth-child(2){padding-right:12px!important}
+  .wa-table tbody td{
+    padding:8px 6px!important;
+    font-size:12px!important;
+    line-height:1.2!important;
+  }
+  .wa-table tbody td:nth-child(2){padding-right:12px!important}
+  .wa-num{width:25px!important;height:25px!important;font-size:12px!important}
+
+  .wa-product{gap:7px!important}
+  .wa-product-img{width:42px!important;height:42px!important;flex:0 0 42px!important;border-radius:8px!important}
+  .wa-product-img .emoji{font-size:22px!important}
+  .wa-product-info b{font-size:13px!important;line-height:1.18!important}
+  .wa-product-info .badge{margin-top:3px!important;padding:2px 6px!important;font-size:9px!important}
+
+  .wa-detail-lines{line-height:1.28!important}
+  .wa-detail-lines .main{font-size:13px!important;margin-bottom:1px!important}
+  .wa-detail-lines .sub{font-size:10px!important}
+  .wa-pack-prices{gap:3px!important;margin-top:4px!important}
+  .wa-pack-chip{padding:2px 5px!important;border-radius:6px!important;font-size:8px!important}
+  .wa-price-cell strong{font-size:12px!important;line-height:1.2!important}
+  .wa-price-cell strong.single-line{font-size:11px!important}
+  .wa-price-cell small{font-size:9px!important;margin-top:1px!important}
+  .wa-total-cell{font-size:14px!important}
+
+  .wa-summary-row{padding:0 28px 12px!important;grid-template-columns:1.35fr .85fr!important;gap:9px!important}
+  .wa-summary{border-radius:12px!important;padding:4px 11px!important}
+  .wa-sum-line{padding:6px 0!important;font-size:12px!important;gap:8px!important}
+  .wa-sum-line.grand{margin:4px -6px!important;padding:8px 7px!important;border-radius:8px!important;font-size:14px!important}
+  .wa-sum-line.grand b{font-size:16px!important}
+  .wa-sum-line.remaining{padding:7px 8px!important;margin-top:4px!important;border-radius:8px!important}
+
+  .wa-payment-card{border-radius:12px!important;padding:12px!important}
+  .wa-payment-card>small{font-size:10px!important}
+  .wa-payment-card .method{font-size:19px!important;margin:3px 0 9px!important}
+  .wa-payment-card .status{padding-top:8px!important}
+  .wa-payment-card .status small{font-size:9px!important}
+  .wa-payment-card .status strong{font-size:13px!important;margin-top:2px!important}
+
+  .wa-note{margin:0 28px 10px!important;padding:7px 10px!important;font-size:10px!important;border-radius:9px!important}
+
+  .wa-footer{
+    padding:11px 28px!important;
+    grid-template-columns:1.2fr auto 1fr!important;
+    gap:10px!important;
+    border-top-width:2px!important;
+  }
+  .wa-footer-brand{font-size:14px!important;line-height:1.2!important}
+  .wa-footer-brand small{font-size:9px!important;margin-top:3px!important}
+  .wa-footer-sign{font-size:17px!important;padding:0 5px!important}
+  .wa-footer-sign::before,.wa-footer-sign::after{width:28px!important;height:1px!important;margin:3px auto!important}
+  .wa-footer-note{font-size:9px!important;line-height:1.35!important}
+</style>
+
+<script id="matgary-whatsapp-compact-v1854-js">
+(function(){
+  'use strict';
+  const CACHE_KEY='__matgaryWaCompact54';
+  const imageCache=new Map();
+  const preparing=new Map();
+
+  function keyOf(inv){
+    if(!inv)return '';
+    return String(inv.saleBatchId||inv.invoiceSeq||inv.invoiceNo||inv.id||'');
+  }
+
+  function resolveInvoice(input){
+    if(input&&typeof input==='object'&&Array.isArray(input.lines))return input;
+    const key=String(input||'').trim();
+    if(!key)return null;
+    try{
+      if(typeof window.findInvoice==='function'){
+        const found=window.findInvoice(key);
+        if(found)return found;
+      }
+    }catch(_){ }
+
+    const sales=Array.isArray(Store.get('sales'))?Store.get('sales'):[];
+    let lines=[];
+    if(key.startsWith('batch:')){
+      const b=key.slice(6);
+      lines=sales.filter(s=>String(s.saleBatchId||'')===b);
+    }else if(key.startsWith('sale:')){
+      const id=key.slice(5);
+      const one=sales.find(s=>String(s.id||'')===id);
+      if(one)lines=one.saleBatchId?sales.filter(s=>String(s.saleBatchId||'')===String(one.saleBatchId)):[one];
+    }else{
+      lines=sales.filter(s=>String(s.saleBatchId||'')===key);
+      if(!lines.length)lines=sales.filter(s=>String(s.invoiceNo||'')===key);
+      if(!lines.length)lines=sales.filter(s=>String(s.invoiceSeq||'')===key);
+    }
+    if(!lines.length)return null;
+    const f=lines[0];
+    const products=Store.get('products')||[];
+    const customer=(Store.get('customers')||[]).find(c=>f.customerId&&String(c.id)===String(f.customerId));
+    const total=lines.reduce((a,s)=>a+Math.max(0,Number(s.total||0)),0);
+    const discount=lines.reduce((a,s)=>a+Math.max(0,Number(s.discountAmount||s.discount||0)),0);
+    const tax=lines.reduce((a,s)=>a+Math.max(0,Number(s.taxAmount||s.tax||0)),0);
+    const subtotal=Math.max(0,total+discount-tax);
+    const paid=Math.min(total,Math.max(0,Number(f.paid||0)));
+    return {
+      ...f,
+      lines,
+      products,
+      customerName:f.customerName||customer?.name||'عميل عادي',
+      customerPhone:f.customerPhone||customer?.phone||'',
+      paymentMethod:f.paymentMethod||f.method||'cash',
+      method:f.method||f.paymentMethod||'cash',
+      subtotal,discount,tax,total,paid,
+      remaining:Math.max(0,total-paid),
+      change:Math.max(0,Number(f.change||0)),
+      type:f.type||'retail'
+    };
+  }
+
+  async function renderCompact(inv,sales){
+    if(typeof window.buildWhatsAppInvoiceHTML!=='function'){
+      throw new Error('WA_BUILD_MISSING');
+    }
+    const list=Array.isArray(sales)?sales:(Array.isArray(inv?.lines)?inv.lines:[]);
+    const stage=document.createElement('div');
+    stage.className='whatsapp-invoice-stage';
+    stage.style.cssText='position:fixed;left:-20000px;top:0;width:1024px;z-index:-9999;opacity:1;visibility:visible;pointer-events:none;direction:rtl;overflow:visible;';
+    stage.innerHTML=window.buildWhatsAppInvoiceHTML(inv,list);
+    document.body.appendChild(stage);
+
+    try{
+      const target=stage.querySelector('.wa-invoice');
+      if(!target)throw new Error('WA_TARGET_MISSING');
+      if(document.fonts?.ready){try{await document.fonts.ready;}catch(_){}}
+      const imgs=[...target.querySelectorAll('img')];
+      await Promise.all(imgs.map(img=>{
+        if(img.complete)return Promise.resolve();
+        return new Promise(resolve=>{
+          const done=()=>resolve();
+          img.addEventListener('load',done,{once:true});
+          img.addEventListener('error',done,{once:true});
+          setTimeout(done,1200);
+        });
+      }));
+      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      const h=Math.max(420,Math.ceil(target.scrollHeight));
+      if(typeof html2canvas!=='function'&&typeof ensureHtml2Canvas==='function')await ensureHtml2Canvas();
+      if(typeof html2canvas!=='function')throw new Error('HTML2CANVAS_UNAVAILABLE');
+      const canvas=await html2canvas(target,{
+        scale:1,
+        backgroundColor:'#fbfcf8',
+        useCORS:true,
+        allowTaint:false,
+        logging:false,
+        width:1024,
+        height:h,
+        windowWidth:1024,
+        windowHeight:h,
+        imageTimeout:1200,
+        removeContainer:false,
+        scrollX:0,
+        scrollY:0
+      });
+      return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('WA_BLOB_FAILED')),'image/jpeg',.94));
+    }finally{
+      stage.remove();
+    }
+  }
+
+  async function prepare(inv){
+    const key=keyOf(inv);
+    if(!key)throw new Error('WA_KEY_EMPTY');
+    if(imageCache.has(key))return imageCache.get(key);
+    if(preparing.has(key))return preparing.get(key);
+    const promise=(async()=>{
+      const sales=Array.isArray(inv.lines)?inv.lines:
+        (typeof getInvoiceSalesForWhatsApp==='function'?
+          getInvoiceSalesForWhatsApp(inv):
+          (Store.get('sales')||[]).filter(s=>String(s.saleBatchId||'')===String(inv.saleBatchId||'')));
+      if(!sales.length)throw new Error('WA_NO_SALES');
+      const blob=await renderCompact(inv,sales);
+      imageCache.set(key,blob);
+      while(imageCache.size>6)imageCache.delete(imageCache.keys().next().value);
+      return blob;
+    })();
+    preparing.set(key,promise);
+    try{return await promise;}finally{preparing.delete(key);}
+  }
+
+  async function shareImage(input,phone){
+    if(window.__waShareBusy)return;
+    const inv=resolveInvoice(input);
+    if(!inv){showToast('❌ لم أتمكن من العثور على الفاتورة','error');return;}
+    const blob=await prepare(inv);
+    const file=new File([blob],`فاتورة_${inv.invoiceSeq||inv.invoiceNo||'بيع'}.jpg`,{type:'image/jpeg'});
+    const targetPhone=phone||inv.customerPhone||'';
+    try{
+      window.__waShareBusy=true;
+      if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+        await navigator.share({files:[file],title:`فاتورة متجري رقم ${inv.invoiceSeq||inv.invoiceNo||''}`});
+        return;
+      }
+    }catch(e){
+      if(e?.name==='AbortError')return;
+    }finally{window.__waShareBusy=false;}
+
+    try{
+      if(navigator.clipboard?.write && typeof ClipboardItem!=='undefined'){
+        await navigator.clipboard.write([new ClipboardItem({'image/jpeg':blob})]);
+        if(targetPhone&&typeof normalizeWhatsAppPhone==='function'){
+          const p=normalizeWhatsAppPhone(targetPhone); if(p)window.open('https://wa.me/'+p,'_blank');
+        }else window.open('https://web.whatsapp.com/','_blank');
+        showToast('📋 صورة الفاتورة اتنسخت — افتح واتساب واضغط لصق','success');
+        return;
+      }
+    }catch(_){ }
+
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+    showToast('✅ تم حفظ صورة الفاتورة','success');
+  }
+
+  window.renderWhatsAppInvoiceImage=renderCompact;
+  window.prepareWhatsAppInvoiceImage=prepare;
+  window.shareInvoiceImagePro=function(input,phone){return shareImage(input,phone||'');};
+  window.shareInvoicePro=function(input){return shareImage(input,'');};
+  window.sharePOSOnWhatsApp=async function(){
+    let raw=null;
+    try{raw=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null');}catch(_){ }
+    if(!raw)return showToast('احفظ الفاتورة أولًا ثم شاركها على واتساب','warning');
+    return shareImage(raw,raw.customerPhone||'');
+  };
+
+  window.__MATGARY_WHATSAPP_COMPACT_VERSION=CACHE_KEY;
+})();
+</script>
 
 </body></html>`;
 
