@@ -3830,7 +3830,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.51';
+const APP_VERSION='v1.8.52';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "27 سبتمبر 2026 — إصلاح عرض وتحليل لوحة الربحية والمخزون وتوحيد متوسط التكلفة";
 
@@ -11154,6 +11154,7 @@ function renderMatgaryProductAnalysis(){
     if(!items.length)return '';
     return `<div class="mpa-group"><div class="mpa-group-head"><span>${groupedTypeLabels[groupType]}</span><small>${items.length} صنف</small></div>${items.map(p=>{const sid=String(p.id);return `<label class="mpa-check ${selectedSet.has(sid)?'active':''}"><input type="checkbox" ${selectedSet.has(sid)?'checked':''} onchange="matgaryAnalysisToggle('${safeEsc(sid)}')"><span class="mpa-check-icon">${icon(analysisGroupType(p))}</span><span class="mpa-check-text"><b>${safeEsc(p.name||'صنف')}</b><small>الرصيد الحالي: ${qty(p.qty)} ${safeEsc(unit(p))}</small></span></label>`;}).join('')}</div>`;
   }).join('');
+  const roundMoney=v=>Math.round((Number(v)||0)*100)/100;
   const rows=[];let totals={purchaseQty:0,purchaseCost:0,lifetimePurchaseQty:0,lifetimePurchaseCost:0,fallbackCostQty:0,fallbackCostValue:0,saleQty:0,returnQty:0,sales:0,returnValue:0,profit:0,stock:0,stockCost:0,estimatedCogs:0,netSales:0,estimatedProfit:0};
   selectedProducts.forEach(p=>{
     const pid=String(p.id);
@@ -11173,7 +11174,7 @@ function renderMatgaryProductAnalysis(){
     const currentQty=Math.max(0,Number(p?.qty)||0);
     /* متوسط تكلفة شراء مرجح من فواتير الشراء الفعلية — للعرض والتحليل فقط. */
     const purchaseAvg=lifetimePurchaseQty>0?lifetimePurchaseCost/lifetimePurchaseQty:(purchaseQty>0?purchaseCost/purchaseQty:Math.max(0,Number(p?.purchase)||0));
-    const currentCost=currentQty*purchaseAvg;
+    const currentCost=roundMoney(currentQty*purchaseAvg);
     const estimatedCogs=netQty*purchaseAvg;
     const netSales=sales-returnValue;
     const estimatedProfit=netSales-estimatedCogs;
@@ -11196,8 +11197,8 @@ function renderMatgaryProductAnalysis(){
   const typeOptions=[['pickles','🥒 المخللات'],['frozen','❄️ المجمدات'],['cheese','🧀 الجبن'],['other','📦 أخرى'],['all','كل الأصناف']];
   /* v1.8.50 — لوحة ربحية ومخزون محسّنة للموبايل + تنسيق عملة موحّد. */
   /* v1.8.50 — mobile cards for profitability/inventory analysis */
-  /* v1.8.51 — تصحيح بطاقات المخزون + متوسط التكلفة العام + تنسيق الموبايل. */
-  /* v1.8.51 — عرض مخصص وآمن لأقسام الربحية والمخزون على الموبايل. */
+  /* v1.8.52 — تصحيح بطاقات المخزون + متوسط التكلفة العام + تنسيق الموبايل. */
+  /* v1.8.52 — عرض مخصص وآمن لأقسام الربحية والمخزون على الموبايل. */
   const v1851MobileCss = `
     <style id="matgary-v1851-mobile">
       .v1851-profitability .rep-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -11276,7 +11277,7 @@ function renderMatgaryProductAnalysis(){
     const estimatedProfit=netSales-estimatedCogs;
     const margin=netSales>0?(estimatedProfit/netSales)*100:0;
     const currentQty=Math.max(0,Number(p?.qty)||0);
-    const stockValue=currentQty*avgCost;
+    const stockValue=Math.round((currentQty*avgCost)*100)/100;
     return {id:pid,name:p?.name||'صنف',unit:unit(p),currentQty,avgCost,stockValue,saleQty,returnQty,netQty,netSales,estimatedCogs,estimatedProfit,margin,hasSales:netQty>0};
   });
   const rankedProfit=profitabilityRows.filter(x=>x.netSales>0).sort((a,b)=>b.estimatedProfit-a.estimatedProfit);
@@ -11329,7 +11330,7 @@ function renderMatgaryProductAnalysis(){
       </div>
       <div class="rep-two">
         <section class="rep-panel mpa-mobile-stagnant"><div class="rep-panel-head"><h3>🧊 مخزون بدون مبيعات</h3><small>له رصيد حالي ولم يُبع خلال الفترة</small></div>${stagnant.length?matgaryReportTable(['الصنف','الرصيد','متوسط التكلفة','قيمة المخزون'],stagnant.slice(0,10).map(x=>`<tr><td>${safeEsc(x.name)}</td><td>${qty(x.currentQty)} ${safeEsc(x.unit)}</td><td>${money(x.avgCost)}</td><td class="rep-num">${money(x.stockValue)}</td></tr>`)):'<div class="rep-empty">لا توجد أصناف بهذه الحالة في الفترة المحددة.</div>'}</section>
-        <section class="rep-panel mpa-mobile-stockvalue"><div class="rep-panel-head"><h3>💰 أعلى قيمة مخزون</h3><small>حسب الرصيد الحالي × متوسط التكلفة</small></div>${matgaryReportTable(['الصنف','الرصيد','متوسط التكلفة','قيمة المخزون'],stockValueRank.slice(0,10).map(x=>`<tr><td>${safeEsc(x.name)}</td><td>${qty(x.currentQty)} ${safeEsc(x.unit)}</td><td>${money(x.avgCost)}</td><td class="rep-num">${money(x.stockValue)}</td></tr>`))}</section>
+        <section class="rep-panel mpa-mobile-stockvalue"><div class="rep-panel-head"><h3>💰 أعلى قيمة مخزون</h3><small>قيمة المخزون = الرصيد الحالي × متوسط التكلفة (بعد التقريب لجنيهات وقروش)</small></div>${matgaryReportTable(['الصنف','الرصيد','متوسط التكلفة','قيمة المخزون'],stockValueRank.slice(0,10).map(x=>`<tr><td>${safeEsc(x.name)}</td><td>${qty(x.currentQty)} ${safeEsc(x.unit)}</td><td>${money(x.avgCost)}</td><td class="rep-num">${money(x.stockValue)}</td></tr>`))}</section>
       </div>
     </section>
   </div>`;
@@ -11949,7 +11950,7 @@ async function replaceCloudDataWithLocal() {
 
 </script>
 <script>
-/* Matgary Service Worker lifecycle — v1.8.51
+/* Matgary Service Worker lifecycle — v1.8.52
    التحديث يعتمد على waiting SW + SKIP_WAITING + controllerchange،
    مع updateViaCache:none لمنع الاحتفاظ بنسخة قديمة من sw.js. */
 (function(){
@@ -11972,7 +11973,7 @@ async function replaceCloudDataWithLocal() {
 
   window.addEventListener('load',async function(){
     try{
-      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.51',{updateViaCache:'none'});
+      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.52',{updateViaCache:'none'});
       window.matgarySWRegistration=swRegistration;
       console.log('[SW] registered:',swRegistration.scope);
 
