@@ -6865,7 +6865,7 @@ function printPOSReceipt(){
     const needsSelection=(mode==='selectedAmount'||mode==='selectedPercent');
     const shouldRebuild=rebuild || (itemsBox && itemsBox.dataset.mode!==mode);
     if(itemsBox && shouldRebuild){
-      itemsBox.style.display=needsSelection?'block':'none';
+      itemsBox.style.setProperty('display', needsSelection ? 'block' : 'none', 'important');
       itemsBox.dataset.mode=mode;
       if(needsSelection){
         const ids=getSelectedIds();
@@ -6907,7 +6907,7 @@ function printPOSReceipt(){
         ` : '<div class="matgary-discount-empty">أضف صنفًا إلى السلة أولًا.</div>';
       }
     }else if(itemsBox){
-      itemsBox.style.display=needsSelection?'block':'none';
+      itemsBox.style.setProperty('display', needsSelection ? 'block' : 'none', 'important');
       if(!needsSelection) itemsBox.dataset.mode=mode;
     }
 
@@ -11204,7 +11204,7 @@ function renderMatgaryProductAnalysis(){
   /* v1.8.50 — لوحة ربحية ومخزون محسّنة للموبايل + تنسيق عملة موحّد. */
   /* v1.8.50 — mobile cards for profitability/inventory analysis */
   /* v1.8.53 — تصحيح بطاقات المخزون + متوسط التكلفة العام + تنسيق الموبايل. */
-  /* v1.8.55 — خصم مبلغ مختلف على كل صنف محدد في الفاتورة. */
+  /* v1.8.55 — تنسيق خصم الأصناف وإصلاح تعارض العرض على الموبايل. */
   /* v1.8.53 — عرض مخصص وآمن لأقسام الربحية والمخزون على الموبايل. */
   const v1851MobileCss = `
     <style id="matgary-v1851-mobile">
@@ -11982,7 +11982,7 @@ async function replaceCloudDataWithLocal() {
 
   window.addEventListener('load',async function(){
     try{
-      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.54',{updateViaCache:'none'});
+      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.55',{updateViaCache:'none'});
       window.matgarySWRegistration=swRegistration;
       console.log('[SW] registered:',swRegistration.scope);
 
@@ -12700,67 +12700,6 @@ th,td{padding:9px 7px;border-bottom:1px solid #e6eeeb;text-align:right}
   .sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow,
   .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox,
   .sale-ref-payment-discount.matgary-discount-panel>.matgary-discount-hint{grid-column:1!important}
-}
-</style>
-
-
-<style id="matgary-discount-layout-final-v1">
-/* إصلاح نهائي لتنسيق خصم الأصناف: القائمة رأسية ولا تتأثر بتنسيق حقول الخصم العامة */
-.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox{
-  display:block!important;
-  grid-column:1/-1!important;
-  width:100%!important;
-  min-width:0!important;
-  box-sizing:border-box!important;
-}
-.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-items-title{
-  width:100%!important;
-  box-sizing:border-box!important;
-}
-.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item{
-  display:flex!important;
-  width:100%!important;
-  min-width:0!important;
-  box-sizing:border-box!important;
-  align-items:center!important;
-  justify-content:space-between!important;
-}
-.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item-main{
-  min-width:0!important;
-  flex:1 1 auto!important;
-}
-.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-amount-wrap{
-  flex:0 0 104px!important;
-  width:104px!important;
-  max-width:104px!important;
-}
-.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-line-amount{
-  width:78px!important;
-  min-width:78px!important;
-  height:38px!important;
-  box-sizing:border-box!important;
-}
-@media(max-width:700px){
-  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox{
-    padding:8px!important;
-  }
-  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item{
-    gap:7px!important;
-    padding:9px!important;
-  }
-  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-amount-wrap{
-    flex:0 0 92px!important;
-    width:92px!important;
-    max-width:92px!important;
-  }
-  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-line-amount{
-    width:68px!important;
-    min-width:68px!important;
-    height:38px!important;
-  }
-  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-amount-wrap span{
-    font-size:.52rem!important;
-  }
 }
 </style>
 
@@ -16773,6 +16712,330 @@ setTimeout(()=>{
   window.__MATGARY_UNIFIED_UNITS_VERSION='v1.8.37';
 })();
 </script>
+
+
+
+<style id="matgary-discount-ui-v22">
+/* ===== v1.8.55 — واجهة خصم الأصناف: إصلاح تعارض CSS + تنسيق موبايل مرتب ===== */
+.sale-ref-payment-discount.matgary-discount-panel{
+  display:grid!important;
+  grid-template-columns:minmax(105px,.72fr) minmax(0,1.28fr)!important;
+  align-items:center!important;
+  gap:10px 12px!important;
+  margin-top:12px!important;
+  padding:14px!important;
+  border:1px solid #eadfb8!important;
+  border-radius:18px!important;
+  background:linear-gradient(135deg,#fffdf6,#fffaf0)!important;
+  box-shadow:0 6px 18px rgba(133,108,31,.065)!important;
+  overflow:visible!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>label{
+  grid-column:1!important;
+  margin:0!important;
+  color:#6e5a12!important;
+  font-size:.8rem!important;
+  font-weight:950!important;
+  white-space:nowrap!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>label i{margin:0!important;color:#a17b08!important;font-size:.95rem!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountMode{
+  grid-column:2!important;
+  width:100%!important;
+  min-width:0!important;
+  height:46px!important;
+  border:1.5px solid #d9c681!important;
+  border-radius:13px!important;
+  background:#fff!important;
+  color:#273437!important;
+  padding:0 12px!important;
+  font:inherit!important;
+  font-size:.77rem!important;
+  font-weight:900!important;
+  outline:none!important;
+  box-shadow:none!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountMode:focus{border-color:#0f766e!important;box-shadow:0 0 0 3px rgba(15,118,110,.10)!important}
+
+/* قيمة الخصم العامة: تُستخدم فقط مع خصم مبلغ/نسبة على الفاتورة أو النسبة على أصناف محددة */
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow{
+  grid-column:1/-1!important;
+  width:100%!important;
+  margin:0!important;
+  min-width:0!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow>div{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  gap:8px!important;
+  align-items:center!important;
+  justify-content:stretch!important;
+  padding:8px!important;
+  border:1px solid #e4d59a!important;
+  border-radius:14px!important;
+  background:#fff!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow>div:before{
+  content:'قيمة الخصم';
+  grid-column:1/-1;
+  color:#7b6b35!important;
+  font-size:.68rem!important;
+  font-weight:900!important;
+  text-align:right!important;
+  padding:0 2px!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow #posDiscountUnit{
+  grid-column:2!important;
+  grid-row:2!important;
+  min-width:50px!important;
+  font-size:.78rem!important;
+  color:#8b7330!important;
+  font-weight:950!important;
+  background:#fff8dc!important;
+  border:1px solid #eadca8!important;
+  border-radius:10px!important;
+  padding:8px 9px!important;
+  text-align:center!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow input#posDiscount{
+  grid-column:1!important;
+  grid-row:2!important;
+  width:100%!important;
+  min-width:0!important;
+  height:48px!important;
+  border:2px solid #d4c27a!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#173b32!important;
+  padding:0 12px!important;
+  text-align:center!important;
+  font:inherit!important;
+  font-size:1rem!important;
+  font-weight:950!important;
+  outline:none!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow input#posDiscount:focus{border-color:#0f766e!important;box-shadow:0 0 0 4px rgba(15,118,110,.10)!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow input#posDiscount::placeholder{color:#a1a8aa!important;font-size:.72rem!important;font-weight:800!important}
+
+/* إصلاح أساسي: لا نسمح للـ selector القديم .sale-ref-payment-discount>div بسحب صندوق الأصناف إلى Grid ضيق */
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox{
+  grid-column:1/-1!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:10px!important;
+  border:1px dashed #d7c98c!important;
+  border-radius:15px!important;
+  background:#fffdf7!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox[style*="display: none"]{display:none!important}
+
+/* عنوان اختيار الأصناف */
+.matgary-discount-items-title{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto auto!important;
+  align-items:center!important;
+  gap:7px!important;
+  width:100%!important;
+  margin:0 0 8px!important;
+  padding:9px 10px!important;
+  box-sizing:border-box!important;
+  background:#fffaf0!important;
+  border:1px dashed #e1d19a!important;
+  border-radius:12px!important;
+  color:#6f5d20!important;
+  font-size:.66rem!important;
+  line-height:1.45!important;
+  font-weight:950!important;
+}
+.matgary-discount-items-title i{color:#9d7708!important;font-size:.86rem!important;margin:0!important}
+.matgary-discount-items-title span{min-width:0!important;flex:initial!important}
+.matgary-discount-items-title button{
+  height:32px!important;
+  border:1px solid #decf94!important;
+  background:#fff!important;
+  color:#756115!important;
+  border-radius:9px!important;
+  padding:0 9px!important;
+  font:inherit!important;
+  font-size:.59rem!important;
+  font-weight:900!important;
+  cursor:pointer!important;
+  white-space:nowrap!important;
+}
+.matgary-discount-items-title button:hover{background:#fff7dd!important;border-color:#cbb767!important}
+
+/* صف كل صنف */
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 112px!important;
+  align-items:center!important;
+  gap:9px!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:6px 0 0!important;
+  padding:9px 10px!important;
+  box-sizing:border-box!important;
+  border:1px solid #e6ddc1!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  overflow:hidden!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item-main{
+  display:block!important;
+  min-width:0!important;
+  width:100%!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item-check{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:8px!important;
+  width:100%!important;
+  min-width:0!important;
+  cursor:pointer!important;
+  flex:initial!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item input[type="checkbox"]{
+  width:20px!important;
+  min-width:20px!important;
+  height:20px!important;
+  min-height:20px!important;
+  margin:0!important;
+  padding:0!important;
+  accent-color:#0f766e!important;
+  flex:0 0 20px!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item-copy{
+  display:block!important;
+  min-width:0!important;
+  flex:1!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item-copy b{
+  display:block!important;
+  min-width:0!important;
+  color:#283438!important;
+  font-size:.72rem!important;
+  line-height:1.35!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item-copy small{
+  display:block!important;
+  margin-top:3px!important;
+  color:#968654!important;
+  font-size:.57rem!important;
+  line-height:1.4!important;
+  white-space:normal!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-amount-wrap{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:5px!important;
+  min-width:0!important;
+  width:100%!important;
+  flex:initial!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-line-amount{
+  width:78px!important;
+  min-width:0!important;
+  height:40px!important;
+  border:1.5px solid #d8c98f!important;
+  border-radius:10px!important;
+  background:#fffdf7!important;
+  color:#173b32!important;
+  padding:0 6px!important;
+  box-sizing:border-box!important;
+  text-align:center!important;
+  font:inherit!important;
+  font-size:.72rem!important;
+  font-weight:950!important;
+  outline:none!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-line-amount:focus{border-color:#0f766e!important;background:#fff!important;box-shadow:0 0 0 3px rgba(15,118,110,.09)!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-line-amount:disabled{opacity:.42!important;background:#f2f4f3!important;cursor:not-allowed!important}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-amount-wrap span{
+  display:inline-block!important;
+  min-width:25px!important;
+  color:#8b7b3b!important;
+  font-size:.58rem!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item:has(input[type="checkbox"]:checked){
+  border-color:#85bcae!important;
+  background:#f4fbf8!important;
+  box-shadow:inset 0 0 0 1px rgba(15,118,110,.04)!important;
+}
+
+/* الملاحظة أسفل القائمة */
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target-note{
+  display:block!important;
+  width:100%!important;
+  margin:8px 0 0!important;
+  padding:8px 9px!important;
+  box-sizing:border-box!important;
+  border-radius:10px!important;
+  background:#f4faf7!important;
+  border:1px solid #dcebe4!important;
+  color:#71807b!important;
+  font-size:.59rem!important;
+  line-height:1.6!important;
+  font-weight:800!important;
+}
+.sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-target-note i{color:#0f766e!important;margin-left:4px!important}
+
+.sale-ref-payment-discount.matgary-discount-panel>.matgary-discount-hint{
+  grid-column:1/-1!important;
+  margin:0!important;
+  padding:0 2px!important;
+  color:#7d7355!important;
+  font-size:.61rem!important;
+  line-height:1.55!important;
+  font-weight:800!important;
+}
+
+@media(max-width:700px){
+  .sale-ref-payment-discount.matgary-discount-panel{
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+    padding:12px!important;
+    border-radius:17px!important;
+  }
+  .sale-ref-payment-discount.matgary-discount-panel>label,
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountMode,
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountValueRow,
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox,
+  .sale-ref-payment-discount.matgary-discount-panel>.matgary-discount-hint{grid-column:1!important}
+  .sale-ref-payment-discount.matgary-discount-panel>label{font-size:.78rem!important}
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountMode{height:45px!important;font-size:.72rem!important}
+  .matgary-discount-items-title{
+    grid-template-columns:1fr auto auto!important;
+    padding:9px!important;
+  }
+  .matgary-discount-items-title span{font-size:.63rem!important}
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item{
+    grid-template-columns:minmax(0,1fr) 95px!important;
+    gap:7px!important;
+    padding:9px 8px!important;
+  }
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item-copy b{font-size:.69rem!important}
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item-copy small{font-size:.55rem!important}
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-line-amount{width:66px!important;height:38px!important;font-size:.68rem!important}
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-amount-wrap span{min-width:23px!important;font-size:.54rem!important}
+}
+@media(max-width:390px){
+  .matgary-discount-items-title{grid-template-columns:1fr auto auto!important;gap:5px!important}
+  .matgary-discount-items-title button{padding:0 7px!important;font-size:.55rem!important}
+  .sale-ref-payment-discount.matgary-discount-panel>#posDiscountItemsBox .matgary-discount-item{grid-template-columns:minmax(0,1fr) 88px!important}
+}
+</style>
 
 </body>
   </html>
