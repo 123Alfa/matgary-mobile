@@ -3830,7 +3830,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.53';
+const APP_VERSION='v1.8.54';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "27 سبتمبر 2026 — إصلاح عرض وتحليل لوحة الربحية والمخزون وتوحيد متوسط التكلفة";
 
@@ -5329,8 +5329,8 @@ function renderSalesPage(container){
               <option value="none">بدون خصم</option>
               <option value="invoiceAmount">خصم مبلغ من الفاتورة</option>
               <option value="invoicePercent">خصم نسبة من الفاتورة</option>
-              <option value="selectedAmount">خصم مبلغ على صنف محدد</option>
-              <option value="selectedPercent">خصم نسبة على صنف محدد</option>
+              <option value="selectedAmount">خصم مبلغ محدد على أصناف</option>
+              <option value="selectedPercent">خصم نسبة على أصناف</option>
             </select>
             <div id="posDiscountValueRow" style="display:none;margin-top:7px">
               <div><span id="posDiscountUnit">ج.م</span><input type="number" id="posDiscount" value="" placeholder="0.00" min="0" step="0.01" oninput="updatePOSSummary()"></div>
@@ -6643,7 +6643,7 @@ function printPOSReceipt(){
 .matgary-discount-panel>#posDiscountValueRow span{font-size:.7rem;color:#8b7b3b}
 .matgary-discount-panel>#posDiscountItemsBox{grid-column:1/-1;width:100%}
 .matgary-discount-hint{grid-column:1/-1;color:#8a7a4d!important;font-size:.62rem!important;line-height:1.55!important;margin-top:-1px!important}
- .matgary-discount-target-title{display:flex;align-items:center;gap:6px;margin-bottom:5px;color:#0f766e;font-size:.66rem;font-weight:900}
+.matgary-discount-target-title{display:flex;align-items:center;gap:6px;margin-bottom:5px;color:#0f766e;font-size:.66rem;font-weight:900}
 .matgary-discount-target-title i{font-size:.75rem}
 .matgary-discount-target{width:100%;height:40px;border:1.5px solid #c99a22;border-radius:11px;background:#fff;color:#273437;padding:0 10px;font:inherit;font-size:.7rem;font-weight:900;outline:none}
 .matgary-discount-target:focus{border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.10)}
@@ -6653,19 +6653,30 @@ function printPOSReceipt(){
 .matgary-discount-items-title span{flex:1;min-width:150px}.matgary-discount-items-title i{margin-left:4px}
 .matgary-discount-items-title button{border:1px solid #e4d79f;background:#fff;color:#7b650f;border-radius:8px;padding:4px 7px;font:inherit;font-size:.58rem;font-weight:900;cursor:pointer}
 .matgary-discount-items-title button:hover{background:#fff8e4}
-.matgary-discount-item{display:flex;align-items:center;gap:8px;width:100%;padding:7px 8px;margin-top:5px;border:1px solid #eadfb8;border-radius:10px;background:#fff;cursor:pointer;min-width:0}
-.matgary-discount-item input{display:none!important}
-.matgary-discount-check{width:18px;height:18px;min-width:18px;border:2px solid #d8c98f;border-radius:6px;background:#fff;position:relative;box-sizing:border-box}
-.matgary-discount-item input:checked+.matgary-discount-check{background:#0f766e;border-color:#0f766e}
-.matgary-discount-item input:checked+.matgary-discount-check:after{content:'✓';position:absolute;inset:0;color:#fff;font-size:12px;display:grid;place-items:center;font-weight:900}
-.matgary-discount-item-main{display:block;min-width:0;flex:1}.matgary-discount-item-main b{display:block;color:#273437;font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.matgary-discount-item-main small{display:block;color:#9a8b5a;font-size:.58rem;margin-top:2px}
-.matgary-discount-item:has(input:checked){border-color:#86bfb1;background:#f4fbf8}
+.matgary-discount-item{display:flex;align-items:center;gap:8px;width:100%;padding:8px 9px;margin-top:5px;border:1px solid #eadfb8;border-radius:11px;background:#fff;min-width:0}
+.matgary-discount-item-main{display:flex;align-items:center;gap:8px;min-width:0;flex:1}
+.matgary-discount-item-check{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;cursor:pointer;flex:1}
+.matgary-discount-item input[type="checkbox"]{width:18px;height:18px;accent-color:#0f766e;flex:0 0 18px}
+.matgary-discount-item-copy{min-width:0;flex:1}
+.matgary-discount-item-copy b{display:block;color:#273437;font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.matgary-discount-item-copy small{display:block;color:#9a8b5a;font-size:.58rem;margin-top:2px}
+.matgary-discount-line-amount{width:92px;min-width:92px;border:1.5px solid #d8c98f;border-radius:9px;background:#fffdf7;color:#273437;padding:7px 6px;text-align:center;font:inherit;font-size:.65rem;font-weight:900;outline:none}
+.matgary-discount-line-amount:focus{border-color:#0f766e;background:#fff;box-shadow:0 0 0 3px rgba(15,118,110,.10)}
+.matgary-discount-line-amount:disabled{opacity:.42;background:#f5f6f5;cursor:not-allowed}
+.matgary-discount-amount-wrap{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.matgary-discount-amount-wrap span{font-size:.56rem;color:#8b7b3b;font-weight:800}
+.matgary-discount-item:has(input[type="checkbox"]:checked){border-color:#86bfb1;background:#f4fbf8}
+.matgary-discount-item.is-disabled{opacity:.68}
 .matgary-discount-empty{padding:8px 10px;border:1px dashed #dfd5b6;border-radius:10px;background:#fffdf7;color:#92855f;font-size:.61rem;text-align:center}
 @media(max-width:700px){
   .matgary-discount-panel{grid-template-columns:1fr!important;gap:7px!important}
   .matgary-discount-panel>label,.matgary-discount-panel>#posDiscountMode,.matgary-discount-panel>#posDiscountValueRow,.matgary-discount-panel>#posDiscountItemsBox,.matgary-discount-hint{grid-column:1!important}
   .matgary-discount-panel>#posDiscountMode{height:40px;font-size:.68rem}
   .matgary-discount-panel>#posDiscountValueRow>div{justify-content:stretch!important;grid-template-columns:auto minmax(95px,1fr)!important}
+  .matgary-discount-item{align-items:flex-start}
+  .matgary-discount-item-main{align-items:flex-start}
+  .matgary-discount-item-copy b{white-space:normal;line-height:1.35}
+  .matgary-discount-line-amount{width:84px;min-width:84px}
 }
 </style>
 
@@ -6674,8 +6685,6 @@ function printPOSReceipt(){
   'use strict';
 
   const ORIGINAL_RENDER_POS_CART = window.renderPOSCart;
-  const ORIGINAL_HOLD_POS_CART = window.holdPOSCart;
-  const ORIGINAL_RESUME_POS_CART = window.resumePOSCart;
 
   function el(id){ return document.getElementById(id); }
   function num(v){ const n=Number(v); return Number.isFinite(n)?n:0; }
@@ -6700,7 +6709,7 @@ function printPOSReceipt(){
     return products().find(p=>String(p.id)===String(item?.id)) || null;
   }
 
-  // قيمة السطر قبل خصم الفاتورة/الأصناف، وقبل الضريبة.
+  // قيمة السطر قبل أي خصم، وقبل الضريبة.
   function lineGross(item){
     if(!item) return 0;
     if(item.service) return money2(num(item.price) * num(item.qty || 1));
@@ -6715,7 +6724,7 @@ function printPOSReceipt(){
   }
 
   function getMode(){ return el('posDiscountMode')?.value || 'none'; }
-  function getRawDiscount(){ return Math.max(0,num(el('posDiscount')?.value)); }
+
   function getSelectedIds(){
     const list=cart();
     const valid=new Set(list.map(x=>String(x._posLineId)));
@@ -6724,12 +6733,38 @@ function printPOSReceipt(){
     return new Set(window.posDiscountSelectedLines);
   }
 
+  function getLineAmountMap(){
+    const source=(window.posDiscountLineAmounts && typeof window.posDiscountLineAmounts==='object')
+      ? window.posDiscountLineAmounts : {};
+    const valid=new Set(cart().map(x=>String(x._posLineId)));
+    const out={};
+    Object.keys(source).forEach(id=>{
+      if(valid.has(String(id))){
+        const v=Math.max(0,num(source[id]));
+        if(v>0) out[String(id)]=money2(v);
+      }
+    });
+    window.posDiscountLineAmounts=out;
+    return out;
+  }
+
+  function getRawDiscount(){
+    const mode=getMode();
+    if(mode==='selectedAmount'){
+      const amounts=getLineAmountMap();
+      const selected=getSelectedIds();
+      return money2([...selected].reduce((sum,id)=>sum+num(amounts[id]),0));
+    }
+    return Math.max(0,num(el('posDiscount')?.value));
+  }
+
   function scopeLines(){
     const list=ensureLineIds();
     const mode=getMode();
     if(mode==='selectedAmount'||mode==='selectedPercent'){
       const ids=getSelectedIds();
-      return list.map((item,index)=>({item,index,gross:lineGross(item),selected:ids.has(String(item._posLineId))})).filter(x=>x.selected && x.gross>0);
+      return list.map((item,index)=>({item,index,gross:lineGross(item),selected:ids.has(String(item._posLineId))}))
+        .filter(x=>x.selected && x.gross>0);
     }
     return list.map((item,index)=>({item,index,gross:lineGross(item),selected:true})).filter(x=>x.gross>0);
   }
@@ -6737,24 +6772,46 @@ function printPOSReceipt(){
   function calculateDiscount(){
     const list=ensureLineIds();
     const mode=getMode();
-    const value=getRawDiscount();
-    const all= list.map((item,index)=>({item,index,gross:lineGross(item),discount:0}));
-    if(mode==='none'||value<=0) return {subtotal:money2(all.reduce((a,x)=>a+x.gross,0)), discount:0, items:all, valid:true, message:''};
+    const all=list.map((item,index)=>({item,index,gross:lineGross(item),discount:0}));
+    const subtotal=money2(all.reduce((a,x)=>a+x.gross,0));
+    if(mode==='none') return {subtotal,discount:0,items:all,valid:true,message:''};
 
     const scope=scopeLines();
-    const subtotal=money2(all.reduce((a,x)=>a+x.gross,0));
     const scopeTotal=money2(scope.reduce((a,x)=>a+x.gross,0));
     if((mode==='selectedAmount'||mode==='selectedPercent') && !scope.length){
       return {subtotal,discount:0,items:all,valid:false,message:'اختر صنفًا واحدًا على الأقل لتطبيق الخصم.'};
     }
 
+    // خصم مبلغ مختلف على كل صنف محدد: مثال 30 ج على البراميلي و20 ج على القديمة.
+    if(mode==='selectedAmount'){
+      const amounts=getLineAmountMap();
+      const selected=getSelectedIds();
+      const missing=scope.find(x=>num(amounts[String(x.item._posLineId)])<=0);
+      if(missing){
+        const name=missing.item?.name || lineProduct(missing.item)?.name || 'الصنف المحدد';
+        return {subtotal,discount:0,items:all,valid:false,message:`اكتب قيمة الخصم لـ ${name}.`};
+      }
+      let totalDiscount=0;
+      scope.forEach(x=>{
+        const id=String(x.item._posLineId);
+        const d=money2(Math.min(num(amounts[id]),x.gross));
+        all[x.index].discount=d;
+        totalDiscount=money2(totalDiscount+d);
+      });
+      return {subtotal,discount:totalDiscount,items:all,valid:true,message:''};
+    }
+
+    const value=Math.max(0,num(el('posDiscount')?.value));
+    if(value<=0){
+      return {subtotal,discount:0,items:all,valid:false,message:(mode==='selectedPercent'?'اكتب نسبة الخصم أولًا.':'اكتب مبلغ الخصم لكل صنف محدد.')};
+    }
+
     let discountTotal=0;
     if(mode==='invoiceAmount') discountTotal=Math.min(value,subtotal);
     else if(mode==='invoicePercent') discountTotal=Math.min(subtotal,subtotal*value/100);
-    else if(mode==='selectedAmount') discountTotal=Math.min(value,scopeTotal);
     else if(mode==='selectedPercent') discountTotal=Math.min(scopeTotal,scopeTotal*value/100);
-    discountTotal=money2(discountTotal);
 
+    discountTotal=money2(discountTotal);
     let allocated=0;
     scope.forEach((x,i)=>{
       let d;
@@ -6773,8 +6830,8 @@ function printPOSReceipt(){
       none:'بدون خصم',
       invoiceAmount:'خصم مبلغ من الفاتورة',
       invoicePercent:'خصم نسبة من الفاتورة',
-      selectedAmount:'خصم مبلغ من أصناف محددة',
-      selectedPercent:'خصم نسبة من أصناف محددة'
+      selectedAmount:'خصم مبالغ محددة على أصناف',
+      selectedPercent:'خصم نسبة على أصناف محددة'
     })[mode] || 'بدون خصم';
   }
 
@@ -6786,7 +6843,7 @@ function printPOSReceipt(){
     return `تم اختيار ${names.length} أصناف.`;
   }
 
-  function renderDiscountControls(){
+  function renderDiscountControls(rebuild=true){
     ensureLineIds();
     const modeSel=el('posDiscountMode');
     if(!modeSel) return;
@@ -6797,7 +6854,8 @@ function printPOSReceipt(){
     const input=el('posDiscount');
     const hint=el('posDiscountHint');
 
-    if(valueRow) valueRow.style.display=mode==='none'?'none':'block';
+    const hasGlobalValue=(mode==='invoiceAmount'||mode==='invoicePercent'||mode==='selectedPercent');
+    if(valueRow) valueRow.style.display=hasGlobalValue?'block':'none';
     if(input){
       input.placeholder=(mode==='invoicePercent'||mode==='selectedPercent')?'مثلاً 5':'مثلاً 20';
       input.step='0.01';
@@ -6805,52 +6863,90 @@ function printPOSReceipt(){
     if(unit) unit.textContent=(mode==='invoicePercent'||mode==='selectedPercent')?'%':'ج.م';
 
     const needsSelection=(mode==='selectedAmount'||mode==='selectedPercent');
-    if(itemsBox){
+    const shouldRebuild=rebuild || (itemsBox && itemsBox.dataset.mode!==mode);
+    if(itemsBox && shouldRebuild){
       itemsBox.style.display=needsSelection?'block':'none';
+      itemsBox.dataset.mode=mode;
       if(needsSelection){
         const ids=getSelectedIds();
-        const selectedId=[...ids][0]||'';
+        const amounts=getLineAmountMap();
+        const title=mode==='selectedAmount'
+          ? 'حدد الأصناف واكتب مبلغ الخصم أمام كل صنف'
+          : 'حدد الأصناف التي تريد تطبيق نسبة الخصم عليها';
+        const note=mode==='selectedAmount'
+          ? 'مثال: البراميلي 30 ج.م + القديمة 20 ج.م = إجمالي خصم 50 ج.م.'
+          : 'النسبة المكتوبة بالأعلى ستُطبَّق على الأصناف المحددة فقط.';
         itemsBox.innerHTML = cart().length ? `
-          <div class="matgary-discount-target-title">
-            <i class="fas fa-bullseye"></i>
-            <span>${mode==='selectedPercent'?'الصنف الذي ستطبق عليه النسبة':'الصنف الذي سيأخذ الخصم'}</span>
+          <div class="matgary-discount-items-title">
+            <i class="fas fa-list-check"></i>
+            <span>${title}</span>
+            <button type="button" onclick="selectAllPOSDiscountItems()">اختيار الكل</button>
+            <button type="button" onclick="clearPOSDiscountItems()">مسح</button>
           </div>
-          <select class="matgary-discount-target" onchange="setPOSDiscountTarget(this.value)">
-            <option value="">— اختر الصنف —</option>
-            ${cart().map(item=>{
-              const p=lineProduct(item);
-              const name=escapeHtml(item.name||p?.name||'صنف');
-              const gross=fmt(lineGross(item));
-              const id=String(item._posLineId);
-              return `<option value="${id}" ${id===selectedId?'selected':''}>${name} — ${gross} ج.م</option>`;
-            }).join('')}
-          </select>
-          <div class="matgary-discount-target-note"><i class="fas fa-circle-info"></i> ${mode==='selectedPercent'?'اختر الصنف ثم اكتب نسبة الخصم، مثل <b>10%</b>.':'اختر الصنف ثم اكتب مبلغ الخصم، مثل <b>20 ج.م</b>.'}</div>
+          ${cart().map(item=>{
+            const p=lineProduct(item);
+            const name=escapeHtml(item.name||p?.name||'صنف');
+            const gross=fmt(lineGross(item));
+            const id=String(item._posLineId);
+            const checked=ids.has(id);
+            const amount=num(amounts[id]);
+            const amountInput=mode==='selectedAmount'
+              ? `<div class="matgary-discount-amount-wrap"><input class="matgary-discount-line-amount" type="number" min="0" step="0.01" inputmode="decimal" value="${amount?amount.toFixed(2):''}" placeholder="0.00" aria-label="خصم ${name}" ${checked?'':'disabled'} oninput="setPOSDiscountLineAmount('${id}',this.value)"><span>ج.م</span></div>`
+              : '';
+            return `<div class="matgary-discount-item ${checked?'is-selected':''}">
+              <div class="matgary-discount-item-main">
+                <label class="matgary-discount-item-check">
+                  <input type="checkbox" ${checked?'checked':''} onchange="togglePOSDiscountItem('${id}')">
+                  <span class="matgary-discount-item-copy"><b>${name}</b><small>قيمة السطر: ${gross} ج.م</small></span>
+                </label>
+              </div>
+              ${amountInput}
+            </div>`;
+          }).join('')}
+          <div class="matgary-discount-target-note"><i class="fas fa-circle-info"></i> ${note}</div>
         ` : '<div class="matgary-discount-empty">أضف صنفًا إلى السلة أولًا.</div>';
       }
+    }else if(itemsBox){
+      itemsBox.style.display=needsSelection?'block':'none';
+      if(!needsSelection) itemsBox.dataset.mode=mode;
     }
 
     if(hint){
       const calc=calculateDiscount();
       if(mode==='none') hint.textContent='لا يوجد خصم على الفاتورة.';
-      else if(needsSelection) hint.textContent=calc.valid ? `${selectedSummaryText()} — الخصم سيُطبَّق على هذا الصنف فقط.` : 'اختر الصنف الذي تريد عمل الخصم عليه.';
+      else if(mode==='selectedAmount') hint.textContent=calc.valid ? `${selectedSummaryText()} — إجمالي الخصم ${fmt(calc.discount)} ج.م.` : (calc.message||'حدد الأصناف واكتب مبلغ الخصم لكل صنف.');
+      else if(mode==='selectedPercent') hint.textContent=calc.valid ? `${selectedSummaryText()} — النسبة ${fmt(num(input?.value||0))}% على المحدد.` : (calc.message||'حدد الأصناف ثم اكتب النسبة.');
       else hint.textContent=mode==='invoicePercent'?'النسبة ستُطبَّق على إجمالي الفاتورة بالكامل.':'اكتب مبلغ الخصم الذي تريد طرحه من إجمالي الفاتورة.';
     }
   }
 
+  window.setPOSDiscountLineAmount=function(lineId,value){
+    const id=String(lineId||'');
+    if(!id)return;
+    if(!window.posDiscountLineAmounts || typeof window.posDiscountLineAmounts!=='object') window.posDiscountLineAmounts={};
+    const item=cart().find(x=>String(x._posLineId)===id);
+    const gross=item?lineGross(item):0;
+    let amount=Math.max(0,num(value));
+    if(gross>0) amount=Math.min(amount,gross);
+    if(amount>0) window.posDiscountLineAmounts[id]=money2(amount);
+    else delete window.posDiscountLineAmounts[id];
+    window.updatePOSSummary();
+  };
+
   window.setPOSDiscountTarget=function(lineId){
     const id=String(lineId||'');
     window.posDiscountSelectedLines=id?[id]:[];
-    renderDiscountControls();
+    renderDiscountControls(true);
     window.updatePOSSummary();
   };
 
   window.onPOSDiscountModeChange=function(){
     if(!window.posDiscountSelectedLines) window.posDiscountSelectedLines=[];
-    if(getMode()==='none'){
+    if(!window.posDiscountLineAmounts || typeof window.posDiscountLineAmounts!=='object') window.posDiscountLineAmounts={};
+    if(getMode()==='none') {
       const input=el('posDiscount'); if(input) input.value='';
     }
-    renderDiscountControls();
+    renderDiscountControls(true);
     window.updatePOSSummary();
   };
 
@@ -6859,76 +6955,97 @@ function printPOSReceipt(){
     const selected=new Set(getSelectedIds());
     if(selected.has(id)) selected.delete(id); else selected.add(id);
     window.posDiscountSelectedLines=[...selected];
-    renderDiscountControls();
+    renderDiscountControls(true);
     window.updatePOSSummary();
   };
+
   window.selectAllPOSDiscountItems=function(){
     ensureLineIds();
     window.posDiscountSelectedLines=cart().map(x=>String(x._posLineId));
-    renderDiscountControls(); window.updatePOSSummary();
+    renderDiscountControls(true);
+    window.updatePOSSummary();
   };
+
   window.clearPOSDiscountItems=function(){
     window.posDiscountSelectedLines=[];
-    renderDiscountControls(); window.updatePOSSummary();
+    renderDiscountControls(true);
+    window.updatePOSSummary();
   };
 
   window.getPOSDiscountBreakdown=function(){ return calculateDiscount(); };
   window.getPOSLineGross=function(item){ return lineGross(item); };
 
-  // عرض السلة الأصلي يظل موجودًا؛ نضيف فوقه أدوات الخصم ونُبقي الأسعار الأساسية كما هي.
+  // عرض السلة الأصلي يظل كما هو، ونضيف فقط أدوات الخصم بعده.
   window.renderPOSCart=function(){
-    const result=ORIGINAL_RENDER_POS_CART.apply(this,arguments);
-    try{ ensureLineIds(); renderDiscountControls(); }
+    const result=ORIGINAL_RENDER_POS_CART ? ORIGINAL_RENDER_POS_CART.apply(this,arguments) : undefined;
+    try{ ensureLineIds(); renderDiscountControls(true); }
     catch(e){ console.warn('[Matgary] discount controls render:',e); }
     return result;
   };
 
-  // استرجاع/تعليق السلة يحتفظان بإعدادات الخصم الجديدة.
-  window.holdPOSCart=function(){
-    const before=window.posCart||[];
-    ensureLineIds();
-    const mode=getMode();
-    const selected=[...getSelectedIds()];
-    const oldList=getHeldPOSCarts();
-    oldList.push({
-      id:Date.now().toString(36),
-      createdAt:new Date().toISOString(),
-      customer:el('posCustomer')?.value||'',
-      customCustomer:el('posCustomCustomer')?.value||'',
-      saleType:el('posSaleType')?.value||'retail',
-      payment:el('posPaymentMethod')?.value||'cash',
-      paid:el('posPaid')?.value||'',
-      discount:el('posDiscount')?.value||'',
-      discountMode:mode,
-      discountSelectedLines:selected,
-      taxRate:el('posTaxRate')?.value||'0',
-      note:el('posSaleNote')?.value||'',
-      invoiceDate:el('posInvoiceDate')?.value||today(),
-      cart:JSON.parse(JSON.stringify(before))
-    });
-    saveHeldPOSCarts(oldList);
-    window.posCart=[]; window.posDiscountSelectedLines=[];
-    renderPOSCart(); renderSaleProductGrid();
-    showToast('⏸️ تم تعليق السلة بنجاح','success');
-  };
+  // استرجاع/تعليق السلة يحتفظان بإعدادات الخصم لكل صنف.
+  const originalHold = window.holdPOSCart;
+  const originalResume = window.resumePOSCart;
 
-  window.resumePOSCart=function(){
-    const list=getHeldPOSCarts(); if(!list.length)return showToast('لا توجد سلال معلقة','warning');
-    const options=list.map((x,i)=>`${i+1} — ${x.customCustomer||'عميل عادي'} — ${x.cart.length} أصناف`).join('\n');
-    const answer=prompt('اختر رقم السلة لاسترجاعها:\n'+options,'1'); if(answer===null)return;
-    const idx=Math.max(0,parseInt(answer,10)-1); if(!list[idx])return showToast('اختيار غير صحيح','warning');
-    const saved=list.splice(idx,1)[0]; saveHeldPOSCarts(list);
-    window.posCart=saved.cart||[];
-    window.posDiscountSelectedLines=Array.isArray(saved.discountSelectedLines)?saved.discountSelectedLines.map(String):[];
-    const set=(id,val)=>{const e=el(id);if(e)e.value=val??'';};
-    set('posSaleType',saved.saleType||'retail'); set('posCustomer',saved.customer||''); set('posCustomCustomer',saved.customCustomer||''); set('posPaymentMethod',saved.payment||'cash'); set('posPaid',saved.paid||''); set('posDiscount',saved.discount||''); set('posDiscountMode',saved.discountMode|| (saved.discount ? 'invoiceAmount':'none')); set('posTaxRate',saved.taxRate||'0'); set('posSaleNote',saved.note||''); set('posInvoiceDate',saved.invoiceDate||today());
-    togglePOSCustomCustomer(); togglePOSCredit(); renderPOSCart(); renderSaleProductGrid(); renderDiscountControls(); window.updatePOSSummary(); showToast('▶️ تم استرجاع السلة','success');
-  };
+  if(typeof originalHold==='function'){
+    window.holdPOSCart=function(){
+      // نستخدم الوظيفة الحالية إذا كانت موجودة، لكن نغلفها لالتقاط إعدادات الخصم في بيانات السلة المعلقة.
+      const before=window.posCart||[];
+      ensureLineIds();
+      const mode=getMode();
+      const selected=[...getSelectedIds()];
+      const amounts={...getLineAmountMap()};
+      const oldList=(typeof getHeldPOSCarts==='function'?getHeldPOSCarts():[]);
+      const payload={
+        id:Date.now().toString(36),createdAt:new Date().toISOString(),
+        customer:el('posCustomer')?.value||'',customCustomer:el('posCustomCustomer')?.value||'',
+        saleType:el('posSaleType')?.value||'retail',payment:el('posPaymentMethod')?.value||'cash',
+        paid:el('posPaid')?.value||'',discount:el('posDiscount')?.value||'',discountMode:mode,
+        discountSelectedLines:selected,discountLineAmounts:amounts,taxRate:el('posTaxRate')?.value||'0',
+        note:el('posSaleNote')?.value||'',invoiceDate:el('posInvoiceDate')?.value||today(),cart:JSON.parse(JSON.stringify(before))
+      };
+      oldList.push(payload);
+      if(typeof saveHeldPOSCarts==='function') saveHeldPOSCarts(oldList);
+      window.posCart=[]; window.posDiscountSelectedLines=[]; window.posDiscountLineAmounts={};
+      renderPOSCart(); renderSaleProductGrid();
+      showToast('⏸️ تم تعليق السلة بنجاح','success');
+    };
+  }
+
+  if(typeof originalResume==='function'){
+    window.resumePOSCart=function(){
+      const list=(typeof getHeldPOSCarts==='function'?getHeldPOSCarts():[]);
+      if(!list.length)return showToast('لا توجد سلال معلقة','warning');
+      const options=list.map((x,i)=>`${i+1} — ${x.customCustomer||'عميل عادي'} — ${(x.cart||[]).length} أصناف`).join('\n');
+      const answer=prompt('اختر رقم السلة لاسترجاعها:\n'+options,'1'); if(answer===null)return;
+      const idx=Math.max(0,parseInt(answer,10)-1); if(!list[idx])return showToast('اختيار غير صحيح','warning');
+      const saved=list.splice(idx,1)[0];
+      if(typeof saveHeldPOSCarts==='function') saveHeldPOSCarts(list);
+      window.posCart=saved.cart||[];
+      window.posDiscountSelectedLines=Array.isArray(saved.discountSelectedLines)?saved.discountSelectedLines.map(String):[];
+      window.posDiscountLineAmounts=(saved.discountLineAmounts&&typeof saved.discountLineAmounts==='object')?saved.discountLineAmounts:{};
+      // توافق مع سلة قديمة كانت تستخدم مبلغًا إجماليًا لصنف واحد.
+      if(saved.discountMode==='selectedAmount' && !Object.keys(window.posDiscountLineAmounts).length && Number(saved.discount||0)>0 && window.posDiscountSelectedLines.length===1){
+        window.posDiscountLineAmounts[window.posDiscountSelectedLines[0]]=money2(Number(saved.discount||0));
+      }
+      const set=(id,val)=>{const e=el(id);if(e)e.value=val??'';};
+      set('posSaleType',saved.saleType||'retail'); set('posCustomer',saved.customer||''); set('posCustomCustomer',saved.customCustomer||'');
+      set('posPaymentMethod',saved.payment||'cash'); set('posPaid',saved.paid||''); set('posDiscount',saved.discount||'');
+      set('posDiscountMode',saved.discountMode|| (saved.discount ? 'invoiceAmount':'none'));
+      set('posTaxRate',saved.taxRate||'0'); set('posSaleNote',saved.note||''); set('posInvoiceDate',saved.invoiceDate||today());
+      togglePOSCustomCustomer(); togglePOSCredit(); renderPOSCart(); renderSaleProductGrid(); renderDiscountControls(true); window.updatePOSSummary();
+      showToast('▶️ تم استرجاع السلة','success');
+    };
+  }
 
   window.editPOSDiscount=function(){
     const mode=getMode();
+    if(mode==='selectedAmount'){
+      showToast('اكتب خصم كل صنف مباشرة داخل قائمة الأصناف المحددة.','warning');
+      return;
+    }
     const label=(mode==='invoicePercent'||mode==='selectedPercent')?'نسبة الخصم %':'قيمة الخصم بالجنيه';
-    const current=getRawDiscount();
+    const current=Math.max(0,num(el('posDiscount')?.value));
     const value=prompt(label,String(current));
     if(value===null)return;
     const input=el('posDiscount'); if(input) input.value=Math.max(0,num(value));
@@ -6938,6 +7055,7 @@ function printPOSReceipt(){
   window.setPOSPaidToTotal=function(){
     const input=el('posPaid'); if(!input)return;
     const d=calculateDiscount();
+    if(!d.valid){ renderDiscountControls(true); showToast('أكمل إعداد الخصم أولًا.','warning'); return; }
     const taxable=Math.max(0,d.subtotal-d.discount);
     const taxRate=Math.min(100,Math.max(0,num(el('posTaxRate')?.value)));
     const tax=money2(taxable*taxRate/100);
@@ -6978,134 +7096,22 @@ function printPOSReceipt(){
     if(discountInput) discountInput.setCustomValidity(modeHasError?d.message:'');
     const checkout=el('posCheckoutBtn');
     if(checkout){
-      checkout.disabled=!cart().length||total<=0||!d.valid||(mode!=='none'&&getRawDiscount()>0&&d.discount<=0)||(method!=='credit'&&paid<total);
+      checkout.disabled=!cart().length||total<=0||!d.valid||((mode==='invoiceAmount'||mode==='invoicePercent'||mode==='selectedPercent')&&getRawDiscount()<=0)||(method!=='credit'&&paid<total);
       set('posCheckoutAmount',fmt(total));
     }
-    try{renderDiscountControls();}catch(e){}
+    try{renderDiscountControls(false);}catch(e){}
     if(typeof updatePOSCustomerPill==='function') updatePOSCustomerPill();
     if(typeof updatePOSHeldCount==='function') updatePOSHeldCount();
   };
 
-  window.checkoutPOS=function(){
-    const c=cart(); if(!c.length)return showToast('السلة فارغة','warning');
-    ensureLineIds();
-    const type=el('posSaleType')?.value||'retail';
-    const method=el('posPaymentMethod')?.value||'cash';
-    const note=el('posSaleNote')?.value?.trim()||'';
-    const invoiceDate=el('posInvoiceDate')?.value||today();
-    const customerId=el('posCustomer')?.value||'';
-    const customName=el('posCustomCustomer')?.value?.trim()||'';
-    const customerName=customerId?(Store.get('customers').find(c=>c.id===customerId)?.name||''):(customName||'عميل عادي');
-    const taxRate=Math.min(100,Math.max(0,num(el('posTaxRate')?.value)));
-    const d=calculateDiscount();
-    if(!d.valid)return showToast('❌ '+d.message,'warning');
-    const subtotal=d.subtotal;
-    const safeDiscount=d.discount;
-    const taxable=Math.max(0,subtotal-safeDiscount);
-    const tax=money2(taxable*taxRate/100);
-    const total=money2(taxable+tax);
-    const enteredPaid=money2(Math.max(0,num(el('posPaid')?.value)));
-    if(enteredPaid-total>0.0001)return showToast('المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة','warning');
-    const paid=Math.min(total,enteredPaid);
-    const remaining=money2(Math.max(0,total-paid));
-    const hasNamedCustomer=Boolean(customerId||customName);
-    if(method==='credit'&&remaining>0&&!hasNamedCustomer)return showToast('حدد العميل أو اكتب اسمه لتسجيل المبلغ المتبقي كآجل','warning');
-    if(method!=='credit'&&paid<total)return showToast('المبلغ المدفوع أقل من إجمالي الفاتورة','warning');
-
-    for(const item of c){
-      if(item.service)continue;
-      const p=products().find(x=>String(x.id)===String(item.id));
-      if(!p)return showToast('الصنف غير موجود أو تم حذفه','error');
-      const weight=Math.max(0,num(item.weight||1));
-      const packs=Math.max(0,num(item.qty||0));
-      if(!Number.isFinite(weight)||weight<=0||!Number.isFinite(packs)||packs<=0)return showToast('كمية أو وزن غير صالح','warning');
-      const required=weight*packs;
-      const available=num(p.qty);
-      if(required>available+0.000001)return showToast(`المخزون غير كافٍ للصنف: ${p.name} — المتاح ${formatProductQty(p,available)}`,'warning');
-    }
-
-    const transactionKeys=['products','sales','debts','customers','auditLog'];
-    const transactionSnapshot={};
-    transactionKeys.forEach(k=>{try{transactionSnapshot[k]=JSON.parse(JSON.stringify(Store.get(k)||[]));}catch(e){transactionSnapshot[k]=[];}});
-
-    try{
-      const invoiceSeq=getNextInvoiceSequence();
-      const invoiceNo='INV-'+String(invoiceSeq);
-      const saleBatchId='SALE-'+safeUUID();
-      const saleTime=currentTimeLabel();
-      const discById=new Map(d.items.map(x=>[String(x.item._posLineId),money2(x.discount)]));
-
-      c.forEach(item=>{
-        if(item.service){
-          const serviceGross=lineGross(item);
-          const lineDiscount=money2(discById.get(String(item._posLineId))||0);
-          const ratio=subtotal>0?serviceGross/subtotal:0;
-          const itemTax=money2(tax*ratio);
-          const itemTotal=money2(Math.max(0,serviceGross-lineDiscount+itemTax));
-          const serviceProfit=money2(Math.max(0,serviceGross-lineDiscount));
-          Store.add('sales',{saleBatchId,invoiceNo,invoiceSeq,date:invoiceDate,time:saleTime,productId:null,productName:item.name,customerId:customerId||null,customerName,type,qty:item.qty,packages:item.qty,weight:1,unitPrice:num(item.price),price:num(item.price),cost:0,discount:serviceGross?(lineDiscount/serviceGross*100):0,discountAmount:lineDiscount,taxRate,taxAmount:itemTax,discountedPrice:num(item.price),total:itemTotal,profit:serviceProfit,paymentMethod:method,paid,remaining,initialPaid:money(paid),collectionHistory:[],isWeightSale:false,sellUnit:String(item.unit||'خدمة'),note:note||'خدمة من الكاشير'});
-          return;
-        }
-        const p=products().find(x=>String(x.id)===String(item.id)); if(!p)return;
-        const weight=num(item.weight||1), packs=num(item.qty||0), price=typeof getPOSItemUnitPrice==='function'?num(getPOSItemUnitPrice(item,p,type)):num(item.price);
-        const gross=lineGross(item);
-        const lineDiscount=money2(discById.get(String(item._posLineId))||0);
-        const ratio=subtotal>0?gross/subtotal:0;
-        const itemTax=money2(tax*ratio);
-        const itemTotal=money2(Math.max(0,gross-lineDiscount+itemTax));
-        const qtyKg=weight*packs;
-        const costKg=num(p.purchase);
-        const netRevenue=money2(Math.max(0,gross-lineDiscount));
-        const profit=money2(netRevenue-(costKg*qtyKg));
-        const newQty=Math.max(0,num(p.qty)-qtyKg);
-        Store.update('products',p.id,{qty:newQty});
-        const effectivePackPrice=packs?money2(itemTotal/packs):0;
-        const discountedPackPrice=packs?money2(netRevenue/packs):0;
-        Store.add('sales',{saleBatchId,invoiceNo,invoiceSeq,date:invoiceDate,time:saleTime,productId:p.id,productName:p.name,customerId:customerId||null,customerName,type,qty:qtyKg,packages:packs,weight,unitPrice:price,price:price,cost:costKg*weight,discount:gross?(lineDiscount/gross*100):0,discountAmount:lineDiscount,taxRate,taxAmount:itemTax,discountedPrice:discountedPackPrice,total:itemTotal,profit,paymentMethod:method,paid,remaining,initialPaid:money(paid),collectionHistory:[],isWeightSale:typeof isKgProduct==='function'?isKgProduct(p):false,sellUnit:typeof isKgProduct==='function'&&isKgProduct(p)?'كجم':(typeof productSaleUnitLabel==='function'?productSaleUnitLabel(p,item):String(p.unit||'عبوة')),saleMode:typeof isKgProduct==='function'&&isKgProduct(p)?(item.saleMode==='value'?'value':'weight'):null,valueAmount:typeof isKgProduct==='function'&&isKgProduct(p)&&item.saleMode==='value'?num(item.valueAmount):null,note:note||`بيع من الكاشير — ${saleQuantityLabel(p,packs,weight)}${method==='credit'?' — آجل':''}`});
-      });
-
-      if(customerId){
-        const customersList=Store.get('customers');
-        const i=customersList.findIndex(x=>x.id===customerId);
-        if(i>=0){customersList[i].points=(customersList[i].points||0)+Math.floor(total/10);customersList[i].totalSpent=(customersList[i].totalSpent||0)+total;Store.set('customers',customersList);}
-      }
-      if(method==='credit'&&remaining>0){
-        Store.add('debts',{saleBatchId,invoiceNo,sourceSaleId:null,customerId:customerId||null,date:invoiceDate,person:customerName,type:'لنا',amount:total,paidAmount:money(Math.min(total,Math.max(0,paid))),paymentHistory:[],debtVersion:2,due:el('posDueDate')?.value||'',note:`آجل من الفاتورة ${invoiceNo}${customerId?' — عميل مسجل':''}`,paid:remaining<=0,source:'sale',saleTotal:total});
-      }
-
-      const selected=[...getSelectedIds()];
-      const invoice={invoiceNo,invoiceSeq,saleBatchId,date:invoiceDate,time:saleTime,customerName,customerId:customerId||null,type,method,subtotal,discount:safeDiscount,discountMode:modeLabel(getMode()),discountModeKey:getMode(),discountInput:getRawDiscount(),discountSelectedLines:selected,taxRate,tax,total,paid,remaining,change:method==='cash'?money2(paid-total):0,note};
-      localStorage.setItem('bm_lastPOSInvoice',JSON.stringify(invoice));
-      const chip=el('posInvoiceNo'); if(chip)chip.textContent=String(invoiceSeq);
-      showToast(method==='credit'?`📋 تم حفظ الفاتورة ${invoiceNo} — المتبقي ${fmt(remaining)}`:`✅ تم حفظ الفاتورة ${invoiceNo} — الباقي ${fmt(invoice.change)}`,'success');
-      window.posCart=[]; window.posDiscountSelectedLines=[];
-      renderSalesPage(document.getElementById('contentArea'));
-      setTimeout(()=>openPOSReceiptPreview(invoice),180);
-    }catch(error){
-      transactionKeys.forEach(k=>{try{Store.set(k,transactionSnapshot[k]);}catch(e){}});
-      console.error('فشل حفظ الفاتورة الجديدة وتم التراجع:',error);
-      showToast('❌ تعذر حفظ الفاتورة — تم التراجع عن العملية بالكامل','error');
-    }
-  };
-
-  // المعاينة/الطباعة: لا تستخدم السعر الفعلي بعد الخصم كسعر الوحدة.
-  function decorateReceiptDiscounts(){
-    const inv=JSON.parse(localStorage.getItem('bm_lastPOSInvoice')||'null');
-    if(!inv)return;
-    document.querySelectorAll('.receipt-summary-pro .discount-row').forEach(row=>{
-      const span=row.querySelector('span'); if(span) span.textContent=inv.discountMode?`الخصم — ${inv.discountMode}`:'الخصم';
-    });
-  }
-
-  const patchReceipt = function(invoice){
-    const original=window.openPOSReceiptPreview.__matgaryOriginal || window.openPOSReceiptPreview;
-    if(!original || original.__matgaryPatched)return;
-    // نستبدل فقط طريقة استدعاء المعاينة: البيانات المحفوظة بالفعل تحتوي السعر الأساسي في unitPrice/price.
-  };
-
-  // تهيئة الخصم عند فتح شاشة البيع، حتى قبل أول إضافة صنف.
+  // فتح شاشة البيع: تهيئة المتغيرات الجديدة قبل أول استخدام.
   document.addEventListener('DOMContentLoaded',function(){
-    try{window.posDiscountSelectedLines=window.posDiscountSelectedLines||[]; renderDiscountControls(); window.updatePOSSummary();}catch(e){}
+    try{
+      window.posDiscountSelectedLines=window.posDiscountSelectedLines||[];
+      window.posDiscountLineAmounts=window.posDiscountLineAmounts||{};
+      renderDiscountControls(true);
+      window.updatePOSSummary();
+    }catch(e){ console.warn('[Matgary] discount init:',e); }
   },{once:true});
 
 })();
@@ -7364,8 +7370,8 @@ function checkoutPOS(){
       none:'بدون خصم',
       invoiceAmount:'خصم مبلغ من الفاتورة',
       invoicePercent:'خصم نسبة من الفاتورة',
-      selectedAmount:'خصم مبلغ على صنف محدد',
-      selectedPercent:'خصم نسبة على صنف محدد'
+      selectedAmount:'خصم مبالغ محددة على أصناف',
+      selectedPercent:'خصم نسبة على أصناف محددة'
     })[modeKey]||'بدون خصم';
     const selected=[...(window.posDiscountSelectedLines||[])].map(String);
     const invoice={
@@ -11198,6 +11204,7 @@ function renderMatgaryProductAnalysis(){
   /* v1.8.50 — لوحة ربحية ومخزون محسّنة للموبايل + تنسيق عملة موحّد. */
   /* v1.8.50 — mobile cards for profitability/inventory analysis */
   /* v1.8.53 — تصحيح بطاقات المخزون + متوسط التكلفة العام + تنسيق الموبايل. */
+  /* v1.8.54 — خصم مبلغ مختلف على كل صنف محدد في الفاتورة. */
   /* v1.8.53 — عرض مخصص وآمن لأقسام الربحية والمخزون على الموبايل. */
   const v1851MobileCss = `
     <style id="matgary-v1851-mobile">
@@ -11952,7 +11959,7 @@ async function replaceCloudDataWithLocal() {
 
 </script>
 <script>
-/* Matgary Service Worker lifecycle — v1.8.53
+/* Matgary Service Worker lifecycle — v1.8.54
    التحديث يعتمد على waiting SW + SKIP_WAITING + controllerchange،
    مع updateViaCache:none لمنع الاحتفاظ بنسخة قديمة من sw.js. */
 (function(){
@@ -11975,7 +11982,7 @@ async function replaceCloudDataWithLocal() {
 
   window.addEventListener('load',async function(){
     try{
-      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.52',{updateViaCache:'none'});
+      swRegistration=await navigator.serviceWorker.register('./sw.js?v=1.8.54',{updateViaCache:'none'});
       window.matgarySWRegistration=swRegistration;
       console.log('[SW] registered:',swRegistration.scope);
 
