@@ -2214,11 +2214,9 @@ input[type="date"].sales-date-filter:focus{
   inset:0!important;
   width:100%!important;
   height:100%!important;
-  opacity:0!important;
+  opacity:.01!important;
   cursor:pointer!important;
-  z-index:3!important;
-  display:block!important;
-  pointer-events:auto!important;
+  z-index:2!important;
 }
 .sales-date-wrap:has(input:not([value=""])){color:var(--text,#263238)!important}
 .sales-date-wrap:focus-within{
@@ -3835,7 +3833,7 @@ html[data-theme="dark"] .sales-summary-card .value{
 // متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
 const APP_VERSION='v1.8.56';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "27 سبتمبر 2026 — إصلاح عرض وتحليل لوحة الربحية والمخزون وتوحيد متوسط التكلفة";
+const APP_BUILD_DATE = "2 أكتوبر 2026 — تسريع سجل المبيعات وإصلاح اختيار التاريخ";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -5370,13 +5368,14 @@ function renderSalesPage(container){
     <section class="sales-history-card sales-history-modern sales-history-collapsed" id="salesHistorySection" style="margin-top:18px">
       <div class="sales-history-head sales-history-toggle-head" onclick="toggleSalesHistory()"><div class="sales-history-title"><div class="sales-history-icon"><i class="fas fa-receipt"></i></div><div><h3>سجل المبيعات</h3><small>اضغط لعرض الفواتير والمبالغ والأرباح</small></div></div><div class="sales-history-head-actions"><button type="button" class="sales-refresh-btn" onclick="event.stopPropagation();renderSalesTable()" title="تحديث السجل"><i class="fas fa-rotate"></i></button><button type="button" class="sales-history-open-btn" id="salesHistoryOpenBtn" title="فتح سجل المبيعات"><i class="fas fa-chevron-down"></i></button></div></div>
       <div class="sales-history-body" id="salesHistoryBody"><div class="sales-stats-grid"><div class="sales-stat"><span class="sales-stat-icon"><i class="fas fa-file-invoice"></i></span><div><small>العمليات</small><strong id="salesStatCount">0</strong></div></div><div class="sales-stat"><span class="sales-stat-icon"><i class="fas fa-money-bill-wave"></i></span><div><small>المبيعات</small><strong id="salesStatTotal">0 ج.م</strong></div></div><div class="sales-stat"><span class="sales-stat-icon"><i class="fas fa-hand-holding-dollar"></i></span><div><small>المدفوع</small><strong id="salesStatPaid">0 ج.م</strong></div></div><div class="sales-stat"><span class="sales-stat-icon"><i class="fas fa-chart-line"></i></span><div><small>الربح</small><strong id="salesStatProfit">0 ج.م</strong></div></div></div>
-        <div class="sales-filters"><div class="sales-search-wrap"><i class="fas fa-search"></i><input type="text" id="saleSearch" placeholder="ابحث عن صنف أو عميل أو ملاحظة..." oninput="debouncedRenderSalesTable()"><button type="button" onclick="document.getElementById('saleSearch').value='';renderSalesTable()"><i class="fas fa-xmark"></i></button></div><div class="sales-quick-filters"><button type="button" class="active" data-range="all" onclick="setSalesRange('all',this)">الكل</button><button type="button" data-range="today" onclick="setSalesRange('today',this)">اليوم</button><button type="button" data-range="week" onclick="setSalesRange('week',this)">هذا الأسبوع</button><button type="button" data-range="month" onclick="setSalesRange('month',this)">هذا الشهر</button></div><div class="sales-filter-row"><select id="saleTypeFilter" onchange="renderSalesTable()"><option value="">كل أنواع البيع</option><option value="retail">🛍️ قطاعي</option><option value="wholesale">📦 جملة</option></select><select id="salePaymentFilter" onchange="renderSalesTable()"><option value="">كل طرق السداد</option><option value="cash">💵 نقدي</option><option value="credit">⏳ آجل</option><option value="transfer">📱 تحويل</option><option value="card">💳 بطاقة</option></select><label class="sales-date-wrap" title="اختيار تاريخ محدد"><i class="fas fa-calendar-days"></i><span id="saleFilterDateLabel">اختر التاريخ</span><input type="date" id="saleFilterDate" onchange="setSalesRange('custom',this)" oninput="setSalesRange('custom',this)" class="sales-date-filter" aria-label="اختيار تاريخ محدد"></label><button type="button" class="sales-clear-filters" onclick="clearSalesFilters()"><i class="fas fa-filter-circle-xmark"></i> مسح الفلاتر</button></div></div><div id="salesTable" class="sales-cards-list"></div></div>
+        <div class="sales-filters"><div class="sales-search-wrap"><i class="fas fa-search"></i><input type="text" id="saleSearch" placeholder="ابحث عن صنف أو عميل أو ملاحظة..." oninput="debouncedRenderSalesTable()"><button type="button" onclick="document.getElementById('saleSearch').value='';renderSalesTable()"><i class="fas fa-xmark"></i></button></div><div class="sales-quick-filters"><button type="button" class="active" data-range="all" onclick="setSalesRange('all',this)">الكل</button><button type="button" data-range="today" onclick="setSalesRange('today',this)">اليوم</button><button type="button" data-range="week" onclick="setSalesRange('week',this)">هذا الأسبوع</button><button type="button" data-range="month" onclick="setSalesRange('month',this)">هذا الشهر</button></div><div class="sales-filter-row"><select id="saleTypeFilter" onchange="renderSalesTable()"><option value="">كل أنواع البيع</option><option value="retail">🛍️ قطاعي</option><option value="wholesale">📦 جملة</option></select><select id="salePaymentFilter" onchange="renderSalesTable()"><option value="">كل طرق السداد</option><option value="cash">💵 نقدي</option><option value="credit">⏳ آجل</option><option value="transfer">📱 تحويل</option><option value="card">💳 بطاقة</option></select><label class="sales-date-wrap" title="اختيار تاريخ محدد" onclick="openSalesDatePicker(event)"><i class="fas fa-calendar-days"></i><span id="saleFilterDateLabel">اختر التاريخ</span><input type="date" id="saleFilterDate" onchange="setSalesRange('custom')" oninput="updateSalesDateFilterLabel()" onclick="event.stopPropagation();try{this.showPicker&&this.showPicker()}catch(e){}" class="sales-date-filter" aria-label="اختيار تاريخ محدد"></label><button type="button" class="sales-clear-filters" onclick="clearSalesFilters()"><i class="fas fa-filter-circle-xmark"></i> مسح الفلاتر</button></div></div><div id="salesTable" class="sales-cards-list"></div></div>
     </section>
   </div>`;
   renderSaleProductGrid();
   renderPOSCart();
   togglePOSCustomCustomer();
   togglePOSCredit();
+  updateSalesDateFilterLabel();
   renderSalesTable();
   updatePOSCustomerPill();
   setPOSPaymentMethod('cash');
@@ -7801,23 +7800,33 @@ function updateSalesDateFilterLabel(){
   const input=document.getElementById('saleFilterDate');
   const label=document.getElementById('saleFilterDateLabel');
   if(!input||!label)return;
-  if(!input.value){
-    label.textContent='اختر التاريخ';
-    return;
-  }
-  const m=input.value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  label.textContent=m?`${m[3]}/${m[2]}/${m[1]}`:input.value;
+  const value=String(input.value||'').trim();
+  const m=value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  label.textContent=m?`${m[3]}/${m[2]}/${m[1]}`:'اختر التاريخ';
+  if(window.salesInvoiceProState) window.salesInvoiceProState.date=value;
+}
+function openSalesDatePicker(event){
+  const input=document.getElementById('saleFilterDate');
+  if(!input)return;
+  updateSalesDateFilterLabel();
+  if(event && event.target===input)return;
+  try{
+    if(typeof input.showPicker==='function'){
+      input.showPicker();
+      return;
+    }
+  }catch(e){}
+  try{input.focus();input.click();}catch(e){}
 }
 function setSalesRange(range,btn){
-  window.salesRange=range;
-  if(range==='custom'){
-    const input=document.getElementById('saleFilterDate');
-    if(input && input.value && window.salesInvoiceProState) window.salesInvoiceProState.date=input.value;
-  }
+  const normalized=range==='custom'?'custom':(range||'all');
+  window.salesRange=normalized;
+  if(window.salesInvoiceProState) window.salesInvoiceProState.range=normalized;
   document.querySelectorAll('.sales-quick-filters button').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  if(range!=='custom'){
-    const date=document.getElementById('saleFilterDate'); if(date)date.value='';
+  if(normalized!=='custom'){
+    const date=document.getElementById('saleFilterDate');
+    if(date)date.value='';
   }
   updateSalesDateFilterLabel();
   renderSalesTable();
@@ -12116,7 +12125,10 @@ async function replaceCloudDataWithLocal() {
 <script id="sales-history-v142-js">
 (function(){
   const money = v => Number(v||0);
-  function allSales(){ return Array.isArray(Store.get('sales')) ? Store.get('sales') : []; }
+  function allSales(){
+    const sales=Store.get('sales');
+    return Array.isArray(sales) ? sales : [];
+  }
   function lineItems(s){ return Array.isArray(s.items) ? s.items : [s]; }
   function invoiceKey(s){ return s.saleBatchId ? 'batch:'+s.saleBatchId : 'sale:'+s.id; }
 
@@ -12182,7 +12194,7 @@ function ensureLegacyInvoiceSequences(){
       map.get(key).push(s);
     });
     const result=[...map.values()].map(lines=>{
-      const first=lines[0];
+      const first=lines[0]||{};
       const total=lines.reduce((n,s)=>n+money(s.total),0);
       const profit=lines.reduce((n,s)=>n+money(s.profit),0);
       // الحماية المالية: بعض الفواتير القديمة قد تحتوي paid أكبر من إجمالي الفاتورة.
@@ -12194,12 +12206,20 @@ function ensureLegacyInvoiceSequences(){
       const returnedLines=lines.filter(s=>money(s.returnedQty)>0);
       const activeLines=lines.filter(s=>money(s.qty)>0 && money(s.total)>0);
       const returnStatus=returnedLines.length?(activeLines.length?'partial':'full'):'';
-      const invoiceNo=first.invoiceNo||('INV-'+String(first.id||'').slice(-6));
+      const productNames=lines.map(s=>s.productName||'').join(' ');
       const customerName=first.customerName||'عميل عادي';
       const note=first.note||'';
-      const searchText=`${invoiceNo} ${customerName} ${note} ${lines.map(s=>s.productName||'').join(' ')}`.toLowerCase();
-      return {key:invoiceKey(first),id:first.id,saleBatchId:first.saleBatchId||null,invoiceNo,invoiceSeq:first.invoiceSeq||null,date:first.date||'',time:first.time||'',createdAt:first.createdAt||'',customerId:first.customerId||null,customerName,type:first.type||'retail',paymentMethod:first.paymentMethod||'cash',note,total,profit,paid,remaining,returnedAmount,returnedQty,returnedLines,activeLines,returnStatus,searchText,lines};
-    }).sort((a,b)=>String(b.date+' '+b.time).localeCompare(String(a.date+' '+a.time)));
+      const invoiceNo=first.invoiceNo||('INV-'+String(first.id||'').slice(-6));
+      const invoiceSeq=first.invoiceSeq||null;
+      const date=first.date||'';
+      const time=first.time||'';
+      const searchText=`${invoiceNo} ${invoiceSeq||''} ${customerName} ${note} ${productNames}`.toLowerCase();
+      const invoice={key:invoiceKey(first),id:first.id,saleBatchId:first.saleBatchId||null,invoiceNo,invoiceSeq,date,time,createdAt:first.createdAt||'',customerId:first.customerId||null,customerName,type:first.type||'retail',paymentMethod:first.paymentMethod||'cash',note,total,profit,paid,remaining,returnedAmount,returnedQty,returnedLines,activeLines,returnStatus,lines,searchText,sortKey:String(date+' '+time)};
+      return invoice;
+    }).sort((a,b)=>b.sortKey.localeCompare(a.sortKey));
+
+    // لا نبني HTML لكل الفواتير هنا؛ نُنشئ بطاقة الفاتورة عند ظهورها فقط،
+    // ثم نحتفظ بها داخل الكائن نفسه لإعادة استخدامها في عمليات البحث التالية.
     __matgarySalesGroupCache={version,source,result};
     return result;
   }
@@ -12286,68 +12306,56 @@ function historyCard(inv){
   window.ensureLegacyInvoiceSequences=ensureLegacyInvoiceSequences;
   window.productForSaleLine=productForSaleLine;
   window.salesInvoiceProState=window.salesInvoiceProState||{q:'',range:'all',type:'',payment:'',date:''};
-  function normalizeSalesDate(value){
-    const raw=String(value??'').trim();
-    if(!raw)return '';
-    let m=raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-    if(m)return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
-    m=raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
-    if(m)return `${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
-    const d=new Date(raw);
-    if(!Number.isNaN(d.getTime())){
-      const y=d.getFullYear(),mo=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
-      return `${y}-${mo}-${day}`;
-    }
-    return raw;
-  }
-
-  let __matgarySalesViewCache={version:-1,key:'',list:null};
   window.renderSalesTable=function(){
-    const st=window.salesInvoiceProState||{};
-    const q=(document.getElementById('saleSearch')?.value??st.q??'').trim().toLowerCase();
-    const type=document.getElementById('saleTypeFilter')?.value??st.type??'';
-    const payment=document.getElementById('salePaymentFilter')?.value??st.payment??'';
-    const date=document.getElementById('saleFilterDate')?.value??st.date??'';
+    const st=window.salesInvoiceProState||{q:'',range:'all',type:'',payment:'',date:''};
+    const q=String(document.getElementById('saleSearch')?.value??st.q??'').trim().toLowerCase();
+    const type=String(document.getElementById('saleTypeFilter')?.value??st.type??'');
+    const payment=String(document.getElementById('salePaymentFilter')?.value??st.payment??'');
+    const date=String(document.getElementById('saleFilterDate')?.value??st.date??'');
     const range=window.salesRange||st.range||'all';
     st.q=q;st.type=type;st.payment=payment;st.date=date;st.range=range;
     window.salesInvoiceProState=st;
+    if(typeof updateSalesDateFilterLabel==='function') updateSalesDateFilterLabel();
 
+    const source=groupSales();
     let start='',end='';
-    if(range==='custom' && date){
-      start=end=normalizeSalesDate(date);
-    }else if(range!=='all' && typeof getSalesRangeDates==='function'){
+    if(range==='custom'&&date){
+      start=end=date;
+    }else if(range!=='all'&&typeof getSalesRangeDates==='function'){
       [start,end]=getSalesRangeDates(range);
     }
-    start=normalizeSalesDate(start); end=normalizeSalesDate(end);
 
-    const cacheKey=[q,type,payment,range,start,end].join('|');
-    const version=__matgarySalesDataVersion;
-    let list;
-    if(__matgarySalesViewCache.version===version && __matgarySalesViewCache.key===cacheKey && Array.isArray(__matgarySalesViewCache.list)){
-      list=__matgarySalesViewCache.list;
-    }else{
-      const grouped=groupSales();
-      list=grouped.filter(inv=>{
-        const invDate=normalizeSalesDate(inv.date);
-        return (!q||inv.searchText.includes(q))
-          &&(!type||inv.type===type)
-          &&(!payment||inv.paymentMethod===payment)
-          &&(!start||(invDate>=start&&invDate<=end));
-      });
-      __matgarySalesViewCache={version,key:cacheKey,list};
+    const list=source.filter(inv=>{
+      if(start){
+        const d=inv.date||'';
+        if(d<start||d>end)return false;
+      }
+      if(type&&inv.type!==type)return false;
+      if(payment&&inv.paymentMethod!==payment)return false;
+      if(q&&!inv.searchText.includes(q))return false;
+      return true;
+    });
+
+    let total=0,paid=0,profit=0;
+    for(const inv of list){
+      total+=inv.total;
+      paid+=inv.paid;
+      profit+=inv.profit;
     }
-
-    const total=list.reduce((n,x)=>n+x.total,0);
-    const paid=list.reduce((n,x)=>n+x.paid,0);
-    const profit=list.reduce((n,x)=>n+x.profit,0);
     const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-    set('salesStatCount',list.length);set('salesStatTotal',fmt(total));set('salesStatPaid',fmt(paid));set('salesStatProfit',fmt(profit));
-    updateSalesDateFilterLabel();
+    set('salesStatCount',list.length);
+    set('salesStatTotal',fmt(total));
+    set('salesStatPaid',fmt(paid));
+    set('salesStatProfit',fmt(profit));
+
     const target=document.getElementById('salesTable');
-    if(target)target.innerHTML=list.map(historyCard).join('')||'<div class="sales-empty"><div><i class="fas fa-receipt"></i></div><strong>لا توجد فواتير</strong><span>جرّب تغيير البحث أو الفلاتر</span></div>';
+    if(!target)return;
+    target.innerHTML=list.length
+      ? list.map(inv=>inv._historyHtml||historyCard(inv)).join('')
+      : '<div class="sales-empty"><div><i class="fas fa-receipt"></i></div><strong>لا توجد فواتير</strong><span>جرّب تغيير البحث أو الفلاتر</span></div>';
   };
 
-  window.clearSalesFilters=function(){window.salesRange='all';__matgarySalesViewCache={version:-1,key:'',list:null};window.salesInvoiceProState={q:'',range:'all',type:'',payment:'',date:''};['saleSearch','saleFilterDate','saleTypeFilter','salePaymentFilter'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.querySelectorAll('.sales-quick-filters button').forEach(b=>b.classList.toggle('active',b.dataset.range==='all'));renderSalesTable();};
+  window.clearSalesFilters=function(){window.salesRange='all';window.salesInvoiceProState={q:'',range:'all',type:'',payment:'',date:''};['saleSearch','saleFilterDate','saleTypeFilter','salePaymentFilter'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});updateSalesDateFilterLabel();document.querySelectorAll('.sales-quick-filters button').forEach(b=>b.classList.toggle('active',b.dataset.range==='all'));renderSalesTable();};
 
   function findInvoice(key){return groupSales().find(x=>x.key===key);}
   function closeIfOpen(){try{closeModal();}catch(e){}}
