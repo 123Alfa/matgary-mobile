@@ -4961,7 +4961,7 @@ function renderProductsPage(container){
         <div class="form-group"><label>سعر الجملة</label><input type="number" id="pWholesale" placeholder="0.00" step="0.01" inputmode="decimal"><div class="pos-value-hint">للأصناف الوزنية: هذا سعر الكيلو. لسعر اتفاق ثابت (مثل 1040 ج.م لبستلتين (4.5 كجم للبستلة) = 9 كجم) استخدم «🧾 إجمالي» من السلة.</div></div>
         <div class="form-group"><label>سعر القطاعي</label><input type="number" id="pRetail" placeholder="0.00" step="0.01" inputmode="decimal" oninput="calcProductProfit()"></div>
         <div class="form-group"><label>الكمية الحالية</label><input type="number" id="pQty" placeholder="0" step="0.01" inputmode="decimal"></div>
-        <div class="form-group"><label>الوحدة</label><select id="pUnit"><option>كجم</option><option>عبوة</option><option>علبة</option><option>كيس</option><option>لفة</option><option>قطعة</option><option>كرتونة</option><option>باكت</option><option>برطمان</option></select></div>
+        <div class="form-group"><label>الوحدة</label><select id="pUnit"><option>كجم</option><option>عبوة</option><option>علبة</option><option>كيس</option><option>لفة</option><option>قطعة</option><option>كرتونة</option><option>باكت</option><option>برطمان</option></select><div class="pos-value-hint">طحينة شهد: برطمان 150 جم — نصف 75 جم — ربع 37.5 جم.</div></div>
         <div class="form-group"><label>حد التنبيه</label><input type="number" id="pMinStock" placeholder="5" value="5" step="1" inputmode="numeric"></div>
         <div class="form-group"><label>ربح القطاعي</label><input type="number" id="pExpectedProfit" class="profit-input" readonly></div><div class="form-group"><label>نسبة الربح</label><input type="text" id="pProfitPercent" class="profit-input" readonly></div>
       </div><button class="btn btn-primary btn-block" onclick="addProduct()"><i class="fas fa-save"></i> حفظ الصنف</button>
@@ -5040,7 +5040,7 @@ function filterProducts(){
     const qty=Number(p.qty||0),min=Number(p.minStock||5),low=qty<=min,out=qty<=0;
     const image=p.image?`<img src="${p.image}" alt="${escapeHtml(p.name)}">`:meta.icon;
     const status=out?'<span class="product-status out">نافد</span>':low?'<span class="product-status low">مخزون منخفض</span>':'<span class="product-status ok">متوفر</span>';
-    return `<div class="product-item product-item-v2 ${out?'is-out':''}" onclick="editProduct('${p.id}')"><div class="p-image">${image}${status}</div><div class="p-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div><div class="p-type"><span class="badge badge-${meta.className}">${meta.icon} ${meta.label}</span></div><div class="product-price-row"><b>${fmt(p.retail||0)}</b><small>قطاعي</small></div><div class="product-price-mini"><span>جملة <b>${fmt(p.wholesale||0)}</b></span><span>شراء <b>${fmt(p.purchase||0)}</b></span></div><div class="p-qty">المخزون: <b>${formatProductQty(p,qty)} ${p.unit||'كجم'}</b></div><div class="product-stock-bar"><i style="width:${Math.min(100,Math.max(3,min>0?qty/min*100:100))}%"></i></div><div class="p-profit"><i class="fas fa-arrow-trend-${pr>=0?'up':'down'}"></i> ربح ${fmt(pr)} <small>(${pct}%)</small></div><div class="p-actions"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editProduct('${p.id}')"><i class="fas fa-pen"></i> تعديل</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button></div></div>`;
+    return `<div class="product-item product-item-v2 ${out?'is-out':''}" onclick="editProduct('${p.id}')"><div class="p-image">${image}${status}</div><div class="p-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div><div class="p-type"><span class="badge badge-${meta.className}">${meta.icon} ${meta.label}</span></div><div class="product-price-row"><b>${fmt(p.retail||0)}</b><small>قطاعي</small></div><div class="product-price-mini"><span>جملة <b>${fmt(p.wholesale||0)}</b></span><span>شراء <b>${fmt(p.purchase||0)}</b></span></div><div class="p-qty">المخزون: <b>${formatProductQty(p,qty)} ${isFractionalPackProduct(p)?'برطمان':(p.unit||'كجم')}</b></div><div class="product-stock-bar"><i style="width:${Math.min(100,Math.max(3,min>0?qty/min*100:100))}%"></i></div><div class="p-profit"><i class="fas fa-arrow-trend-${pr>=0?'up':'down'}"></i> ربح ${fmt(pr)} <small>(${pct}%)</small></div><div class="p-actions"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editProduct('${p.id}')"><i class="fas fa-pen"></i> تعديل</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button></div></div>`;
   }).join('')||'<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-box-open"></i><p>لا توجد أصناف مطابقة للبحث</p></div>';
 }
 
@@ -5614,6 +5614,39 @@ function setPOSPaymentMethod(method,btn){
 // ==================== تنبيه اختيار المنتج في نقطة البيع ====================
 let posSaleAudioContext = null;
 
+// ==================== طحينة شهد — عبوة ثابتة 150 جم ====================
+// الوحدة المخزنية والبيعية = برطمان، مع السماح ببيع نصف وربع البرطمان.
+function isFractionalPackProduct(p){
+  if(!p) return false;
+  const name=String(p.name||'').trim().toLowerCase();
+  const unit=String(p.unit||p.sellUnit||'').trim().toLowerCase();
+  return /طحينة\s*شهد|شهد\s*طحينة|tahini\s*shahd/.test(name) || (unit==='برطمان' && /طحينة|طحينه|tahini/.test(name));
+}
+function tahinaPackLabel(fraction){
+  const f=Number(fraction);
+  if(Math.abs(f-1)<.000001) return 'برطمان 150 جم';
+  if(Math.abs(f-.5)<.000001) return 'نصف برطمان 75 جم';
+  if(Math.abs(f-.25)<.000001) return 'ربع برطمان 37.5 جم';
+  return 'برطمان';
+}
+function tahinaPackShortLabel(fraction){
+  const f=Number(fraction);
+  if(Math.abs(f-1)<.000001) return '150 جم';
+  if(Math.abs(f-.5)<.000001) return '75 جم';
+  if(Math.abs(f-.25)<.000001) return '37.5 جم';
+  return `${Number((f*150).toFixed(1))} جم`;
+}
+function tahinaPackQuantityLabel(qty,fraction){
+  const q=Math.max(1,Number(qty||1));
+  const f=Math.max(.001,Number(fraction||1));
+  const grams=q*f*150;
+  const gramsLabel=Number.isInteger(grams)?String(grams):String(Number(grams.toFixed(1)));
+  if(Math.abs(f-1)<.000001) return `${q} برطمان • ${gramsLabel} جم`;
+  if(Math.abs(f-.5)<.000001) return `${q} أنصاف برطمان • ${gramsLabel} جم`;
+  if(Math.abs(f-.25)<.000001) return `${q} أرباع برطمان • ${gramsLabel} جم`;
+  return `${q} × ${tahinaPackLabel(f)} • ${gramsLabel} جم`;
+}
+
 function playPOSAddSound(){
   try{
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -5663,13 +5696,18 @@ function addToPOSCart(id, weight = 1) {
   if (!p) return showToast('تعذر العثور على المنتج', 'warning');
   const stock = Number(p.qty);
   if (!Number.isFinite(stock) || stock <= 0) return showToast('المنتج غير متاح في المخزون', 'warning');
+
+  const kgProduct = typeof isKgProduct==='function' ? isKgProduct(p) : false;
+  const packProduct = isFractionalPackProduct(p);
   let actualWeight = Number(weight);
-  if (!isKgProduct(p)) actualWeight = 1;
+  if (!kgProduct && !packProduct) actualWeight = 1;
   else if (!Number.isFinite(actualWeight) || actualWeight <= 0) actualWeight = 1;
+  if(packProduct && ![1,.5,.25].some(v=>Math.abs(v-actualWeight)<0.000001)) actualWeight=1;
 
   const existingReserved = reservedProductQty(productId);
   if (existingReserved + actualWeight > stock + 0.000001) {
-    return showToast(`الكمية المتاحة غير كافية — المتاح ${formatProductQty(p, p.qty)} ${p.unit || 'كجم'}`, 'warning');
+    const stockUnit=packProduct?'برطمان':(p.unit||'كجم');
+    return showToast(`الكمية المتاحة غير كافية — المتاح ${formatProductQty(p, p.qty)} ${stockUnit}`, 'warning');
   }
 
   window.posCart = window.posCart || [];
@@ -5683,13 +5721,39 @@ function addToPOSCart(id, weight = 1) {
       qty: 1,
       weight: actualWeight,
       priceOverride: null,
-      saleMode: 'weight',
+      saleMode: packProduct ? 'pack' : 'weight',
       valueAmount: 0
     });
   }
   renderPOSCart();
   renderSaleProductGrid();
   showPOSProductSelected(productId);
+}
+
+
+function changePOSPackFraction(index,newFraction){
+  const item=(window.posCart||[])[index];
+  if(!item)return;
+  const p=(window.saleProducts||[]).find(x=>String(x.id)===String(item.id));
+  if(!p||!isFractionalPackProduct(p))return;
+  newFraction=Number(newFraction);
+  if(![1,.5,.25].some(v=>Math.abs(v-newFraction)<.000001))return showToast('اختَر برطمانًا كاملًا أو نصفًا أو ربعًا','warning');
+  const otherReserved=reservedProductQty(p.id,index);
+  const needed=otherReserved+(newFraction*Number(item.qty||0));
+  if(needed>(Number(p.qty)||0)+0.000001){
+    renderPOSCart();
+    return showToast(`المتاح لا يكفي لهذا الحجم — المتاح ${formatProductQty(p,p.qty)} برطمان`,'warning');
+  }
+  const same=(window.posCart||[]).find((x,i)=>i!==index && String(x.id)===String(p.id) && Math.abs(Number(x.weight||1)-newFraction)<.000001);
+  if(same){
+    same.qty=Number(same.qty||0)+Number(item.qty||0);
+    window.posCart.splice(index,1);
+  }else{
+    item.weight=newFraction;
+    item.saleMode='pack';
+  }
+  renderPOSCart();
+  renderSaleProductGrid();
 }
 
 function changePOSQty(index,delta){
@@ -5856,7 +5920,7 @@ function openPOSLineTotalEditor(index){
   const type=document.getElementById('posSaleType')?.value||'retail';
   const price=getPOSItemUnitPrice(item,p,type);
   const qty=Math.max(1,Number(item.qty||1));
-  const weight=isKgProduct(p)?Math.max(0.001,Number(item.weight||1)):1;
+  const weight=(isKgProduct(p)||isFractionalPackProduct(p))?Math.max(0.001,Number(item.weight||1)):1;
   const divisor=qty*weight;
   const current=roundPOSMoney(price*divisor);
   const value=window.prompt(isKgProduct(p)?'إجمالي الاتفاق للصنف (مثال: 1040 لبستلتين (4.5 كجم للبستلة) = 9 كجم)':'إجمالي الاتفاق للصنف',String(current));
@@ -5874,7 +5938,7 @@ function openPOSPriceEditor(index){
   const p=(window.saleProducts||[]).find(x=>String(x.id)===String(item.id));
   const type=document.getElementById('posSaleType')?.value||'retail';
   const current=getPOSItemUnitPrice(item,p,type);
-  const label=p && isKgProduct(p) ? 'سعر البيع للكيلو' : 'سعر البيع';
+  const label=p && isKgProduct(p) ? 'سعر البيع للكيلو' : (p && isFractionalPackProduct(p) ? 'سعر البيع للبرطمان' : 'سعر البيع');
   const value=window.prompt(label, String(current));
   if(value===null)return;
   updatePOSItemPrice(index,value);
@@ -5985,7 +6049,8 @@ function renderPOSCart(){
     const img=p.image?`<img src="${p.image}" alt="${p.name}">`:`<div class="pos-cart-noimg">🧀</div>`;
     const out=(p.qty||0)<=0;
     const isWeight=isKgProduct(p);
-    const total=isWeight&&item.saleMode==='value' ? roundPOSMoney(Number(item.valueAmount||0)*Number(item.qty||1)) : roundPOSMoney(price*(item.qty||1)*(isWeight?weight:1));
+    const isTahinaPack=isFractionalPackProduct(p);
+    const total=isWeight&&item.saleMode==='value' ? roundPOSMoney(Number(item.valueAmount||0)*Number(item.qty||1)) : roundPOSMoney(price*(item.qty||1)*(isWeight||isTahinaPack?weight:1));
     const basePrice=Number(type === 'wholesale' ? (p.wholesale || 0) : (p.retail || 0));
     const offerInfo=getOfferDiscountForProduct(p.id,basePrice);
     const offerHtml=offerInfo.offer && offerInfo.discount>0 ? `<div class="pos-cart-offer">🏷️ ${offerInfo.offer.name}: خصم ${fmt(offerInfo.discount)} ج (${offerInfo.percent.toFixed(2)}%)</div>` : '';
@@ -6009,21 +6074,29 @@ function renderPOSCart(){
       `:`
         <div class="pos-weight-control"><input id="weightInput_${index}" type="number" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" min="0" step="0.001" value="${item.weight ? item.weight : '.250'}" placeholder="0.250" oninput="handleLiveWeightInput(${index}, this.value, ${price})" onkeydown="return ['e','E','+','-'].includes(event.key) ? false : true"><span>كجم</span></div>
       }
-    `}`):`<span class="pos-unit-label">${typeof productSaleUnitLabel==='function'?productSaleUnitLabel(p,item):(p.unit||'قطعة')}</span>`;
+    `}`):isTahinaPack?`
+      <div class="pos-sale-mode"><button type="button" class="active" disabled>🫙 أحجام البرطمان</button></div>
+      <div class="sp-sizes-modern tahina-pack-sizes" style="margin-top:6px">
+        <button type="button" class="sp-size ${Math.abs(weight-1)<.000001?'active':''}" ${Number(p.qty||0)<1?'disabled':''} onclick="changePOSPackFraction(${index},1)">برطمان 150 جم — ${fmt(price)}</button>
+        <button type="button" class="sp-size ${Math.abs(weight-.5)<.000001?'active':''}" ${Number(p.qty||0)<.5?'disabled':''} onclick="changePOSPackFraction(${index},0.5)">نصف 75 جم — ${fmt(price*.5)}</button>
+        <button type="button" class="sp-size ${Math.abs(weight-.25)<.000001?'active':''}" ${Number(p.qty||0)<.25?'disabled':''} onclick="changePOSPackFraction(${index},0.25)">ربع 37.5 جم — ${fmt(price*.25)}</button>
+      </div>
+      <div class="pos-value-hint tahina-pack-hint">الحجم المختار: ${tahinaPackShortLabel(weight)} • الكمية المسجلة: ${tahinaPackQuantityLabel(Number(item.qty||1),weight)}</div>
+    `:`<span class="pos-unit-label">${typeof productSaleUnitLabel==='function'?productSaleUnitLabel(p,item):(p.unit||'قطعة')}</span>`;
     return `<div class="pos-cart-item pos-cart-product-row">
       <div class="pos-cart-product-cell">
         <div class="cart-visual">${img}</div>
         <div class="pos-cart-main">
           <div class="pos-cart-topline"><span class="pos-cart-name">${escapeHtml(p.name)}</span><button class="pos-cart-delete" onclick="removePOSItem(${index})" title="حذف">🗑️</button></div>
           ${lastHtml}${offerHtml}
-          <div class="pos-cart-stock-badge ${out?'out':''}">${out?'⚠️ نفد':`📦 المخزون: ${formatProductQty(p,p.qty||0)} ${p.unit||'كجم'}`}</div>
+          <div class="pos-cart-stock-badge ${out?'out':''}">${out?'⚠️ نفد':`📦 المخزون: ${formatProductQty(p,p.qty||0)} ${isTahinaPack?'برطمان':(p.unit||'كجم')}`}</div>
         </div>
       </div>
       <div class="pos-cart-qty-cell">
         <div class="pos-qty"><button onclick="changePOSQty(${index},-1)">−</button><strong>${item.qty||1}</strong><button onclick="changePOSQty(${index},1)">+</button></div>
         ${weightControl}
       </div>
-      <div class="pos-cart-price-cell"><small>سعر البيع ${isWeight?'للكيلو':''}</small><strong>${fmtNum(price)}</strong><span>ج.م / ${isWeight?'كجم':'وحدة'}</span><button type="button" class="pos-edit-price-mini" onclick="openPOSPriceEditor(${index})" title="تعديل سعر البيع">✎ تعديل</button><button type="button" class="pos-edit-price-mini" onclick="openPOSLineTotalEditor(${index})" title="تثبيت إجمالي الاتفاق">🧾 إجمالي</button>${item.priceOverride!==null&&item.priceOverride!==undefined?`<button class="pos-edit-price-mini" onclick="resetPOSItemPrice(${index})">↩ الأساسي</button>`:''}</div>
+      <div class="pos-cart-price-cell"><small>سعر البيع ${isWeight?'للكيلو':(isTahinaPack?'للبرطمان':'')}</small><strong>${fmtNum(price)}</strong><span>ج.م / ${isWeight?'كجم':(isTahinaPack?'برطمان':'وحدة')}</span><button type="button" class="pos-edit-price-mini" onclick="openPOSPriceEditor(${index})" title="تعديل سعر البيع">✎ تعديل</button><button type="button" class="pos-edit-price-mini" onclick="openPOSLineTotalEditor(${index})" title="تثبيت إجمالي الاتفاق">🧾 إجمالي</button>${item.priceOverride!==null&&item.priceOverride!==undefined?`<button class="pos-edit-price-mini" onclick="resetPOSItemPrice(${index})">↩ الأساسي</button>`:''}</div>
       <div class="pos-cart-total-cell"><small>الإجمالي</small><strong id="livePrice_${index}">${fmtNum(total)}</strong><span>ج.م</span></div>
     </div>`;
   }).join('');
@@ -6734,10 +6807,12 @@ function printPOSReceipt(){
     const price=typeof getPOSItemUnitPrice==='function' ? num(getPOSItemUnitPrice(item,p,currentType())) : num(item.price);
     const qty=Math.max(0,num(item.qty));
     const weight=Math.max(0,num(item.weight || 1));
-    if(typeof isKgProduct==='function' && isKgProduct(p) && item.saleMode==='value'){
+    const isKg=typeof isKgProduct==='function' && isKgProduct(p);
+    const isTahina=typeof isFractionalPackProduct==='function' && isFractionalPackProduct(p);
+    if(isKg && item.saleMode==='value'){
       return money2(num(item.valueAmount) * qty);
     }
-    return money2(price * qty * ((typeof isKgProduct==='function' && isKgProduct(p)) ? weight : 1));
+    return money2(price * qty * ((isKg || isTahina) ? weight : 1));
   }
 
   function getMode(){ return el('posDiscountMode')?.value || 'none'; }
@@ -7417,7 +7492,10 @@ function renderSaleProductGrid(){
   if(!grid)return;
   const search=(document.getElementById('saleProductSearch')?.value||'').toLowerCase().trim();
   const cat=window.posCategory||'all';
-  let products=(window.saleProducts||[]).filter(p=>{const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();return hay.includes(search)&&(cat==='all'||p.type===cat);});
+  let products=(window.saleProducts||[]).filter(p=>{
+    const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();
+    return hay.includes(search)&&(cat==='all'||p.type===cat);
+  });
   const sales=Store.get('sales')||[];
   if(!window.__matgaryPOSSoldCache || window.__matgaryPOSSoldCache.version!==__matgarySalesDataVersion || window.__matgaryPOSSoldCache.source!==sales){
     const soldMap={};
@@ -7436,32 +7514,40 @@ function renderSaleProductGrid(){
     const img=p.image?`<img src="${p.image}" alt="${p.name}">`:icon;
     const out=(p.qty||0)<=0;
     const sold=soldMap[p.id]||0;
-    const kg=isKgProduct(p);
+    const kg=typeof isKgProduct==='function'?isKgProduct(p):false;
+    const pack=isFractionalPackProduct(p);
+    const displayUnit=pack?'برطمان':(p.unit||'كجم');
     const sizeButtons=kg?`<div class="sp-sizes-modern" onclick="event.stopPropagation()">
       <button class="sp-size" ${out?'disabled':''} onclick="addToPOSCart('${p.id}',1)">1 كجم</button>
       <button class="sp-size" ${Number(p.qty||0)<.5?'disabled':''} onclick="addToPOSCart('${p.id}',0.5)">500 جم</button>
       <button class="sp-size" ${Number(p.qty||0)<.25?'disabled':''} onclick="addToPOSCart('${p.id}',0.25)">250 جم</button>
+    </div>`:pack?`<div class="sp-sizes-modern tahina-pack-sizes" onclick="event.stopPropagation()">
+      <button class="sp-size" ${Number(p.qty||0)<1?'disabled':''} onclick="addToPOSCart('${p.id}',1)">برطمان 150 جم</button>
+      <button class="sp-size" ${Number(p.qty||0)<.5?'disabled':''} onclick="addToPOSCart('${p.id}',0.5)">نصف 75 جم</button>
+      <button class="sp-size" ${Number(p.qty||0)<.25?'disabled':''} onclick="addToPOSCart('${p.id}',0.25)">ربع 37.5 جم</button>
     </div>`:`<button class="sp-add-one" ${out?'disabled':''} onclick="event.stopPropagation();addToPOSCart('${p.id}',1)"><i class="fas fa-plus"></i> إضافة للسلة</button>`;
     return `<div class="sale-product-card pos-product-card ${out?'disabled':''}" data-product-id="${String(p.id).replace(/"/g,'&quot;')}" onclick="addToPOSCart('${p.id}',1)">
-      <div class="sp-stock-badge ${out?'out':''}">${out?'⚠️ نفد':`📦 ${formatProductQty(p, p.qty || 0)} ${p.unit||'كجم'}`}</div>
-      ${sold>0?`<div class="sp-best-badge">🔥 ${formatProductQty(p, sold)} مباع</div>`:''}
+      <div class="sp-stock-badge ${out?'out':''}">${out?'⚠️ نفد':`📦 ${formatProductQty(p,p.qty||0)} ${displayUnit}`}</div>
+      ${sold>0?`<div class="sp-best-badge">🔥 ${formatProductQty(p,sold)} مباع</div>`:''}
       <div class="sp-image pos-sp-image">${img}</div>
       <div class="sp-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
       ${(()=>{
-        const saleType = document.getElementById('posSaleType')?.value || 'retail';
-        const basePrice = Number(saleType==='wholesale' ? (p.wholesale||0) : (p.retail||0));
-        const unitLabel = saleType==='wholesale' ? 'جملة' : 'قطاعي';
+        const saleType=document.getElementById('posSaleType')?.value||'retail';
+        const basePrice=Number(saleType==='wholesale'?(p.wholesale||0):(p.retail||0));
+        const unitLabel=saleType==='wholesale'?'جملة':'قطاعي';
         const oi=getOfferDiscountForProduct(p.id,basePrice);
+        const packUnit=pack?'برطمان':(p.unit||'كجم');
         return oi.offer&&oi.discount>0
-          ?`<div class="sp-offer-badge">🏷️ ${oi.offer.name} · خصم ${fmt(oi.discount)} ج</div><div class="sp-price sp-price-offer"><del>${fmt(basePrice)}</del> ${fmt(oi.price)} <small>/ ${p.unit||'كجم'} (${unitLabel})</small></div>`
-          :`<div class="sp-price">${fmt(basePrice)} <small>/ ${p.unit||'كجم'} (${unitLabel})</small></div>`;
+          ?`<div class="sp-offer-badge">🏷️ ${oi.offer.name} · خصم ${fmt(oi.discount)} ج</div><div class="sp-price sp-price-offer"><del>${fmt(basePrice)}</del> ${fmt(oi.price)} <small>/ ${packUnit} (${unitLabel})</small></div>`
+          :`<div class="sp-price">${fmt(basePrice)} <small>/ ${packUnit} (${unitLabel})</small></div>`;
       })()}
-      <div class="sp-pack-price">${kg?(()=>{const saleType=document.getElementById('posSaleType')?.value||'retail';const basePrice=Number(saleType==='wholesale'?(p.wholesale||0):(p.retail||0));return `500 جم ${fmt(basePrice*.5)} · 250 جم ${fmt(basePrice*.25)}`;})():'اضغط للإضافة'}</div>
+      <div class="sp-pack-price">${kg?(()=>{const saleType=document.getElementById('posSaleType')?.value||'retail';const basePrice=Number(saleType==='wholesale'?(p.wholesale||0):(p.retail||0));return `500 جم ${fmt(basePrice*.5)} · 250 جم ${fmt(basePrice*.25)}`;})():pack?(()=>{const saleType=document.getElementById('posSaleType')?.value||'retail';const basePrice=Number(saleType==='wholesale'?(p.wholesale||0):(p.retail||0));const oi=getOfferDiscountForProduct(p.id,basePrice);const u=oi.offer&&oi.discount>0?oi.price:basePrice;return `150 جم ${fmt(u)} · 75 جم ${fmt(u*.5)} · 37.5 جم ${fmt(u*.25)}`;})():'اضغط للإضافة'}</div>
       ${sizeButtons}
     </div>`;
   }).join('')||'<div class="empty-state" style="grid-column:1/-1;padding:30px"><i class="fas fa-box-open"></i><p>لا توجد منتجات مطابقة</p></div>';
   updateSaleSelectedPreview();
 }
+
 
 function selectSaleProduct(id){
   const select=document.getElementById('sProduct');
@@ -13022,196 +13108,6 @@ th,td{padding:9px 7px;border-bottom:1px solid #e6eeeb;text-align:right}
 }
 </style>
 
-
-<script id="matgary-tahina-jar-sizes-v1">
-(function(){
-  'use strict';
-
-  // طحينة شهد: تباع كبرطمان كامل أو نصف برطمان أو ربع برطمان.
-  // المخزون هنا بوحدة البرطمان، وسعر p.retail / p.wholesale هو سعر البرطمان الكامل.
-  function isTahinaProduct(p){
-    return !!p && /طحينة|طحينه|tahini/i.test(String(p.name||''));
-  }
-  window.isTahinaProduct=isTahinaProduct;
-
-  // السعر المعتمد للقطاعي: البرطمان الكامل 150 ج، النصف 75 ج، الربع 37.50 ج.
-  const TAHINA_RETAIL_JAR_PRICE = 150;
-  window.TAHINA_RETAIL_JAR_PRICE = TAHINA_RETAIL_JAR_PRICE;
-  function tahinaRetailPrice(size){
-    const q=Number(size||1);
-    return Math.round((TAHINA_RETAIL_JAR_PRICE*q + Number.EPSILON)*100)/100;
-  }
-  window.tahinaRetailPrice=tahinaRetailPrice;
-
-  // تحديث بيانات طحينة شهد الموجودة بالفعل في التخزين حتى لا تظل بسعر قديم.
-  try{
-    setTimeout(()=>{
-      const products=Store.get('products')||[];
-      products.filter(isTahinaProduct).forEach(p=>{
-        const patch={unit:'برطمان',sellByWeight:false,retail:TAHINA_RETAIL_JAR_PRICE};
-        Store.update('products',p.id,patch);
-      });
-    },0);
-  }catch(e){ console.warn('تعذر تحديث سعر طحينة شهد تلقائيًا:',e); }
-
-  function tahinaQtyLabel(q){
-    const n=Number(q||0);
-    if(Math.abs(n-1)<.000001) return '1 برطمان';
-    if(Math.abs(n-.5)<.000001) return 'نصف برطمان';
-    if(Math.abs(n-.25)<.000001) return 'ربع برطمان';
-    if(Math.abs(n-.75)<.000001) return '¾ برطمان';
-    return `${n} برطمان`;
-  }
-  window.tahinaQtyLabel=tahinaQtyLabel;
-
-  // نخلي الطحينة صنف عبوات ثابتة، وليس صنفًا موزونًا بالكيلو.
-  const originalIsKgProduct=window.isKgProduct;
-  window.isKgProduct=function(p){
-    if(isTahinaProduct(p)) return false;
-    return typeof originalIsKgProduct==='function' ? originalIsKgProduct(p) : false;
-  };
-
-  // عرض الوحدة في الفواتير والسلة.
-  const originalProductSaleUnitLabel=window.productSaleUnitLabel;
-  window.productSaleUnitLabel=function(p,s){
-    if(isTahinaProduct(p)) return 'برطمان';
-    return typeof originalProductSaleUnitLabel==='function'
-      ? originalProductSaleUnitLabel(p,s)
-      : String(s?.sellUnit||p?.unit||'وحدة');
-  };
-  window.matgaryUnitLabel=window.productSaleUnitLabel;
-
-  // إضافة الطحينة بالحجم المطلوب: 1 / 0.5 / 0.25 برطمان.
-  const originalAddToPOSCart=window.addToPOSCart;
-  window.addToPOSCart=function(id,size){
-    const productId=String(id);
-    const p=(window.saleProducts||[]).find(x=>String(x.id)===productId);
-    if(!isTahinaProduct(p)) return originalAddToPOSCart(id,size);
-
-    const stock=Number(p.qty||0);
-    if(!Number.isFinite(stock)||stock<=0) return showToast('الطحينة غير متاحة في المخزون','warning');
-    let qty=Number(size);
-    if(![1,.5,.25].some(x=>Math.abs(x-qty)<.000001)) qty=1;
-
-    const existingReserved=reservedProductQty(productId);
-    if(existingReserved+qty>stock+.000001){
-      return showToast(`الكمية المتاحة ${formatProductQty(p,p.qty)} برطمان`,'warning');
-    }
-
-    window.posCart=window.posCart||[];
-    const existing=window.posCart.find(x=>String(x.id)===productId && Math.abs(Number(x.weight||1)-1)<.000001);
-    if(existing) existing.qty=Number(existing.qty||0)+qty;
-    else window.posCart.push({id:productId,name:p.name||'طحينة',qty,weight:1,priceOverride:null,saleMode:null,valueAmount:0});
-
-    renderPOSCart();
-    renderSaleProductGrid();
-    showPOSProductSelected(productId);
-  };
-
-  // أزرار الأحجام داخل بطاقة الطحينة.
-  const originalRenderSaleProductGrid=window.renderSaleProductGrid;
-  window.renderSaleProductGrid=function(){
-    originalRenderSaleProductGrid();
-    document.querySelectorAll('.sale-product-card').forEach(card=>{
-      const id=card.getAttribute('data-product-id');
-      const p=(window.saleProducts||[]).find(x=>String(x.id)===String(id));
-      if(!isTahinaProduct(p)) return;
-      const saleType=document.getElementById('posSaleType')?.value||'retail';
-      const price=Number(saleType==='wholesale'?(p.wholesale||0):(p.retail||TAHINA_RETAIL_JAR_PRICE));
-      const buttons=card.querySelector('.sp-add-one');
-      if(buttons) buttons.outerHTML=`<div class="sp-sizes-modern tahina-sizes" onclick="event.stopPropagation()">
-        <button class="sp-size" ${Number(p.qty||0)<1?'disabled':''} onclick="addToPOSCart('${p.id}',1)">برطمان<br><b>${fmt(price)}</b></button>
-        <button class="sp-size" ${Number(p.qty||0)<.5?'disabled':''} onclick="addToPOSCart('${p.id}',.5)">نصف<br><b>${fmt(price*.5)}</b></button>
-        <button class="sp-size" ${Number(p.qty||0)<.25?'disabled':''} onclick="addToPOSCart('${p.id}',.25)">ربع<br><b>${fmt(price*.25)}</b></button>
-      </div>`;
-      const pack=card.querySelector('.sp-pack-price');
-      if(pack) pack.innerHTML=`برطمان ${fmt(price)} · نصف ${fmt(price*.5)} · ربع ${fmt(price*.25)}`;
-      const priceEl=card.querySelector('.sp-price');
-      if(priceEl) priceEl.innerHTML=`${fmt(price)} <small>/ برطمان (${(document.getElementById('posSaleType')?.value||'retail')==='wholesale'?'جملة':'قطاعي'})</small>`;
-    });
-  };
-
-  // تعديل كمية الطحينة من السلة بوحدات ربع برطمان.
-  const originalChangePOSQty=window.changePOSQty;
-  window.changePOSQty=function(index,delta){
-    const item=(window.posCart||[])[index];
-    const p=item&&(window.saleProducts||[]).find(x=>String(x.id)===String(item.id));
-    if(!isTahinaProduct(p)) return originalChangePOSQty(index,delta);
-    const step=.25;
-    const newQty=Math.round((Number(item.qty||0)+delta*step)*100)/100;
-    if(newQty<=0){window.posCart.splice(index,1);renderPOSCart();renderSaleProductGrid();return;}
-    const otherReserved=reservedProductQty(p.id,index);
-    if(otherReserved+newQty>(Number(p.qty)||0)+.000001) return showToast(`المتاح فقط ${formatProductQty(p,p.qty)} برطمان`,'warning');
-    item.qty=newQty;
-    renderPOSCart();renderSaleProductGrid();
-  };
-
-  // تنسيق كمية الطحينة داخل سجل البيع/الفواتير القديمة والجديدة.
-  const originalSaleQuantityLabel=window.saleQuantityLabel;
-  window.saleQuantityLabel=function(p,qty,weight){
-    if(isTahinaProduct(p)) return tahinaQtyLabel(qty);
-    return typeof originalSaleQuantityLabel==='function' ? originalSaleQuantityLabel(p,qty,weight) : `${qty} ${p?.unit||'وحدة'}`;
-  };
-
-  // بعد رسم السلة نستبدل أزرار الأحجام الخاصة بالطحينة فقط، بدون لمس باقي الأصناف.
-  const originalRenderPOSCart=window.renderPOSCart;
-  window.renderPOSCart=function(){
-    originalRenderPOSCart();
-    const cart=window.posCart||[];
-    const box=document.getElementById('posCartList');
-    if(!box) return;
-    const rows=[...box.querySelectorAll('.pos-cart-product-row')];
-    cart.forEach((item,index)=>{
-      const p=(window.saleProducts||[]).find(x=>String(x.id)===String(item.id));
-      if(!isTahinaProduct(p)||!rows[index]) return;
-      const row=rows[index];
-      const qtyCell=row.querySelector('.pos-cart-qty-cell');
-      if(qtyCell){
-        qtyCell.innerHTML=`<div class="pos-qty"><button onclick="changePOSQty(${index},-1)">−</button><strong>${tahinaQtyLabel(item.qty).replace(' برطمان','')}</strong><button onclick="changePOSQty(${index},1)">+</button></div><span class="pos-unit-label">برطمان</span>`;
-      }
-      const priceCell=row.querySelector('.pos-cart-price-cell');
-      if(priceCell){
-        const saleType=document.getElementById('posSaleType')?.value||'retail';
-        const price=saleType==='wholesale' ? Number(p.wholesale||0) : TAHINA_RETAIL_JAR_PRICE;
-        priceCell.querySelector('small')?.replaceChildren(document.createTextNode('سعر البرطمان'));
-        priceCell.querySelector('span')?.replaceChildren(document.createTextNode('ج.م / برطمان'));
-        const strong=priceCell.querySelector('strong'); if(strong)strong.textContent=fmtNum(price);
-      }
-    });
-  };
-
-  // changePOSWeight للطحينة يغيّر حجم البرطمان بدل الوزن بالكيلو.
-  const originalChangePOSWeight=window.changePOSWeight;
-  window.changePOSWeight=function(index,newWeight){
-    const item=(window.posCart||[])[index];
-    const p=item&&(window.saleProducts||[]).find(x=>String(x.id)===String(item.id));
-    if(!isTahinaProduct(p)) return originalChangePOSWeight(index,newWeight);
-    const q=Number(newWeight);
-    if(![1,.5,.25].some(x=>Math.abs(x-q)<.000001)) return showToast('الطحينة تُباع برطمان كامل أو نصف أو ربع','warning');
-    const otherReserved=reservedProductQty(p.id,index);
-    if(otherReserved+q*Number(item.qty||0)>(Number(p.qty)||0)+.000001){
-      return showToast(`المتاح لا يكفي — المتاح ${formatProductQty(p,p.qty)} برطمان`,'warning');
-    }
-    // في الطحينة كل سطر يمثل برطمانًا واحدًا بحجم مختار؛ لذلك لا نستخدم الوزن هنا.
-    // لو كانت الكمية الحالية أكثر من برطمان، نحولها إلى عدد برطمانات بالحجم المختار.
-    const totalJarEquivalent=Number(item.qty||1);
-    const whole=Math.max(.25,Math.round((totalJarEquivalent*q)*100)/100);
-    item.qty=whole;
-    item.weight=1;
-    renderPOSCart();renderSaleProductGrid();
-  };
-
-  // تنسيق بسيط لأزرار الأحجام.
-  const st=document.createElement('style');
-  st.textContent=`
-    .tahina-sizes{grid-template-columns:repeat(3,1fr)!important;gap:4px!important}
-    .tahina-sizes .sp-size{line-height:1.2!important;padding:6px 2px!important;font-size:.58rem!important}
-    .tahina-sizes .sp-size b{font-size:.62rem!important}
-  `;
-  document.head.appendChild(st);
-})();
-</script>
-
 </body></html>`;
 
   w.document.open();
@@ -17547,178 +17443,98 @@ setTimeout(()=>{
 </style>
 
 
-<script id="matgary-tahina-jar-sizes-v1">
+<script id="matgary-tahina-150g-v1">
 (function(){
   'use strict';
-
-  // طحينة شهد: تباع كبرطمان كامل أو نصف برطمان أو ربع برطمان.
-  // المخزون هنا بوحدة البرطمان، وسعر p.retail / p.wholesale هو سعر البرطمان الكامل.
-  function isTahinaProduct(p){
-    return !!p && /طحينة|طحينه|tahini/i.test(String(p.name||''));
-  }
-  window.isTahinaProduct=isTahinaProduct;
-
-  function tahinaQtyLabel(q){
-    const n=Number(q||0);
-    if(Math.abs(n-1)<.000001) return '1 برطمان';
-    if(Math.abs(n-.5)<.000001) return 'نصف برطمان';
-    if(Math.abs(n-.25)<.000001) return 'ربع برطمان';
-    if(Math.abs(n-.75)<.000001) return '¾ برطمان';
-    return `${n} برطمان`;
-  }
-  window.tahinaQtyLabel=tahinaQtyLabel;
-
-  // نخلي الطحينة صنف عبوات ثابتة، وليس صنفًا موزونًا بالكيلو.
   const originalIsKgProduct=window.isKgProduct;
+  const originalProductSaleUnitLabel=window.productSaleUnitLabel;
+  const originalMatgaryInvoiceUnit=window.matgaryInvoiceUnit;
+  const originalSaleQuantityLabel=window.saleQuantityLabel;
+  const originalIsWeightSaleLine=window.isWeightSaleLine;
+  const originalInvoiceSaleQuantityLabel=window.invoiceSaleQuantityLabel;
+  const originalInvoiceSaleDetailLabel=window.invoiceSaleDetailLabel;
   window.isKgProduct=function(p){
-    if(isTahinaProduct(p)) return false;
+    if(typeof isFractionalPackProduct==='function' && isFractionalPackProduct(p)) return false;
     return typeof originalIsKgProduct==='function' ? originalIsKgProduct(p) : false;
   };
-
-  // عرض الوحدة في الفواتير والسلة.
-  const originalProductSaleUnitLabel=window.productSaleUnitLabel;
   window.productSaleUnitLabel=function(p,s){
-    if(isTahinaProduct(p)) return 'برطمان';
-    return typeof originalProductSaleUnitLabel==='function'
-      ? originalProductSaleUnitLabel(p,s)
-      : String(s?.sellUnit||p?.unit||'وحدة');
+    if(typeof isFractionalPackProduct==='function' && isFractionalPackProduct(p)) return 'برطمان';
+    return typeof originalProductSaleUnitLabel==='function' ? originalProductSaleUnitLabel(p,s) : (p?.unit||'عبوة');
+  };
+  window.matgaryInvoiceUnit=function(p,s){
+    if(typeof isFractionalPackProduct==='function' && isFractionalPackProduct(p)) return 'برطمان';
+    return typeof originalMatgaryInvoiceUnit==='function' ? originalMatgaryInvoiceUnit(p,s) : (p?.unit||'عبوة');
   };
   window.matgaryUnitLabel=window.productSaleUnitLabel;
-
-  // إضافة الطحينة بالحجم المطلوب: 1 / 0.5 / 0.25 برطمان.
-  const originalAddToPOSCart=window.addToPOSCart;
-  window.addToPOSCart=function(id,size){
-    const productId=String(id);
-    const p=(window.saleProducts||[]).find(x=>String(x.id)===productId);
-    if(!isTahinaProduct(p)) return originalAddToPOSCart(id,size);
-
-    const stock=Number(p.qty||0);
-    if(!Number.isFinite(stock)||stock<=0) return showToast('الطحينة غير متاحة في المخزون','warning');
-    let qty=Number(size);
-    if(![1,.5,.25].some(x=>Math.abs(x-qty)<.000001)) qty=1;
-
-    const existingReserved=reservedProductQty(productId);
-    if(existingReserved+qty>stock+.000001){
-      return showToast(`الكمية المتاحة ${formatProductQty(p,p.qty)} برطمان`,'warning');
-    }
-
-    window.posCart=window.posCart||[];
-    const existing=window.posCart.find(x=>String(x.id)===productId && Math.abs(Number(x.weight||1)-1)<.000001);
-    if(existing) existing.qty=Number(existing.qty||0)+qty;
-    else window.posCart.push({id:productId,name:p.name||'طحينة',qty,weight:1,priceOverride:null,saleMode:null,valueAmount:0});
-
-    renderPOSCart();
-    renderSaleProductGrid();
-    showPOSProductSelected(productId);
-  };
-
-  // أزرار الأحجام داخل بطاقة الطحينة.
-  const originalRenderSaleProductGrid=window.renderSaleProductGrid;
-  window.renderSaleProductGrid=function(){
-    originalRenderSaleProductGrid();
-    document.querySelectorAll('.sale-product-card').forEach(card=>{
-      const id=card.getAttribute('data-product-id');
-      const p=(window.saleProducts||[]).find(x=>String(x.id)===String(id));
-      if(!isTahinaProduct(p)) return;
-      const saleType=document.getElementById('posSaleType')?.value||'retail';
-      const price=Number(saleType==='wholesale'?(p.wholesale||0):(p.retail||TAHINA_RETAIL_JAR_PRICE));
-      const buttons=card.querySelector('.sp-add-one');
-      if(buttons) buttons.outerHTML=`<div class="sp-sizes-modern tahina-sizes" onclick="event.stopPropagation()">
-        <button class="sp-size" ${Number(p.qty||0)<1?'disabled':''} onclick="addToPOSCart('${p.id}',1)">برطمان<br><b>${fmt(price)}</b></button>
-        <button class="sp-size" ${Number(p.qty||0)<.5?'disabled':''} onclick="addToPOSCart('${p.id}',.5)">نصف<br><b>${fmt(price*.5)}</b></button>
-        <button class="sp-size" ${Number(p.qty||0)<.25?'disabled':''} onclick="addToPOSCart('${p.id}',.25)">ربع<br><b>${fmt(price*.25)}</b></button>
-      </div>`;
-      const pack=card.querySelector('.sp-pack-price');
-      if(pack) pack.innerHTML=`برطمان ${fmt(price)} · نصف ${fmt(price*.5)} · ربع ${fmt(price*.25)}`;
-      const priceEl=card.querySelector('.sp-price');
-      if(priceEl) priceEl.innerHTML=`${fmt(price)} <small>/ برطمان (${(document.getElementById('posSaleType')?.value||'retail')==='wholesale'?'جملة':'قطاعي'})</small>`;
-    });
-  };
-
-  // تعديل كمية الطحينة من السلة بوحدات ربع برطمان.
-  const originalChangePOSQty=window.changePOSQty;
-  window.changePOSQty=function(index,delta){
-    const item=(window.posCart||[])[index];
-    const p=item&&(window.saleProducts||[]).find(x=>String(x.id)===String(item.id));
-    if(!isTahinaProduct(p)) return originalChangePOSQty(index,delta);
-    const step=.25;
-    const newQty=Math.round((Number(item.qty||0)+delta*step)*100)/100;
-    if(newQty<=0){window.posCart.splice(index,1);renderPOSCart();renderSaleProductGrid();return;}
-    const otherReserved=reservedProductQty(p.id,index);
-    if(otherReserved+newQty>(Number(p.qty)||0)+.000001) return showToast(`المتاح فقط ${formatProductQty(p,p.qty)} برطمان`,'warning');
-    item.qty=newQty;
-    renderPOSCart();renderSaleProductGrid();
-  };
-
-  // تنسيق كمية الطحينة داخل سجل البيع/الفواتير القديمة والجديدة.
-  const originalSaleQuantityLabel=window.saleQuantityLabel;
   window.saleQuantityLabel=function(p,qty,weight){
-    if(isTahinaProduct(p)) return tahinaQtyLabel(qty);
-    return typeof originalSaleQuantityLabel==='function' ? originalSaleQuantityLabel(p,qty,weight) : `${qty} ${p?.unit||'وحدة'}`;
+    if(typeof isFractionalPackProduct==='function' && isFractionalPackProduct(p)) return tahinaPackQuantityLabel(qty,weight);
+    return typeof originalSaleQuantityLabel==='function' ? originalSaleQuantityLabel(p,qty,weight) : `${Math.max(1,Number(qty||1))} ${window.productSaleUnitLabel?window.productSaleUnitLabel(p,{}):(p?.unit||'عبوة')}`;
   };
-
-  // بعد رسم السلة نستبدل أزرار الأحجام الخاصة بالطحينة فقط، بدون لمس باقي الأصناف.
-  const originalRenderPOSCart=window.renderPOSCart;
-  window.renderPOSCart=function(){
-    originalRenderPOSCart();
-    const cart=window.posCart||[];
-    const box=document.getElementById('posCartList');
-    if(!box) return;
-    const rows=[...box.querySelectorAll('.pos-cart-product-row')];
-    cart.forEach((item,index)=>{
-      const p=(window.saleProducts||[]).find(x=>String(x.id)===String(item.id));
-      if(!isTahinaProduct(p)||!rows[index]) return;
-      const row=rows[index];
-      const qtyCell=row.querySelector('.pos-cart-qty-cell');
-      if(qtyCell){
-        qtyCell.innerHTML=`<div class="pos-qty"><button onclick="changePOSQty(${index},-1)">−</button><strong>${tahinaQtyLabel(item.qty).replace(' برطمان','')}</strong><button onclick="changePOSQty(${index},1)">+</button></div>
-          <div class="sp-sizes-modern tahina-cart-sizes">
-            <button type="button" class="sp-size" onclick="changePOSWeight(${index},1)">كامل</button>
-            <button type="button" class="sp-size" onclick="changePOSWeight(${index},.5)">نصف</button>
-            <button type="button" class="sp-size" onclick="changePOSWeight(${index},.25)">ربع</button>
-          </div>`;
-      }
-      const priceCell=row.querySelector('.pos-cart-price-cell');
-      if(priceCell){
-        const price=getPOSItemUnitPrice(item,p,document.getElementById('posSaleType')?.value||'retail');
-        priceCell.querySelector('small')?.replaceChildren(document.createTextNode('سعر البرطمان'));
-        priceCell.querySelector('span')?.replaceChildren(document.createTextNode('ج.م / برطمان'));
-        const strong=priceCell.querySelector('strong'); if(strong)strong.textContent=fmtNum(price);
-      }
-    });
+  window.isWeightSaleLine=function(s,p){
+    if(typeof isFractionalPackProduct==='function' && isFractionalPackProduct(p)) return false;
+    return typeof originalIsWeightSaleLine==='function' ? originalIsWeightSaleLine(s,p) : false;
   };
-
-  // changePOSWeight للطحينة يغيّر حجم البرطمان بدل الوزن بالكيلو.
-  const originalChangePOSWeight=window.changePOSWeight;
-  window.changePOSWeight=function(index,newWeight){
-    const item=(window.posCart||[])[index];
-    const p=item&&(window.saleProducts||[]).find(x=>String(x.id)===String(item.id));
-    if(!isTahinaProduct(p)) return originalChangePOSWeight(index,newWeight);
-    const q=Number(newWeight);
-    if(![1,.5,.25].some(x=>Math.abs(x-q)<.000001)) return showToast('الطحينة تُباع برطمان كامل أو نصف أو ربع','warning');
-    const otherReserved=reservedProductQty(p.id,index);
-    if(otherReserved+q*Number(item.qty||0)>(Number(p.qty)||0)+.000001){
-      return showToast(`المتاح لا يكفي — المتاح ${formatProductQty(p,p.qty)} برطمان`,'warning');
+  window.invoiceSaleQuantityLabel=function(s,p){
+    if(typeof isFractionalPackProduct==='function' && isFractionalPackProduct(p)){
+      const packs=Math.max(1,Number(s?.packages||1));
+      const fraction=Math.max(.001,Number(s?.weight||1));
+      return tahinaPackQuantityLabel(packs,fraction);
     }
-    // في الطحينة كل سطر يمثل برطمانًا واحدًا بحجم مختار؛ لذلك لا نستخدم الوزن هنا.
-    // لو كانت الكمية الحالية أكثر من برطمان، نحولها إلى عدد برطمانات بالحجم المختار.
-    const totalJarEquivalent=Number(item.qty||1);
-    const whole=Math.max(.25,Math.round((totalJarEquivalent*q)*100)/100);
-    item.qty=whole;
-    item.weight=1;
-    renderPOSCart();renderSaleProductGrid();
+    return typeof originalInvoiceSaleQuantityLabel==='function' ? originalInvoiceSaleQuantityLabel(s,p) : window.saleQuantityLabel(p,s?.packages||s?.qty||1,s?.weight||1);
   };
+  window.invoiceSaleDetailLabel=function(s,p){
+    if(typeof isFractionalPackProduct==='function' && isFractionalPackProduct(p)) return window.invoiceSaleQuantityLabel(s,p);
+    return typeof originalInvoiceSaleDetailLabel==='function' ? originalInvoiceSaleDetailLabel(s,p) : window.invoiceSaleQuantityLabel(s,p);
+  };
+  document.addEventListener('input',function(e){
+    if(e.target && e.target.id==='pName'){
+      const u=document.getElementById('pUnit');
+      const name=String(e.target.value||'').trim().toLowerCase();
+      if(u && /طحينة\s*شهد|شهد\s*طحينة|tahini\s*shahd/.test(name)) u.value='برطمان';
+    }
+  });
+  // في نافذتي الإضافة والتعديل: عند اختيار «طحينة شهد» تكون الوحدة برطمان تلقائيًا.
+  document.addEventListener('input',function(e){
+    const id=e.target?.id;
+    if(id!=='pName' && id!=='epName')return;
+    const unitId=id==='epName'?'epUnit':'pUnit';
+    const u=document.getElementById(unitId);
+    const name=String(e.target.value||'').trim().toLowerCase();
+    if(u && /طحينة\s*شهد|شهد\s*طحينة|tahini\s*shahd/.test(name)) u.value='برطمان';
+  });
 
-  // تنسيق بسيط لأزرار الأحجام.
-  const st=document.createElement('style');
-  st.textContent=`
-    .tahina-sizes{grid-template-columns:repeat(3,1fr)!important;gap:4px!important}
-    .tahina-sizes .sp-size{line-height:1.2!important;padding:6px 2px!important;font-size:.58rem!important}
-    .tahina-sizes .sp-size b{font-size:.62rem!important}
+  const style=document.createElement('style');
+  style.textContent=`
+    .tahina-pack-sizes{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px!important}
+    .tahina-pack-sizes .sp-size{min-height:42px;line-height:1.25}
+    .tahina-pack-sizes .sp-size.active{background:#0f766e!important;color:#fff!important;border-color:#0f766e!important;box-shadow:0 0 0 2px rgba(15,118,110,.12)}
+    .tahina-pack-hint{background:#fff8e7!important;border:1px solid #ead9a8!important;color:#6d5b2a!important;border-radius:9px!important;padding:6px 8px!important;margin-top:5px!important}
+    @media(max-width:520px){.tahina-pack-sizes{grid-template-columns:1fr!important}}
   `;
-  document.head.appendChild(st);
+  document.head.appendChild(style);
+  window.__MATGARY_TAHINA_150G_VERSION='v1.1';
+  // ترقية خفيفة للسجلات الموجودة: «طحينة شهد» تصبح برطمانات بدون تغيير كمية المخزون.
+  // لا نضيف صنفًا جديدًا ولا نلمس الأسعار أو الرصيد؛ فقط نثبت وحدة البيع وحجم العبوة.
+  setTimeout(function(){
+    try{
+      const products=Store.get('products')||[];
+      let changed=false;
+      products.forEach(p=>{
+        const name=String(p?.name||'').trim().toLowerCase();
+        if(/طحينة\s*شهد|شهد\s*طحينة|tahini\s*shahd/.test(name) && String(p.unit||'')!=='برطمان'){
+          p.unit='برطمان';
+          p.sellUnit='برطمان';
+          p.packSizeGrams=150;
+          p.fractionalPack=true;
+          p.updatedAt=new Date().toISOString();
+          changed=true;
+        }
+      });
+      if(changed) Store.set('products',products);
+    }catch(e){ console.warn('[Matgary] تعذر ضبط وحدة طحينة شهد:',e); }
+  },80);
+
 })();
 </script>
-
 </body>
   </html>
