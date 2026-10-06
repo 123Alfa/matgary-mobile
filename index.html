@@ -2571,7 +2571,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 </style>
 
 <style id="stock-count-v1857">
-/* ===== الجرد الفعلي — تدقيق شامل v1.8.58 ===== */
+/* ===== الجرد الفعلي — تدقيق شامل v1.8.59 ===== */
 .stock-count-page{max-width:1120px;margin:0 auto;padding:12px 10px 118px;direction:rtl}
 .stock-count-hero{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px;border-radius:22px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;margin-bottom:12px;box-shadow:0 10px 28px rgba(15,118,110,.16)}
 .stock-count-hero h2{margin:3px 0 5px;font-size:1.35rem}.stock-count-hero p{margin:0;opacity:.9;font-size:.78rem;line-height:1.7}.stock-count-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.stock-count-actions .btn{min-height:44px}
@@ -4052,10 +4052,10 @@ html[data-theme="dark"] .sales-summary-card .value{
 </div>
 <script>
 // ==================== معلومات الإصدار ====================
-// متجري v1.8.33 — تحليل الأصناف والمخللات وتفاصيل الحركة
-const APP_VERSION='v1.8.58';
+// متجري v1.8.59 — تطوير شامل لقسم المبيعات وتجربة الاستخدام
+const APP_VERSION='v1.8.59';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "2 أكتوبر 2026 — تدقيق الجرد الفعلي وإصلاح تكرار ج.م وتحسين دقة ملخص الجرد";
+const APP_BUILD_DATE = "7 أكتوبر 2026 — إعادة تصميم قسم المبيعات، إضافة آلة حاسبة للمبلغ المدفوع وتحسين سجل المبيعات";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -5538,7 +5538,7 @@ function renderSalesPage(container){
           </div>
           <select id="posPaymentMethod" style="display:none"><option value="cash">نقدي</option><option value="credit">آجل</option><option value="transfer">تحويل</option><option value="card">بطاقة</option></select>
           <label class="sale-ref-paid-label">المبلغ المدفوع</label>
-          <div class="sale-ref-paid-input"><span>ج.م</span><input type="number" id="posPaid" placeholder="0.00" min="0" step="0.01" oninput="updatePOSSummary()"><button type="button" class="sale-paid-calculator" onclick="setPOSPaidToTotal()" title="آلة حاسبة — دفع كامل الفاتورة" aria-label="آلة حاسبة لتعبئة المبلغ المدفوع بالكامل"><i class="fas fa-calculator"></i></button></div>
+          <div class="sale-ref-paid-input"><span>ج.م</span><input type="number" id="posPaid" placeholder="0.00" min="0" step="0.01" oninput="updatePOSSummary()"><button type="button" class="sale-paid-calculator" onclick="openPOSPaidCalculator()" title="فتح الآلة الحاسبة" aria-label="فتح آلة حاسبة للمبلغ المدفوع"><i class="fas fa-calculator"></i></button></div>
           <div class="pos-quick-paid">
             <button type="button" onclick="setPOSPaidQuick(0)">صفر</button>
             <button type="button" onclick="setPOSPaidToTotal()">كامل</button>
@@ -8275,7 +8275,7 @@ function deleteSale(id,productId,qty){
   }
 }
 
-// ==================== الجرد الفعلي v1.8.58 ====================
+// ==================== الجرد الفعلي v1.8.59 ====================
 window.stockCountDraft = window.stockCountDraft || {};
 window.stockCountSearch = window.stockCountSearch || '';
 window.stockCountFilter = window.stockCountFilter || 'all';
@@ -12444,7 +12444,7 @@ async function replaceCloudDataWithLocal() {
 
 </script>
 <script>
-/* Matgary Service Worker lifecycle — v1.8.58
+/* Matgary Service Worker lifecycle — v1.8.59
    التحديث يعتمد على waiting SW + SKIP_WAITING + controllerchange،
    مع updateViaCache:none لمنع الاحتفاظ بنسخة قديمة من sw.js. */
 (function(){
@@ -17567,7 +17567,7 @@ setTimeout(()=>{
 
 
 
-<script id="matgary-tahina-jar-sizes-v1.8.58">
+<script id="matgary-tahina-jar-sizes-v1.8.59">
 (function(){
   'use strict';
 
@@ -17645,7 +17645,7 @@ setTimeout(()=>{
     return typeof prevPreferred==='function' ? prevPreferred(name,current) : (current||'عبوة');
   };
 
-  window.__MATGARY_TAHINA_JAR_SIZES_VERSION='v1.8.58';
+  window.__MATGARY_TAHINA_JAR_SIZES_VERSION='v1.8.59';
 })();
 </script>
 
@@ -18476,5 +18476,167 @@ setTimeout(()=>{
 }
 
 </style>
+
+<style id="matgary-sales-release-v59">
+/* ============================================================
+   متجري v1.8.59 — Sales Release Polish
+   التركيز: الآلة الحاسبة + سجل المبيعات + اتساق الهوية البصرية
+   ============================================================ */
+.sales-v2 .sale-paid-calculator{
+  width:52px!important;min-width:52px!important;flex:0 0 52px!important;height:100%!important;
+  border:0!important;border-right:1px solid #d8e8e2!important;border-radius:0!important;
+  background:linear-gradient(180deg,#eefaf6 0%,#e3f4ee 100%)!important;color:#08796d!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;cursor:pointer!important;
+  position:relative!important;transition:background .16s ease,transform .16s ease,color .16s ease!important;
+}
+.sales-v2 .sale-paid-calculator::after{
+  content:'حاسبة';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
+  font-size:.38rem;font-weight:950;color:#6f8c85;line-height:1;pointer-events:none;
+}
+.sales-v2 .sale-paid-calculator i{font-size:1.08rem!important;line-height:1!important;transform:translateY(-3px)}
+.sales-v2 .sale-paid-calculator:hover{background:#d9efe8!important;color:#075f56!important}
+.sales-v2 .sale-paid-calculator:active{transform:scale(.96)!important}
+
+/* توحيد الهوية البصرية لسجل المبيعات */
+.sales-v2 .sales-history-icon{background:#e7f7f1!important;color:#08796d!important}
+.sales-v2 .sales-history-title h3{color:#173b32!important}
+.sales-v2 .sales-cv2-title i{color:#08796d!important}
+.sales-v2 .sales-cv2-icon{background:#e7f7f1!important;color:#08796d!important}
+
+/* أزرار سجل المبيعات — واضحة ومتناسقة ولا تُقص على الموبايل */
+.sales-v2 .sales-cv2-actions{
+  display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;
+  gap:6px!important;margin-top:11px!important;padding-top:2px!important;align-items:stretch!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn{
+  min-width:0!important;min-height:42px!important;padding:7px 7px!important;
+  border:1px solid #dbe7e2!important;border-radius:11px!important;
+  font-family:inherit!important;font-size:.62rem!important;font-weight:950!important;line-height:1.1!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;
+  white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;
+  box-shadow:0 2px 7px rgba(20,70,55,.035)!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn i{font-size:.82rem!important;flex:0 0 auto!important}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn span{overflow:visible!important;text-overflow:clip!important;white-space:nowrap!important}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.view{background:#e4f6f0!important;color:#08796d!important;border-color:#bfe3d7!important}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.return{background:#fff5e7!important;color:#a96305!important;border-color:#ead6b3!important}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.collect{background:#eaf8f0!important;color:#117b4b!important;border-color:#c8e4d5!important}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.edit{background:#eef4ff!important;color:#2f62b3!important;border-color:#d3dff3!important}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.print{background:#f5f7f8!important;color:#536269!important;border-color:#dce4e7!important}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.whatsapp{background:#eaf8ee!important;color:#158747!important;border-color:#c6e3ce!important}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.delete{background:#fff0f1!important;color:#c52e3a!important;border-color:#efd0d4!important}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn:hover{transform:translateY(-1px)!important;box-shadow:0 6px 14px rgba(20,70,55,.08)!important}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn:active{transform:scale(.97)!important}
+
+/* واتساب أسفل السداد */
+.sales-v2 .sale-ref-checkout-actions{grid-template-columns:minmax(0,1fr) 76px!important;gap:7px!important}
+.sales-v2 .sale-ref-whatsapp{
+  width:100%!important;min-width:0!important;height:50px!important;min-height:50px!important;
+  border-radius:12px!important;display:flex!important;flex-direction:column!important;align-items:center!important;
+  justify-content:center!important;gap:3px!important;padding:3px!important;overflow:hidden!important;
+}
+.sales-v2 .sale-ref-whatsapp i{font-size:1.08rem!important;line-height:1!important}
+.sales-v2 .sale-ref-whatsapp span{font-size:.52rem!important;white-space:nowrap!important}
+
+/* آلة حاسبة حقيقية للمبلغ المدفوع */
+.matgary-paid-calculator-overlay{
+  position:fixed;inset:0;z-index:2147483000;display:none;align-items:flex-end;justify-content:center;
+  background:rgba(18,36,31,.46);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:12px;
+}
+.matgary-paid-calculator-overlay.active{display:flex}
+.matgary-paid-calculator{
+  width:min(430px,100%);background:#fff;border:1px solid #dbe8e3;border-radius:24px 24px 18px 18px;
+  box-shadow:0 -14px 45px rgba(20,70,55,.22);overflow:hidden;direction:rtl;animation:matgaryCalcUp .18s ease-out;
+}
+@keyframes matgaryCalcUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.matgary-paid-calculator-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;background:linear-gradient(135deg,#08796d,#075f56);color:#fff}
+.matgary-paid-calculator-title{display:flex;align-items:center;gap:9px;min-width:0}
+.matgary-paid-calculator-title .icon{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-size:.9rem}
+.matgary-paid-calculator-title strong{display:block;font-size:.82rem;font-weight:950}
+.matgary-paid-calculator-title small{display:block;font-size:.54rem;color:rgba(255,255,255,.78);margin-top:2px}
+.matgary-paid-calculator-close{width:33px;height:33px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.10);color:#fff;border-radius:10px;cursor:pointer;display:grid;place-items:center;font-size:.9rem}
+.matgary-paid-calculator-display{padding:11px 12px 8px;background:#f7fbf9}
+.matgary-paid-calculator-total{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 8px;border-radius:9px;background:#eef7f3;color:#658077;font-size:.55rem;font-weight:900;margin-bottom:7px}
+.matgary-paid-calculator-total b{color:#08796d;font-size:.62rem}
+.matgary-paid-calculator-screen{width:100%;height:58px;border:1px solid #d7e6e0;border-radius:13px;background:#fff;display:flex;align-items:center;justify-content:flex-end;padding:0 13px;color:#173b32;font-size:1.55rem;font-weight:950;letter-spacing:.3px;overflow:hidden;white-space:nowrap}
+.matgary-paid-calculator-pad{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:10px 12px 8px}
+.matgary-paid-calculator-pad button{min-height:50px;border:1px solid #dce9e4;border-radius:12px;background:#fff;color:#253a34;font:inherit;font-size:.92rem;font-weight:900;cursor:pointer;box-shadow:0 2px 7px rgba(20,70,55,.03)}
+.matgary-paid-calculator-pad button:active{transform:scale(.96)}
+.matgary-paid-calculator-pad button.op{background:#eff8f4;color:#08796d;border-color:#cde4dc}
+.matgary-paid-calculator-pad button.danger{background:#fff2f2;color:#be2f3a;border-color:#efd3d6}
+.matgary-paid-calculator-pad button.equals{background:#08796d;color:#fff;border-color:#08796d}
+.matgary-paid-calculator-pad button.zero{grid-column:span 2}
+.matgary-paid-calculator-actions{display:grid;grid-template-columns:1fr 1.5fr;gap:7px;padding:8px 12px 13px}
+.matgary-paid-calculator-actions button{min-height:45px;border-radius:12px;font:inherit;font-size:.68rem;font-weight:950;cursor:pointer;border:1px solid #dce8e3}
+.matgary-paid-calculator-actions .cancel{background:#f7f9f8;color:#667670}
+.matgary-paid-calculator-actions .apply{background:linear-gradient(135deg,#08796d,#075f56);color:#fff;border-color:#08796d}
+@media(max-width:600px){
+  .sales-v2 .sales-cv2-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+  .sales-v2 .sales-cv2-actions .sales-cv2-btn{min-height:45px!important;padding:6px 4px!important;font-size:.60rem!important;border-radius:11px!important}
+  .sales-v2 .sales-cv2-actions .sales-cv2-btn i{font-size:.82rem!important}
+  .sales-v2 .sale-ref-checkout-actions{grid-template-columns:minmax(0,1fr) 74px!important}
+  .sales-v2 .sale-ref-whatsapp{height:47px!important;min-height:47px!important}
+  .matgary-paid-calculator-overlay{padding:8px}
+  .matgary-paid-calculator{border-radius:22px 22px 15px 15px}
+  .matgary-paid-calculator-pad{gap:6px;padding:8px 10px 6px}
+  .matgary-paid-calculator-pad button{min-height:48px}
+}
+@media(max-width:370px){
+  .sales-v2 .sales-cv2-actions{gap:4px!important}
+  .sales-v2 .sales-cv2-actions .sales-cv2-btn{min-height:42px!important;font-size:.56rem!important;padding:5px 3px!important}
+  .sales-v2 .sales-cv2-actions .sales-cv2-btn i{font-size:.75rem!important}
+  .sales-v2 .sale-ref-checkout-actions{grid-template-columns:minmax(0,1fr) 70px!important}
+  .sales-v2 .sale-ref-whatsapp{height:45px!important;min-height:45px!important}
+  .matgary-paid-calculator-screen{height:54px;font-size:1.42rem}
+  .matgary-paid-calculator-pad button{min-height:45px}
+}
+</style>
+
+<script id="matgary-paid-calculator-v59">
+(function(){
+  const CALC_ID='matgaryPaidCalculatorOverlay';
+  const DIGITS=['0','1','2','3','4','5','6','7','8','9'];
+  const arToEn=(s)=>String(s??'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٬،]/g,'').replace(/٫/g,'.');
+  const formatCalc=(n)=>{if(!Number.isFinite(n))return '0';const r=Math.round(n*100)/100;return String(r).replace(/\.00$/,'').replace(/(\.\d*[1-9])0$/,'$1');};
+  function invoiceTotal(){const el=document.getElementById('posCheckoutAmount');if(!el)return 0;const n=parseFloat(arToEn(el.textContent).replace(/[^0-9.\-]/g,''));return Number.isFinite(n)?n:0;}
+  function state(){if(!window.__matgaryPaidCalc)window.__matgaryPaidCalc={display:'0',first:null,op:null,waiting:false};return window.__matgaryPaidCalc;}
+  function ensureUI(){
+    let wrap=document.getElementById(CALC_ID);if(wrap)return wrap;
+    wrap=document.createElement('div');wrap.id=CALC_ID;wrap.className='matgary-paid-calculator-overlay';
+    wrap.innerHTML=`<div class="matgary-paid-calculator" role="dialog" aria-modal="true" aria-label="آلة حاسبة للمبلغ المدفوع">
+      <div class="matgary-paid-calculator-head"><div class="matgary-paid-calculator-title"><span class="icon"><i class="fas fa-calculator"></i></span><div><strong>آلة حاسبة المبلغ المدفوع</strong><small>احسب المبلغ ثم طبّقه على الفاتورة</small></div></div><button type="button" class="matgary-paid-calculator-close" onclick="closePOSPaidCalculator()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button></div>
+      <div class="matgary-paid-calculator-display"><div class="matgary-paid-calculator-total"><span>إجمالي الفاتورة</span><b id="matgaryCalcInvoiceTotal">0 ج.م</b></div><div class="matgary-paid-calculator-screen" id="matgaryCalcScreen" dir="ltr">0</div></div>
+      <div class="matgary-paid-calculator-pad">
+        <button type="button" class="danger" onclick="matgaryPaidCalcPress('clear')">مسح</button><button type="button" class="op" onclick="matgaryPaidCalcPress('back')">⌫</button><button type="button" class="op" onclick="matgaryPaidCalcPress('%')">%</button><button type="button" class="op" onclick="matgaryPaidCalcPress('/')">÷</button>
+        <button type="button" onclick="matgaryPaidCalcPress('7')">7</button><button type="button" onclick="matgaryPaidCalcPress('8')">8</button><button type="button" onclick="matgaryPaidCalcPress('9')">9</button><button type="button" class="op" onclick="matgaryPaidCalcPress('*')">×</button>
+        <button type="button" onclick="matgaryPaidCalcPress('4')">4</button><button type="button" onclick="matgaryPaidCalcPress('5')">5</button><button type="button" onclick="matgaryPaidCalcPress('6')">6</button><button type="button" class="op" onclick="matgaryPaidCalcPress('-')">−</button>
+        <button type="button" onclick="matgaryPaidCalcPress('1')">1</button><button type="button" onclick="matgaryPaidCalcPress('2')">2</button><button type="button" onclick="matgaryPaidCalcPress('3')">3</button><button type="button" class="op" onclick="matgaryPaidCalcPress('+')">+</button>
+        <button type="button" class="zero" onclick="matgaryPaidCalcPress('0')">0</button><button type="button" onclick="matgaryPaidCalcPress('.')">.</button><button type="button" class="equals" onclick="matgaryPaidCalcPress('=')">=</button>
+      </div>
+      <div class="matgary-paid-calculator-actions"><button type="button" class="cancel" onclick="closePOSPaidCalculator()">إلغاء</button><button type="button" class="apply" onclick="applyPOSPaidCalculator()"><i class="fas fa-check"></i> إدخال المبلغ المدفوع</button></div>
+    </div>`;
+    wrap.addEventListener('click',e=>{if(e.target===wrap)closePOSPaidCalculator();});
+    document.body.appendChild(wrap);return wrap;
+  }
+  function draw(){const s=state(),screen=document.getElementById('matgaryCalcScreen'),total=document.getElementById('matgaryCalcInvoiceTotal');if(screen)screen.textContent=s.display;if(total){const n=invoiceTotal();total.textContent=(formatCalc(n)||'0')+' ج.م';}}
+  function calculate(a,b,op){a=Number(a);b=Number(b);if(op==='+')return a+b;if(op==='-')return a-b;if(op==='*')return a*b;if(op==='/')return b===0?NaN:a/b;return b;}
+  window.openPOSPaidCalculator=function(){const wrap=ensureUI(),input=document.getElementById('posPaid'),cur=Number(arToEn(input?.value||'0')),s=state();s.display=Number.isFinite(cur)&&cur>0?formatCalc(cur):'0';s.first=null;s.op=null;s.waiting=false;draw();wrap.classList.add('active');};
+  window.closePOSPaidCalculator=function(){document.getElementById(CALC_ID)?.classList.remove('active');};
+  window.matgaryPaidCalcPress=function(key){
+    const s=state();
+    if(DIGITS.includes(key)){if(s.waiting){s.display=key;s.waiting=false;}else{s.display=s.display==='0'?key:(s.display+key).slice(0,14);}}
+    else if(key==='.') {if(s.waiting){s.display='0.';s.waiting=false;}else if(!s.display.includes('.'))s.display+='.';}
+    else if(key==='clear'){s.display='0';s.first=null;s.op=null;s.waiting=false;}
+    else if(key==='back'){s.display=s.display.length>1?s.display.slice(0,-1):'0';}
+    else if(key==='%'){const n=Number(s.display);if(Number.isFinite(n))s.display=formatCalc(n/100);s.waiting=false;}
+    else if(['+','-','*','/'].includes(key)){const cur=Number(s.display);if(!Number.isFinite(cur))return;if(s.first!==null&&s.op&&!s.waiting){const res=calculate(s.first,cur,s.op);if(!Number.isFinite(res)){s.display='0';s.first=null;s.op=null;s.waiting=false;showToast('⚠️ تعذر إجراء العملية','warning');draw();return;}s.first=res;s.display=formatCalc(res);}else s.first=cur;s.op=key;s.waiting=true;}
+    else if(key==='='){if(s.first!==null&&s.op){const res=calculate(s.first,Number(s.display),s.op);if(!Number.isFinite(res)){s.display='0';s.first=null;s.op=null;showToast('⚠️ تعذر إجراء العملية','warning');draw();return;}s.display=formatCalc(res);s.first=null;s.op=null;s.waiting=true;}}
+    draw();
+  };
+  window.applyPOSPaidCalculator=function(){const s=state(),value=Number(s.display);if(!Number.isFinite(value)||value<0)return showToast('أدخل مبلغًا صحيحًا','warning');const total=invoiceTotal();if(total<=0&&value>0)return showToast('لا توجد فاتورة بقيمة تسمح بإدخال مبلغ مدفوع','warning');if(total>0&&value>total+0.0001)return showToast(`المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة (${formatCalc(total)} ج.م)`,'warning');const input=document.getElementById('posPaid');if(!input)return;input.value=(Math.round(value*100)/100).toFixed(2);if(typeof window.updatePOSSummary==='function')window.updatePOSSummary();closePOSPaidCalculator();input.focus();};
+  document.addEventListener('keydown',e=>{if(!document.getElementById(CALC_ID)?.classList.contains('active'))return;const k=e.key;if(DIGITS.includes(k)||['.','+','-','*','/','%','='].includes(k)){e.preventDefault();window.matgaryPaidCalcPress(k);}else if(k==='Enter'){e.preventDefault();window.matgaryPaidCalcPress('=');}else if(k==='Backspace'){e.preventDefault();window.matgaryPaidCalcPress('back');}else if(k==='Escape'){e.preventDefault();closePOSPaidCalculator();}});
+})();
+</script>
+
 </body>
   </html>
