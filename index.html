@@ -17441,5 +17441,833 @@ setTimeout(()=>{
   window.__MATGARY_TAHINA_JAR_SIZES_VERSION='v1.8.58';
 })();
 </script>
+
+<style id="matgary-sales-redesign-v3-20261007">
+/* ==========================================================
+   متجري — قسم المبيعات | Visual Redesign v3.0
+   الهدف: تطوير الشكل وتجربة الاستخدام فقط مع الحفاظ على
+   منطق السلة والحسابات والفواتير والفلاتر والمرتجعات.
+   ========================================================== */
+
+.sales-v2{
+  --sales-green:#0b776b;
+  --sales-green-dark:#075c53;
+  --sales-green-soft:#eaf7f3;
+  --sales-gold:#c9951d;
+  --sales-gold-soft:#fff7df;
+  --sales-ink:#17332d;
+  --sales-muted:#71817c;
+  --sales-line:#dce8e3;
+  --sales-surface:#ffffff;
+  --sales-bg:#f4f8f6;
+  max-width:1120px!important;
+  margin:0 auto!important;
+  padding:8px 0 110px!important;
+  position:relative;
+}
+
+.sales-v2::before{
+  content:"";
+  position:fixed;
+  inset:auto auto 10% -120px;
+  width:320px;
+  height:320px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(15,118,110,.10),transparent 68%);
+  pointer-events:none;
+  z-index:-1;
+}
+
+/* ---------- مؤشرات اليوم ---------- */
+.sales-v2 .sales-today-strip{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin:0 0 14px;
+}
+.sales-v2 .sales-today-strip>div{
+  position:relative;
+  min-width:0;
+  min-height:78px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:11px 12px;
+  background:linear-gradient(180deg,#fff 0%,#fbfdfc 100%);
+  border:1px solid var(--sales-line);
+  border-radius:17px;
+  box-shadow:0 7px 20px rgba(24,70,58,.055);
+  overflow:hidden;
+}
+.sales-v2 .sales-today-strip>div::after{
+  content:"";
+  position:absolute;
+  inset:auto 0 0;
+  height:3px;
+  background:linear-gradient(90deg,var(--sales-green),var(--sales-gold));
+  opacity:.9;
+}
+.sales-v2 .sales-today-strip i{
+  width:38px;
+  height:38px;
+  flex:0 0 38px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  background:var(--sales-green-soft);
+  color:var(--sales-green);
+  font-size:.9rem;
+}
+.sales-v2 .sales-today-strip span{
+  display:block;
+  min-width:0;
+  color:var(--sales-muted);
+  font-size:.60rem;
+  font-weight:800;
+  line-height:1.2;
+}
+.sales-v2 .sales-today-strip strong{
+  display:block;
+  margin-top:4px;
+  color:var(--sales-ink);
+  font-size:.92rem;
+  font-weight:950;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.sales-v2 .sales-today-strip>div:nth-child(2) i{background:#fff6e5;color:#ac760b}
+.sales-v2 .sales-today-strip>div:nth-child(3) i{background:#edf5ff;color:#3975c2}
+.sales-v2 .sales-today-strip>div:nth-child(4) i{background:#ebf8f0;color:#168253}
+.sales-v2 .sales-today-strip>div:nth-child(2) strong{color:#ad750b}
+.sales-v2 .sales-today-strip>div:nth-child(3) strong{color:#3a75bf}
+.sales-v2 .sales-today-strip>div:nth-child(4) strong{color:#118052}
+
+/* ---------- حاوية نقطة البيع ---------- */
+.sales-v2 .sale-reference-cart{
+  background:linear-gradient(180deg,#fff 0%,#fbfdfc 100%);
+  border:1px solid var(--sales-line);
+  border-radius:24px;
+  box-shadow:0 14px 38px rgba(20,70,55,.08);
+  overflow:hidden;
+  isolation:isolate;
+}
+
+/* رأس القسم */
+.sales-v2 .sale-reference-head{
+  min-height:94px;
+  height:auto;
+  grid-template-columns:50px 1fr 50px!important;
+  padding:14px 18px!important;
+  background:linear-gradient(135deg,#075f56 0%,#0b796e 58%,#0a665d 100%)!important;
+  position:relative;
+  overflow:hidden;
+}
+.sales-v2 .sale-reference-head::before{
+  content:"";
+  position:absolute;
+  width:250px;
+  height:250px;
+  border-radius:50%;
+  left:-120px;
+  top:-155px;
+  background:rgba(255,255,255,.07);
+}
+.sales-v2 .sale-reference-head::after{
+  content:"";
+  position:absolute;
+  width:190px;
+  height:190px;
+  border-radius:50%;
+  right:-85px;
+  bottom:-125px;
+  background:rgba(214,169,43,.16);
+}
+.sales-v2 .sale-ref-title{position:relative;z-index:2;gap:11px}
+.sales-v2 .sale-ref-title h2{font-size:1.45rem!important;line-height:1.15}
+.sales-v2 .sale-ref-title span{font-size:.66rem!important;color:rgba(255,255,255,.82)!important}
+.sales-v2 .sale-ref-cart-icon{
+  width:44px!important;
+  height:44px!important;
+  background:rgba(255,255,255,.13)!important;
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  font-size:1.05rem!important;
+}
+.sales-v2 .sale-ref-back,
+.sales-v2 .sale-ref-clear{
+  position:relative;
+  z-index:3;
+  width:40px!important;
+  height:40px!important;
+  border-radius:12px!important;
+  background:rgba(255,255,255,.08)!important;
+  border:1px solid rgba(255,255,255,.15)!important;
+  font-size:1rem!important;
+}
+.sales-v2 .sale-ref-clear{color:#ff8d87!important}
+.sales-v2 .sale-ref-clear b{width:22px!important;height:22px!important;top:-6px!important;right:-5px!important;font-size:.58rem!important;border:2px solid #0b7065!important}
+
+/* ---------- بطاقات الإجمالي ---------- */
+.sales-v2 .sale-ref-summary{
+  gap:10px!important;
+  padding:12px 14px 8px!important;
+  background:#fff;
+  border-bottom:1px solid #edf2ef;
+}
+.sales-v2 .sale-ref-stat{
+  min-height:66px!important;
+  height:auto!important;
+  margin:0!important;
+  padding:9px 10px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  border:1px solid var(--sales-line)!important;
+  border-radius:14px!important;
+  background:linear-gradient(180deg,#fff,#f9fcfb)!important;
+  box-shadow:none!important;
+}
+.sales-v2 .sale-ref-stat-icon{
+  width:32px!important;
+  height:32px!important;
+  flex:0 0 32px;
+  border-radius:10px!important;
+  display:grid!important;
+  place-items:center!important;
+  font-size:.8rem!important;
+  background:var(--sales-green-soft)!important;
+  color:var(--sales-green)!important;
+}
+.sales-v2 .sale-ref-stat span{font-size:.57rem!important;color:var(--sales-muted)!important}
+.sales-v2 .sale-ref-stat strong{font-size:.86rem!important;margin-top:2px!important;color:var(--sales-ink)!important}
+.sales-v2 .sale-ref-stat.total{border-color:#eadcba!important;background:linear-gradient(180deg,#fffdf8,#fff9ea)!important}
+.sales-v2 .sale-ref-stat.total .sale-ref-stat-icon{background:#fff3d6!important;color:#ad750b!important}
+.sales-v2 .sale-ref-stat.total strong{color:#ad750b!important}
+.sales-v2 .sale-ref-stat.paid .sale-ref-stat-icon{background:#edf4ff!important;color:#3a76bf!important}
+.sales-v2 .sale-ref-stat.paid strong{color:#3a76bf!important}
+.sales-v2 .sale-ref-stat.remaining .sale-ref-stat-icon{background:#ecf9f1!important;color:#0f8053!important}
+.sales-v2 .sale-ref-stat.remaining strong{color:#0f8053!important}
+
+/* ---------- العميل + نوع البيع ---------- */
+.sales-v2 .sale-ref-customer-row{
+  margin:0!important;
+  padding:12px 14px 10px!important;
+  display:grid!important;
+  grid-template-columns:minmax(155px,.72fr) minmax(0,1.28fr)!important;
+  gap:9px!important;
+  background:#fff;
+}
+.sales-v2 .sale-ref-sale-type,
+.sales-v2 .sale-ref-customer{
+  min-width:0!important;
+  border:1px solid var(--sales-line)!important;
+  border-radius:14px!important;
+  background:#f9fcfb!important;
+  min-height:54px;
+}
+.sales-v2 .sale-ref-sale-type{padding:6px 9px!important}
+.sales-v2 .sale-ref-sale-type>span,
+.sales-v2 .sale-ref-customer-select>span{
+  font-size:.56rem!important;
+  color:#82908b!important;
+  font-weight:900!important;
+}
+.sales-v2 .sale-ref-sale-type select,
+.sales-v2 .sale-ref-customer-select select{
+  width:100%!important;
+  min-width:0!important;
+  padding:2px 0!important;
+  background:transparent!important;
+  color:var(--sales-ink)!important;
+  font-size:.76rem!important;
+  font-weight:950!important;
+}
+.sales-v2 .sale-ref-customer{padding:6px 7px!important;display:flex!important;align-items:center!important;gap:7px!important}
+.sales-v2 .sale-ref-customer-edit{width:34px!important;height:34px!important;border-radius:10px!important;background:#fff!important;color:var(--sales-green)!important;border:1px solid #dbe7e2!important;font-size:.8rem!important}
+.sales-v2 .sale-ref-user-icon{font-size:.95rem!important;color:#64756f!important;margin:0 2px}
+.sales-v2 .sale-ref-customer-select{min-width:0!important}
+
+/* ---------- شريط أدوات الفاتورة ---------- */
+.sales-v2 .pos-advanced-toolbar{
+  margin:0 14px 11px!important;
+  padding:8px!important;
+  min-height:50px;
+  border:1px solid var(--sales-line)!important;
+  border-radius:14px!important;
+  background:#f8fbfa!important;
+  box-shadow:none!important;
+}
+.sales-v2 .pos-adv-tools{gap:5px!important;flex-wrap:wrap!important}
+.sales-v2 .pos-adv-tools button{
+  min-height:32px;
+  padding:6px 9px!important;
+  border:1px solid #dbe6e1!important;
+  border-radius:9px!important;
+  background:#fff!important;
+  color:#52625e!important;
+  font-size:.59rem!important;
+  box-shadow:none!important;
+}
+.sales-v2 .pos-adv-tools button:hover{border-color:#b9d9ce!important;color:var(--sales-green)!important;background:#f6fbf9!important}
+.sales-v2 .pos-adv-tools button i{color:var(--sales-green)!important}
+.sales-v2 .pos-adv-tools b{background:var(--sales-green)!important;font-size:.52rem!important}
+.sales-v2 .pos-invoice-chip,
+.sales-v2 .pos-invoice-date{
+  min-height:32px;
+  border:1px solid #dbe6e1!important;
+  background:#fff!important;
+  border-radius:9px!important;
+  padding:6px 9px!important;
+  color:#778581!important;
+  font-size:.58rem!important;
+  font-weight:800!important;
+}
+.sales-v2 .pos-invoice-chip strong{color:var(--sales-green)!important}
+.sales-v2 .pos-invoice-date label{font-size:.57rem!important;color:#70807b!important;font-weight:900!important}
+.sales-v2 .pos-invoice-date input{height:28px!important;border:0!important;background:transparent!important;font:inherit!important;color:var(--sales-ink)!important;font-weight:900!important;outline:0!important;min-width:112px}
+
+/* ---------- عناوين جدول السلة ---------- */
+.sales-v2 .sale-ref-table-head{
+  margin:0 14px!important;
+  min-height:38px;
+  padding:9px 10px!important;
+  border-radius:12px 12px 0 0!important;
+  grid-template-columns:2fr 1.25fr .9fr .9fr!important;
+  gap:6px!important;
+  background:linear-gradient(135deg,#0b7569,#086357)!important;
+  font-size:.63rem!important;
+  box-shadow:0 6px 15px rgba(8,96,82,.10);
+}
+.sales-v2 .sale-ref-cart-list{
+  margin:0 14px!important;
+  border:1px solid #e5eeea!important;
+  border-top:0!important;
+  border-radius:0 0 13px 13px!important;
+  background:#fff!important;
+}
+.sales-v2 .sale-ref-cart-list .pos-cart-item.pos-cart-product-row,
+.sales-v2 .sale-ref-cart-list .pos-cart-item.pos-cart-service-row{
+  grid-template-columns:2fr 1.25fr .9fr .9fr!important;
+  min-height:98px!important;
+  padding:10px 9px!important;
+  gap:6px!important;
+  border-bottom:1px solid #edf2ef!important;
+  background:#fff!important;
+}
+.sales-v2 .sale-ref-cart-list .pos-cart-item:nth-child(even){background:#fbfdfc!important}
+.sales-v2 .sale-ref-cart-list .pos-cart-product-cell .cart-visual,
+.sales-v2 .sale-ref-cart-list .pos-cart-product-cell .cart-visual img,
+.sales-v2 .sale-ref-cart-list .pos-cart-product-cell .cart-visual .cart-icon{
+  width:46px!important;height:46px!important;border-radius:12px!important;
+}
+.sales-v2 .sale-ref-cart-list .pos-cart-name{font-size:.69rem!important;line-height:1.35!important}
+.sales-v2 .sale-ref-cart-list .pos-cart-stock-badge{font-size:.5rem!important;padding:3px 5px!important}
+.sales-v2 .sale-ref-cart-list .pos-qty{gap:3px!important}
+.sales-v2 .sale-ref-cart-list .pos-qty button{width:26px!important;height:26px!important;border-radius:8px!important;font-size:.7rem!important}
+.sales-v2 .sale-ref-cart-list .pos-qty strong,
+.sales-v2 .sale-ref-cart-list .pos-qty span{font-size:.75rem!important;font-weight:900!important}
+.sales-v2 .sale-ref-cart-list .pos-cart-price-cell strong{font-size:.74rem!important}
+.sales-v2 .sale-ref-cart-list .pos-cart-total-cell strong{font-size:.80rem!important;color:var(--sales-green)!important}
+
+/* ---------- خدمة التوصيل ---------- */
+.sales-v2 .sale-ref-service-row{
+  margin:9px 14px 12px!important;
+  padding:7px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 150px!important;
+  gap:7px!important;
+  border:1px dashed #cbded6!important;
+  border-radius:12px!important;
+  background:#fbfdfc!important;
+}
+.sales-v2 .sale-ref-service{
+  width:100%!important;
+  height:42px!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:9px!important;
+  background:#eff8f5!important;
+  color:#126b5f!important;
+  font-size:.62rem!important;
+}
+.sales-v2 .sale-ref-service i{font-size:.85rem!important;color:var(--sales-green)!important}
+.sales-v2 .sale-ref-delivery-input{
+  min-width:0!important;
+  width:100%!important;
+  height:42px!important;
+  border:1px solid #dbe7e2!important;
+  border-radius:9px!important;
+  background:#fff!important;
+  padding:0 9px!important;
+  font:inherit!important;
+  font-size:.66rem!important;
+  font-weight:900!important;
+  text-align:center!important;
+  color:var(--sales-ink)!important;
+}
+
+/* ---------- منطقة الدفع ---------- */
+.sales-v2 .sale-ref-bottom{
+  display:block!important;
+  margin:0 14px 15px!important;
+  direction:rtl!important;
+}
+.sales-v2 .sale-ref-payment{
+  width:100%!important;
+  border:1px solid var(--sales-line)!important;
+  border-radius:17px!important;
+  background:linear-gradient(180deg,#fff,#fbfdfc)!important;
+  padding:13px!important;
+  box-shadow:0 8px 22px rgba(20,70,55,.045);
+}
+.sales-v2 .sale-ref-section-title{font-size:.78rem!important;margin-bottom:9px!important;color:var(--sales-ink)!important}
+.sales-v2 .sale-ref-section-title i{color:var(--sales-green)!important;font-size:.9rem!important}
+.sales-v2 .sale-ref-methods{gap:6px!important}
+.sales-v2 .sale-ref-methods button{
+  min-height:52px!important;
+  height:52px!important;
+  padding:6px 4px!important;
+  border:1px solid #dce7e2!important;
+  border-radius:11px!important;
+  background:#fff!important;
+  color:#64736f!important;
+  box-shadow:none!important;
+  font-size:.58rem!important;
+}
+.sales-v2 .sale-ref-methods button i{font-size:.82rem!important;margin-bottom:2px!important}
+.sales-v2 .sale-ref-methods button b{display:none!important}
+.sales-v2 .sale-ref-methods button.active{
+  background:#eaf7f3!important;
+  border-color:#9acdbf!important;
+  color:var(--sales-green)!important;
+  box-shadow:0 0 0 2px rgba(15,118,110,.07)!important;
+  transform:none!important;
+}
+.sales-v2 .sale-ref-paid-label{display:block!important;margin-top:11px!important;margin-bottom:5px!important;font-size:.61rem!important;color:#788680!important;font-weight:900!important}
+.sales-v2 .sale-ref-paid-input{
+  min-height:46px!important;
+  border:1px solid #d5e3dd!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  overflow:hidden!important;
+}
+.sales-v2 .sale-ref-paid-input span{padding:0 9px!important;color:#82918c!important;font-size:.58rem!important;font-weight:900!important}
+.sales-v2 .sale-ref-paid-input input{font-size:.83rem!important;font-weight:950!important;color:var(--sales-ink)!important}
+.sales-v2 .sale-ref-paid-input button{width:38px!important;background:#f4faf7!important;color:var(--sales-green)!important;border-right:1px solid #e1ebe7!important;border-left:0!important}
+.sales-v2 .pos-quick-paid{margin-top:6px!important;gap:5px!important}
+.sales-v2 .pos-quick-paid button{min-height:29px!important;padding:5px 9px!important;background:#fff!important;border:1px solid #dbe6e1!important;border-radius:8px!important;font-size:.56rem!important;color:#596964!important}
+.sales-v2 .pos-quick-paid button:hover{border-color:#a8d2c7!important;background:#eef8f5!important;color:var(--sales-green)!important}
+
+/* الخصم والضريبة */
+.sales-v2 .sale-ref-payment-discount{
+  margin-top:9px!important;
+  border:1px solid #eee2bd!important;
+  border-radius:12px!important;
+  background:#fffdf7!important;
+  padding:9px!important;
+}
+.sales-v2 .sale-ref-payment-discount label{font-size:.58rem!important;font-weight:900!important;color:#7b6a2d!important}
+.sales-v2 .sale-ref-payment-discount select{font-size:.62rem!important;height:34px!important;border-radius:9px!important}
+.sales-v2 .sale-ref-payment-discount input{height:34px!important;font-size:.68rem!important}
+.sales-v2 .matgary-discount-hint{font-size:.53rem!important;color:#98895c!important}
+.sales-v2 .pos-tax-line{
+  margin-top:8px!important;
+  padding:8px 9px!important;
+  border-radius:11px!important;
+  background:#f7faf9!important;
+  border:1px solid #dfeae6!important;
+}
+.sales-v2 .pos-tax-line label{font-size:.58rem!important}
+.sales-v2 .pos-tax-line input{width:64px!important;height:32px!important;padding:0 5px!important;font-size:.67rem!important}
+.sales-v2 .pos-tax-summary{margin-top:6px!important;padding:7px 9px!important;border-radius:9px!important;font-size:.58rem!important}
+.sales-v2 .pos-tax-summary strong{font-size:.69rem!important}
+.sales-v2 .pos-credit-row{margin-top:7px!important;padding:7px 9px!important;border:1px solid #dfeae6!important;border-radius:10px!important;background:#f8fbfa!important}
+.sales-v2 .pos-credit-row label{font-size:.58rem!important;color:#70807b!important;font-weight:900!important}
+.sales-v2 .pos-credit-row input{height:32px!important;border:1px solid #dbe6e1!important;border-radius:8px!important;font:inherit!important;font-size:.64rem!important;font-weight:800!important}
+.sales-v2 .pos-sale-note{min-height:42px!important;margin-top:7px!important;border:1px solid #dfeae6!important;border-radius:10px!important;font-size:.62rem!important;padding:8px 9px!important}
+
+/* الباقي */
+.sales-v2 .sale-ref-change{
+  margin-top:8px!important;
+  min-height:48px!important;
+  padding:8px 10px!important;
+  border:1px solid #cfe5dc!important;
+  border-radius:12px!important;
+  background:linear-gradient(90deg,#eff9f5,#f8fcfb)!important;
+}
+.sales-v2 .sale-ref-change span{font-size:.59rem!important;color:#71817b!important}
+.sales-v2 .sale-ref-change strong{font-size:.92rem!important;color:var(--sales-green)!important}
+.sales-v2 .sale-ref-change i{font-size:.82rem!important;color:#79a59b!important}
+
+/* أزرار إتمام البيع */
+.sales-v2 .sale-ref-checkout-actions{display:grid!important;grid-template-columns:minmax(0,1fr) 44px!important;gap:7px!important;margin-top:9px!important}
+.sales-v2 .sale-ref-checkout{
+  min-height:50px!important;
+  border-radius:12px!important;
+  background:linear-gradient(135deg,#08796d,#075f56)!important;
+  box-shadow:0 8px 18px rgba(8,121,109,.17)!important;
+  font-size:.69rem!important;
+}
+.sales-v2 .sale-ref-checkout span{font-weight:900!important}
+.sales-v2 .sale-ref-checkout strong{font-size:.80rem!important}
+.sales-v2 .sale-ref-checkout:disabled{opacity:.45!important;box-shadow:none!important}
+.sales-v2 .sale-ref-whatsapp{
+  min-width:44px!important;
+  min-height:50px!important;
+  border-radius:12px!important;
+  border:1px solid #bde1c8!important;
+  background:#eefaf1!important;
+  color:#198947!important;
+}
+.sales-v2 .sale-ref-whatsapp i{font-size:1rem!important}
+
+/* ---------- اختيار الأصناف ---------- */
+.sales-v2 .sale-ref-products-panel{
+  margin-top:14px!important;
+  background:linear-gradient(180deg,#fff,#fbfdfc)!important;
+  border:1px solid var(--sales-line)!important;
+  border-radius:22px!important;
+  box-shadow:0 11px 28px rgba(20,70,55,.06)!important;
+  overflow:hidden!important;
+}
+.sales-v2 .pos-products-head{
+  padding:14px 15px!important;
+  min-height:67px;
+  border-bottom:1px solid #edf2ef!important;
+  background:linear-gradient(90deg,#fff,#f7fbf9)!important;
+}
+.sales-v2 .pos-products-head h3{font-size:.88rem!important;color:var(--sales-ink)!important}
+.sales-v2 .pos-products-head h3 i{color:var(--sales-green)!important}
+.sales-v2 .pos-products-head small{font-size:.58rem!important;color:#84908c!important}
+.sales-v2 .pos-live-dot{padding:6px 9px!important;font-size:.55rem!important;border-radius:999px!important;background:#eff8f4!important;color:#157453!important}
+.sales-v2 .pos-live-dot span{width:6px!important;height:6px!important;margin-left:4px!important}
+.sales-v2 .pos-products-body{padding:12px 14px 14px!important}
+.sales-v2 .pos-search-row{gap:7px!important;margin-bottom:8px!important}
+.sales-v2 .pos-search-main{min-height:42px!important;border-radius:11px!important;background:#f7faf9!important;border:1px solid #dbe7e2!important;padding:0 10px!important}
+.sales-v2 .pos-search-main i{font-size:.72rem!important;color:#8b9994!important}
+.sales-v2 .pos-search-main input{font-size:.67rem!important;font-weight:800!important}
+.sales-v2 .pos-scan-btn{min-width:46px!important;border-radius:11px!important;padding:0 10px!important;background:#fff!important;font-size:.59rem!important}
+.sales-v2 .pos-category-row{display:flex!important;gap:6px!important;overflow:auto!important;padding:2px 0 8px!important;scrollbar-width:none}
+.sales-v2 .pos-category-row::-webkit-scrollbar{display:none}
+.sales-v2 .pos-category-row button{
+  flex:0 0 auto;
+  min-height:34px;
+  padding:7px 10px!important;
+  border:1px solid #dbe7e2!important;
+  background:#fff!important;
+  color:#62726c!important;
+  border-radius:9px!important;
+  font-size:.56rem!important;
+}
+.sales-v2 .pos-category-row button.active{
+  background:#e9f7f2!important;
+  border-color:#9ccdbf!important;
+  color:var(--sales-green)!important;
+  box-shadow:none!important;
+}
+.sales-v2 .pos-products-tools{margin:1px 0 8px!important}
+.sales-v2 .pos-products-tools span{font-size:.55rem!important;color:#84908c!important}
+.sales-v2 .pos-products-tools select{font-size:.56rem!important;padding:7px 8px!important;border-radius:9px!important}
+.sales-v2 .pos-product-grid-modern{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important}
+.sales-v2 .pos-product-card{
+  min-width:0!important;
+  padding:8px!important;
+  border-radius:14px!important;
+  border:1px solid #e0e9e5!important;
+  box-shadow:0 5px 14px rgba(20,70,55,.045)!important;
+  background:#fff!important;
+}
+.sales-v2 .pos-product-card:hover{transform:translateY(-2px)!important;border-color:#b8d8cd!important;box-shadow:0 10px 20px rgba(20,70,55,.08)!important}
+.sales-v2 .pos-sp-image{height:115px!important;border-radius:11px!important;background:linear-gradient(135deg,#f7faf8,#eef5f1)!important;margin-bottom:7px!important}
+.sales-v2 .pos-product-card .sp-name{font-size:.65rem!important;min-height:31px!important;line-height:1.35!important}
+.sales-v2 .pos-product-card .sp-price{font-size:.76rem!important;margin-top:4px!important}
+.sales-v2 .pos-product-card .sp-price small{font-size:.49rem!important}
+.sales-v2 .pos-product-card .sp-pack-price{font-size:.48rem!important;min-height:13px!important}
+.sales-v2 .sp-stock-badge,.sales-v2 .sp-best-badge{font-size:.45rem!important;padding:4px 6px!important;top:6px!important}
+.sales-v2 .sp-sizes-modern{gap:4px!important;margin-top:6px!important}
+.sales-v2 .sp-sizes-modern .sp-size{padding:5px 2px!important;border-radius:7px!important;font-size:.47rem!important}
+.sales-v2 .sp-add-one{min-height:30px;margin-top:6px!important;padding:6px!important;border-radius:8px!important;font-size:.51rem!important}
+
+/* ---------- سجل المبيعات ---------- */
+.sales-v2 .sales-history-modern{
+  margin-top:14px!important;
+  background:linear-gradient(180deg,#fff,#fbfdfc)!important;
+  border:1px solid var(--sales-line)!important;
+  border-radius:21px!important;
+  box-shadow:0 12px 30px rgba(20,70,55,.065)!important;
+}
+.sales-v2 .sales-history-head{
+  min-height:64px!important;
+  padding:12px 14px!important;
+  border-bottom:1px solid #edf2ef!important;
+  background:linear-gradient(90deg,#fff,#f7fbf9)!important;
+}
+.sales-v2 .sales-history-title{gap:9px!important}
+.sales-v2 .sales-history-icon{width:38px!important;height:38px!important;border-radius:11px!important;font-size:.88rem!important}
+.sales-v2 .sales-history-title h3{font-size:.86rem!important;color:var(--sales-ink)!important}
+.sales-v2 .sales-history-title small{font-size:.54rem!important;color:#85918d!important}
+.sales-v2 .sales-history-head-actions{gap:5px!important}
+.sales-v2 .sales-refresh-btn,
+.sales-v2 .sales-history-open-btn{width:32px!important;height:32px!important;border-radius:9px!important;background:#fff!important;border:1px solid #dce7e2!important;color:#6e7c78!important}
+.sales-v2 .sales-history-open-btn{color:var(--sales-green)!important}
+.sales-v2 .sales-stats-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:7px!important;
+  padding:10px 12px!important;
+}
+.sales-v2 .sales-stat{
+  min-width:0!important;
+  min-height:56px!important;
+  padding:8px!important;
+  border:1px solid #e1ebe7!important;
+  border-radius:12px!important;
+  background:#fafcfb!important;
+}
+.sales-v2 .sales-stat-icon{width:30px!important;height:30px!important;border-radius:9px!important;font-size:.7rem!important}
+.sales-v2 .sales-stat small{font-size:.49rem!important}
+.sales-v2 .sales-stat strong{font-size:.66rem!important;margin-top:1px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+
+.sales-v2 .sales-filters{padding:0 12px 10px!important}
+.sales-v2 .sales-search-wrap{
+  min-height:40px!important;
+  padding:0 9px!important;
+  margin-bottom:7px!important;
+  border-radius:11px!important;
+  border:1px solid #dbe7e2!important;
+  background:#f9fcfb!important;
+}
+.sales-v2 .sales-search-wrap>i{font-size:.65rem!important;color:#899691!important}
+.sales-v2 .sales-search-wrap input{font-size:.63rem!important;padding:9px 2px!important}
+.sales-v2 .sales-search-wrap button{width:28px;height:28px;border-radius:7px;background:#fff!important}
+.sales-v2 .sales-quick-filters{gap:5px!important;padding-bottom:7px!important}
+.sales-v2 .sales-quick-filters button{
+  min-height:30px;
+  padding:5px 9px!important;
+  border:1px solid #dbe7e2!important;
+  border-radius:8px!important;
+  background:#fff!important;
+  color:#64736e!important;
+  font-size:.52rem!important;
+}
+.sales-v2 .sales-quick-filters button.active{background:#e9f7f2!important;border-color:#a1d0c4!important;color:var(--sales-green)!important}
+.sales-v2 .sales-filter-row{grid-template-columns:1fr 1fr minmax(130px,1.1fr) auto!important;gap:6px!important}
+.sales-v2 .sales-filter-row select,
+.sales-v2 .sales-date-wrap,
+.sales-v2 .sales-clear-filters{
+  min-height:38px!important;
+  height:38px!important;
+  border:1px solid #dbe7e2!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  color:#64736e!important;
+  font:inherit!important;
+  font-size:.55rem!important;
+  font-weight:900!important;
+}
+.sales-v2 .sales-filter-row select{padding:0 8px!important;min-width:0!important}
+.sales-v2 .sales-date-wrap{display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;padding:0 8px!important;position:relative;cursor:pointer;overflow:hidden}
+.sales-v2 .sales-date-wrap i{color:var(--sales-green)!important;font-size:.68rem!important}
+.sales-v2 .sales-date-wrap span{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.sales-v2 .sales-date-filter{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;opacity:0!important;cursor:pointer!important}
+.sales-v2 .sales-clear-filters{padding:0 10px!important;color:#9a5850!important;border-color:#eed8d4!important;background:#fff7f5!important;white-space:nowrap}
+
+/* بطاقات الفواتير الجديدة الحالية في السجل */
+.sales-v2 .sales-cards-list{padding:0 12px 12px!important;gap:8px!important}
+.sales-v2 .sales-cv2-card,
+.sales-v2 .sale-compact-card{
+  margin:0!important;
+  padding:10px!important;
+  border-radius:15px!important;
+  border:1px solid #dfe9e5!important;
+  background:#fff!important;
+  box-shadow:0 5px 15px rgba(20,70,55,.04)!important;
+}
+.sales-v2 .sales-cv2-card:hover,
+.sales-v2 .sale-compact-card:hover{border-color:#bbd9cf!important;box-shadow:0 9px 22px rgba(20,70,55,.075)!important;transform:translateY(-1px)!important}
+.sales-v2 .sales-cv2-head{padding-bottom:8px!important;gap:8px!important}
+.sales-v2 .sales-cv2-title{font-size:.70rem!important}
+.sales-v2 .sales-cv2-date{font-size:.51rem!important}
+.sales-v2 .sales-cv2-status{font-size:.50rem!important;padding:4px 7px!important}
+.sales-v2 .sales-cv2-body{gap:8px!important;padding:8px 0!important}
+.sales-v2 .sales-cv2-icon{width:32px!important;height:32px!important;border-radius:10px!important;font-size:.72rem!important;flex-basis:32px!important}
+.sales-v2 .sales-cv2-product strong{font-size:.64rem!important}
+.sales-v2 .sales-cv2-product small{font-size:.50rem!important;margin-left:6px!important}
+.sales-v2 .sales-cv2-total{min-width:78px!important;padding:6px 7px!important;border-radius:10px!important}
+.sales-v2 .sales-cv2-total small{font-size:.46rem!important}
+.sales-v2 .sales-cv2-total b{font-size:.76rem!important}
+.sales-v2 .sales-cv2-grid{gap:5px!important;padding:7px 0!important}
+.sales-v2 .sales-cv2-grid>div{padding:5px 3px!important;border-radius:8px!important}
+.sales-v2 .sales-cv2-grid small{font-size:.44rem!important}
+.sales-v2 .sales-cv2-grid b{font-size:.52rem!important}
+.sales-v2 .sales-cv2-return{padding:5px 7px!important;border-radius:8px!important;font-size:.48rem!important}
+.sales-v2 .sales-cv2-actions{gap:4px!important;margin-top:7px!important;grid-template-columns:1.5fr 1fr 1fr 1fr 31px 31px 31px!important}
+.sales-v2 .sales-cv2-actions button{min-height:29px!important;border-radius:8px!important;font-size:.48rem!important}
+
+.sales-v2 .sales-empty{padding:35px 15px!important}
+.sales-v2 .sales-empty strong{font-size:.74rem!important}
+.sales-v2 .sales-empty span{font-size:.55rem!important}
+
+/* ---------- تفاصيل الفاتورة داخل النافذة ---------- */
+.sales-v2 + *{}
+
+/* ---------- سطح المكتب الكبير ---------- */
+@media(min-width:901px){
+  .sales-v2 .sale-reference-head{min-height:88px}
+  .sales-v2 .sale-ref-summary{grid-template-columns:repeat(3,1fr)!important;padding-top:13px!important}
+  .sales-v2 .sale-ref-customer-row{grid-template-columns:minmax(220px,.65fr) minmax(0,1.35fr)!important}
+  .sales-v2 .sale-ref-payment{max-width:none!important}
+  .sales-v2 .sale-ref-products-panel{margin-top:14px!important}
+}
+
+/* ---------- تابلت ---------- */
+@media(max-width:900px){
+  .sales-v2{padding-left:0!important;padding-right:0!important}
+  .sales-v2 .sales-today-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sales-v2 .pos-product-grid-modern{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .sales-v2 .sales-filter-row{grid-template-columns:1fr 1fr!important}
+  .sales-v2 .sales-clear-filters{grid-column:1/-1}
+}
+
+/* ---------- موبايل ---------- */
+@media(max-width:600px){
+  .sales-v2{padding-bottom:102px!important}
+  .sales-v2 .sales-today-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px!important;margin-bottom:10px!important}
+  .sales-v2 .sales-today-strip>div{min-height:69px;padding:8px!important;border-radius:14px!important;gap:7px!important}
+  .sales-v2 .sales-today-strip i{width:31px;height:31px;flex-basis:31px;border-radius:9px;font-size:.72rem}
+  .sales-v2 .sales-today-strip span{font-size:.50rem!important}
+  .sales-v2 .sales-today-strip strong{font-size:.70rem!important}
+  .sales-v2 .sale-reference-cart{border-radius:19px!important}
+  .sales-v2 .sale-reference-head{min-height:77px!important;grid-template-columns:40px 1fr 40px!important;padding:10px 10px!important}
+  .sales-v2 .sale-ref-title h2{font-size:1.10rem!important}
+  .sales-v2 .sale-ref-title span{font-size:.52rem!important}
+  .sales-v2 .sale-ref-cart-icon{width:36px!important;height:36px!important;font-size:.88rem!important}
+  .sales-v2 .sale-ref-back,.sales-v2 .sale-ref-clear{width:35px!important;height:35px!important;border-radius:10px!important;font-size:.8rem!important}
+  .sales-v2 .sale-ref-clear b{width:18px!important;height:18px!important;font-size:.48rem!important;top:-5px!important;right:-4px!important}
+  .sales-v2 .sale-ref-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important;padding:9px 8px 7px!important;gap:5px!important}
+  .sales-v2 .sale-ref-stat{min-height:61px!important;padding:7px 4px!important;gap:5px!important;flex-direction:column!important}
+  .sales-v2 .sale-ref-stat-icon{width:27px!important;height:27px!important;flex-basis:27px!important;border-radius:8px!important;font-size:.67rem!important}
+  .sales-v2 .sale-ref-stat span{font-size:.45rem!important}
+  .sales-v2 .sale-ref-stat strong{font-size:.62rem!important}
+  .sales-v2 .sale-ref-customer-row{grid-template-columns:1fr 1fr!important;gap:6px!important;padding:8px!important}
+  .sales-v2 .sale-ref-sale-type,.sales-v2 .sale-ref-customer{min-height:48px!important}
+  .sales-v2 .sale-ref-sale-type>span,.sales-v2 .sale-ref-customer-select>span{font-size:.47rem!important}
+  .sales-v2 .sale-ref-sale-type select,.sales-v2 .sale-ref-customer-select select{font-size:.60rem!important}
+  .sales-v2 .sale-ref-customer-edit{width:30px!important;height:30px!important;font-size:.68rem!important}
+  .sales-v2 .sale-ref-user-icon{font-size:.76rem!important}
+  .sales-v2 .pos-advanced-toolbar{margin:0 8px 8px!important;padding:6px!important;gap:5px!important}
+  .sales-v2 .pos-adv-tools{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important}
+  .sales-v2 .pos-adv-tools button{justify-content:center!important;font-size:.51rem!important;min-height:29px!important}
+  .sales-v2 .pos-invoice-chip,.sales-v2 .pos-invoice-date{justify-content:center!important;width:100%!important;font-size:.50rem!important}
+  .sales-v2 .pos-invoice-date input{font-size:.56rem!important;min-width:0!important;flex:1!important}
+  .sales-v2 .sale-ref-table-head{margin:0 8px!important;grid-template-columns:1.75fr 1.15fr .82fr .82fr!important;font-size:.49rem!important;padding:8px 4px!important}
+  .sales-v2 .sale-ref-cart-list{margin:0 8px!important}
+  .sales-v2 .sale-ref-cart-list .pos-cart-item.pos-cart-product-row,
+  .sales-v2 .sale-ref-cart-list .pos-cart-item.pos-cart-service-row{grid-template-columns:1.75fr 1.15fr .82fr .82fr!important;min-height:83px!important;padding:7px 4px!important;gap:4px!important}
+  .sales-v2 .sale-ref-cart-list .pos-cart-product-cell .cart-visual,
+  .sales-v2 .sale-ref-cart-list .pos-cart-product-cell .cart-visual img,
+  .sales-v2 .sale-ref-cart-list .pos-cart-product-cell .cart-visual .cart-icon{width:36px!important;height:36px!important;border-radius:10px!important}
+  .sales-v2 .sale-ref-cart-list .pos-cart-name{font-size:.56rem!important}
+  .sales-v2 .sale-ref-cart-list .pos-cart-stock-badge{font-size:.43rem!important}
+  .sales-v2 .sale-ref-cart-list .pos-qty button{width:21px!important;height:21px!important;font-size:.58rem!important}
+  .sales-v2 .sale-ref-cart-list .pos-qty strong,.sales-v2 .sale-ref-cart-list .pos-qty span{font-size:.60rem!important}
+  .sales-v2 .sale-ref-cart-list .pos-cart-price-cell strong,.sales-v2 .sale-ref-cart-list .pos-cart-total-cell strong{font-size:.62rem!important}
+  .sales-v2 .sale-ref-service-row{margin:7px 8px 9px!important;grid-template-columns:minmax(0,1fr) 100px!important}
+  .sales-v2 .sale-ref-service,.sales-v2 .sale-ref-delivery-input{height:37px!important;font-size:.53rem!important}
+  .sales-v2 .sale-ref-bottom{margin:0 8px 10px!important}
+  .sales-v2 .sale-ref-payment{padding:9px!important;border-radius:14px!important}
+  .sales-v2 .sale-ref-section-title{font-size:.65rem!important;margin-bottom:7px!important}
+  .sales-v2 .sale-ref-methods{gap:4px!important}
+  .sales-v2 .sale-ref-methods button{height:44px!important;min-height:44px!important;border-radius:9px!important;font-size:.50rem!important}
+  .sales-v2 .sale-ref-methods button i{font-size:.70rem!important}
+  .sales-v2 .sale-ref-paid-label{font-size:.51rem!important;margin-top:8px!important}
+  .sales-v2 .sale-ref-paid-input{min-height:40px!important}
+  .sales-v2 .sale-ref-paid-input span{font-size:.48rem!important;padding:0 7px!important}
+  .sales-v2 .sale-ref-paid-input input{font-size:.67rem!important}
+  .sales-v2 .sale-ref-paid-input button{width:33px!important}
+  .sales-v2 .pos-quick-paid button{min-height:25px!important;padding:4px 6px!important;font-size:.48rem!important}
+  .sales-v2 .sale-ref-payment-discount{padding:7px!important;margin-top:7px!important}
+  .sales-v2 .sale-ref-payment-discount label{font-size:.48rem!important}
+  .sales-v2 .sale-ref-payment-discount select{font-size:.52rem!important;height:30px!important}
+  .sales-v2 .sale-ref-payment-discount input{height:30px!important}
+  .sales-v2 .pos-tax-line{padding:6px 7px!important}
+  .sales-v2 .pos-tax-line label{font-size:.49rem!important}
+  .sales-v2 .pos-tax-line input{width:57px!important;height:29px!important}
+  .sales-v2 .pos-tax-summary{font-size:.49rem!important}
+  .sales-v2 .pos-tax-summary strong{font-size:.57rem!important}
+  .sales-v2 .pos-sale-note{min-height:37px!important;font-size:.52rem!important}
+  .sales-v2 .sale-ref-change{min-height:40px!important;padding:6px 8px!important}
+  .sales-v2 .sale-ref-change span{font-size:.49rem!important}
+  .sales-v2 .sale-ref-change strong{font-size:.70rem!important}
+  .sales-v2 .sale-ref-checkout-actions{grid-template-columns:minmax(0,1fr) 39px!important;gap:5px!important;margin-top:7px!important}
+  .sales-v2 .sale-ref-checkout{min-height:44px!important;font-size:.57rem!important;border-radius:10px!important}
+  .sales-v2 .sale-ref-checkout strong{font-size:.66rem!important}
+  .sales-v2 .sale-ref-whatsapp{min-width:39px!important;min-height:44px!important;border-radius:10px!important}
+  .sales-v2 .sale-ref-products-panel{margin-top:10px!important;border-radius:17px!important}
+  .sales-v2 .pos-products-head{padding:10px!important;min-height:58px!important}
+  .sales-v2 .pos-products-head h3{font-size:.68rem!important}
+  .sales-v2 .pos-products-head small{font-size:.48rem!important}
+  .sales-v2 .pos-live-dot{font-size:.45rem!important;padding:5px 7px!important}
+  .sales-v2 .pos-products-body{padding:9px!important}
+  .sales-v2 .pos-product-grid-modern{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+  .sales-v2 .pos-product-card{padding:7px!important;border-radius:12px!important}
+  .sales-v2 .pos-sp-image{height:102px!important;border-radius:10px!important}
+  .sales-v2 .pos-product-card .sp-name{font-size:.59rem!important;min-height:29px!important}
+  .sales-v2 .pos-product-card .sp-price{font-size:.70rem!important}
+  .sales-v2 .pos-category-row button{min-height:30px!important;padding:6px 8px!important;font-size:.49rem!important}
+  .sales-v2 .pos-products-tools span,.sales-v2 .pos-products-tools select{font-size:.49rem!important}
+  .sales-v2 .sales-history-modern{margin-top:10px!important;border-radius:17px!important}
+  .sales-v2 .sales-history-head{min-height:58px!important;padding:10px!important}
+  .sales-v2 .sales-history-icon{width:33px!important;height:33px!important;border-radius:10px!important;font-size:.76rem!important}
+  .sales-v2 .sales-history-title h3{font-size:.68rem!important}
+  .sales-v2 .sales-history-title small{font-size:.46rem!important}
+  .sales-v2 .sales-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;padding:8px!important;gap:5px!important}
+  .sales-v2 .sales-stat{min-height:48px!important;padding:6px!important;border-radius:10px!important}
+  .sales-v2 .sales-stat-icon{width:26px!important;height:26px!important;flex-basis:26px!important}
+  .sales-v2 .sales-stat small{font-size:.45rem!important}
+  .sales-v2 .sales-stat strong{font-size:.59rem!important}
+  .sales-v2 .sales-filters{padding:0 8px 8px!important}
+  .sales-v2 .sales-search-wrap{min-height:36px!important}
+  .sales-v2 .sales-search-wrap input{font-size:.55rem!important}
+  .sales-v2 .sales-quick-filters button{min-height:28px!important;font-size:.49rem!important;padding:4px 8px!important}
+  .sales-v2 .sales-filter-row{grid-template-columns:1fr 1fr!important;gap:5px!important}
+  .sales-v2 .sales-filter-row select,.sales-v2 .sales-date-wrap,.sales-v2 .sales-clear-filters{height:35px!important;min-height:35px!important;font-size:.49rem!important}
+  .sales-v2 .sales-clear-filters{grid-column:1/-1}
+  .sales-v2 .sales-cards-list{padding:0 8px 8px!important;gap:6px!important}
+  .sales-v2 .sales-cv2-card,.sales-v2 .sale-compact-card{padding:8px!important;border-radius:13px!important}
+  .sales-v2 .sales-cv2-title{font-size:.62rem!important}
+  .sales-v2 .sales-cv2-date{font-size:.46rem!important}
+  .sales-v2 .sales-cv2-status{font-size:.45rem!important}
+  .sales-v2 .sales-cv2-product strong{font-size:.57rem!important}
+  .sales-v2 .sales-cv2-product small{font-size:.45rem!important}
+  .sales-v2 .sales-cv2-total{min-width:69px!important}
+  .sales-v2 .sales-cv2-total b{font-size:.67rem!important}
+  .sales-v2 .sales-cv2-grid b{font-size:.48rem!important}
+  .sales-v2 .sales-cv2-actions{grid-template-columns:1.45fr 1fr 1fr 1fr 28px 28px 28px!important;gap:3px!important}
+  .sales-v2 .sales-cv2-actions button{min-height:27px!important;font-size:.44rem!important}
+}
+
+@media(max-width:370px){
+  .sales-v2 .sales-today-strip span{font-size:.46rem!important}
+  .sales-v2 .sales-today-strip strong{font-size:.63rem!important}
+  .sales-v2 .sale-ref-title h2{font-size:1rem!important}
+  .sales-v2 .sale-ref-summary{gap:4px!important}
+  .sales-v2 .sale-ref-stat{padding-left:2px!important;padding-right:2px!important}
+  .sales-v2 .sale-ref-stat strong{font-size:.57rem!important}
+  .sales-v2 .sale-ref-table-head{font-size:.45rem!important}
+  .sales-v2 .sale-ref-cart-list .pos-cart-name{font-size:.52rem!important}
+  .sales-v2 .sale-ref-cart-list .pos-qty strong,.sales-v2 .sale-ref-cart-list .pos-qty span{font-size:.56rem!important}
+  .sales-v2 .sale-ref-cart-list .pos-cart-price-cell strong,.sales-v2 .sale-ref-cart-list .pos-cart-total-cell strong{font-size:.57rem!important}
+  .sales-v2 .sale-ref-checkout-actions{grid-template-columns:minmax(0,1fr) 36px!important}
+  .sales-v2 .sale-ref-whatsapp{min-width:36px!important}
+}
+
+/* تقليل الحركة لمن يفضلها */
+@media(prefers-reduced-motion:reduce){
+  .sales-v2 *,.sales-v2 *::before,.sales-v2 *::after{animation:none!important;transition:none!important}
+}
+
+</style>
 </body>
   </html>
