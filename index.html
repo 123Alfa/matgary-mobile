@@ -3776,6 +3776,213 @@ html[data-theme="dark"] .sales-summary-card .value{
 @media(max-width:760px){#contentArea .stock-movement-page .sm-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:430px){#contentArea .stock-movement-page .sm-summary{grid-template-columns:1fr!important}}
 </style>
+
+<style id="matgary-sales-final-polish-v4">
+/* =========================================================
+   متجري — قسم المبيعات | Final Polish v4
+   الهدف: وضوح أعلى للموبايل + أزرار سجل المبيعات أكثر احترافية
+   لا يغيّر منطق الحسابات أو وظائف البيع.
+   ========================================================= */
+
+/* 1) المبلغ المدفوع — زر الآلة الحاسبة */
+.sales-v2 .sale-ref-paid-input{
+  min-height:50px!important;
+  height:50px!important;
+  border:1px solid #cfded8!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:inset 0 0 0 1px rgba(15,118,110,.025),0 3px 10px rgba(20,70,55,.035)!important;
+}
+.sales-v2 .sale-ref-paid-input input{
+  height:100%!important;
+  min-width:0!important;
+  padding:0 10px!important;
+  font-size:.92rem!important;
+  font-weight:950!important;
+  color:#20332e!important;
+}
+.sales-v2 .sale-ref-paid-input span{
+  min-width:52px!important;
+  height:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0 8px!important;
+  color:#71827c!important;
+  font-size:.62rem!important;
+  font-weight:950!important;
+  background:#f8fbfa!important;
+}
+.sales-v2 .sale-ref-paid-input .sale-paid-calculator{
+  width:50px!important;
+  min-width:50px!important;
+  height:100%!important;
+  flex:0 0 50px!important;
+  border:0!important;
+  border-right:1px solid #dfe9e5!important;
+  background:linear-gradient(180deg,#f1faf6,#e8f5f0)!important;
+  color:#08796d!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  cursor:pointer!important;
+  transition:background .18s ease,transform .18s ease,color .18s ease!important;
+}
+.sales-v2 .sale-ref-paid-input .sale-paid-calculator i{
+  font-size:1.08rem!important;
+  line-height:1!important;
+}
+.sales-v2 .sale-ref-paid-input .sale-paid-calculator:hover{
+  background:#dff2eb!important;
+  color:#075f56!important;
+}
+.sales-v2 .sale-ref-paid-input .sale-paid-calculator:active{
+  transform:scale(.96)!important;
+}
+
+/* 2) سجل المبيعات — منطقة الأزرار */
+.sales-v2 .sales-cv2-actions{
+  display:grid!important;
+  grid-template-columns:repeat(7,minmax(0,1fr))!important;
+  gap:6px!important;
+  margin-top:10px!important;
+  padding-top:2px!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn{
+  min-width:0!important;
+  min-height:39px!important;
+  padding:5px 6px!important;
+  border:1px solid #dce7e2!important;
+  border-radius:11px!important;
+  font-family:inherit!important;
+  font-size:.60rem!important;
+  font-weight:950!important;
+  line-height:1.15!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  box-shadow:0 2px 7px rgba(20,70,55,.035)!important;
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn i{
+  flex:0 0 auto!important;
+  font-size:.76rem!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn span{
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn:hover{
+  transform:translateY(-1px)!important;
+  box-shadow:0 5px 12px rgba(20,70,55,.08)!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn:active{
+  transform:scale(.97)!important;
+}
+
+/* ألوان واضحة وثابتة حسب وظيفة الزر */
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.view{
+  background:#e8f7f2!important;
+  color:#08796d!important;
+  border-color:#c5e4da!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.return{
+  background:#fff7eb!important;
+  color:#ad6a0b!important;
+  border-color:#efd9b7!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.collect{
+  background:#ebf8f0!important;
+  color:#13834f!important;
+  border-color:#cce7d7!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.edit{
+  background:#eef4ff!important;
+  color:#2f63b6!important;
+  border-color:#d5e1f7!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.print{
+  background:#f5f7f8!important;
+  color:#58686e!important;
+  border-color:#dce4e6!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.whatsapp{
+  background:#eefaf1!important;
+  color:#168b46!important;
+  border-color:#cbe8d2!important;
+}
+.sales-v2 .sales-cv2-actions .sales-cv2-btn.delete{
+  background:#fff1f1!important;
+  color:#c52f3a!important;
+  border-color:#f0d0d2!important;
+}
+
+/* وضوح أكبر لكارت الفاتورة نفسه */
+.sales-v2 .sales-cv2-card{
+  border-color:#dfeae6!important;
+  box-shadow:0 5px 16px rgba(20,70,55,.05)!important;
+}
+.sales-v2 .sales-cv2-card:hover{
+  border-color:#bfdcd2!important;
+  box-shadow:0 9px 22px rgba(20,70,55,.08)!important;
+}
+
+/* 3) موبايل: 4 أزرار في الصف الأول + 3 في الصف الثاني بدل التكدس */
+@media(max-width:520px){
+  .sales-v2 .sale-ref-paid-input{
+    min-height:47px!important;
+    height:47px!important;
+    border-radius:13px!important;
+  }
+  .sales-v2 .sale-ref-paid-input input{font-size:.84rem!important}
+  .sales-v2 .sale-ref-paid-input span{min-width:47px!important;font-size:.58rem!important}
+  .sales-v2 .sale-ref-paid-input .sale-paid-calculator{
+    width:46px!important;
+    min-width:46px!important;
+    flex-basis:46px!important;
+  }
+  .sales-v2 .sale-ref-paid-input .sale-paid-calculator i{font-size:1rem!important}
+
+  .sales-v2 .sales-cv2-actions{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:5px!important;
+    margin-top:9px!important;
+  }
+  .sales-v2 .sales-cv2-actions .sales-cv2-btn{
+    min-height:37px!important;
+    padding:5px 4px!important;
+    border-radius:10px!important;
+    font-size:.55rem!important;
+    gap:3px!important;
+  }
+  .sales-v2 .sales-cv2-actions .sales-cv2-btn i{font-size:.73rem!important}
+}
+
+@media(max-width:370px){
+  .sales-v2 .sale-ref-paid-input{
+    min-height:45px!important;
+    height:45px!important;
+  }
+  .sales-v2 .sale-ref-paid-input input{font-size:.80rem!important}
+  .sales-v2 .sale-ref-paid-input span{min-width:43px!important;font-size:.55rem!important}
+  .sales-v2 .sale-ref-paid-input .sale-paid-calculator{
+    width:43px!important;
+    min-width:43px!important;
+    flex-basis:43px!important;
+  }
+  .sales-v2 .sales-cv2-actions{gap:4px!important}
+  .sales-v2 .sales-cv2-actions .sales-cv2-btn{
+    min-height:35px!important;
+    font-size:.52rem!important;
+    padding:4px 3px!important;
+  }
+  .sales-v2 .sales-cv2-actions .sales-cv2-btn i{font-size:.68rem!important}
+}
+</style>
 </head>
 <body>
 <div id="loading-screen">
@@ -5331,7 +5538,7 @@ function renderSalesPage(container){
           </div>
           <select id="posPaymentMethod" style="display:none"><option value="cash">نقدي</option><option value="credit">آجل</option><option value="transfer">تحويل</option><option value="card">بطاقة</option></select>
           <label class="sale-ref-paid-label">المبلغ المدفوع</label>
-          <div class="sale-ref-paid-input"><span>ج.م</span><input type="number" id="posPaid" placeholder="0.00" min="0" step="0.01" oninput="updatePOSSummary()"><button type="button" onclick="setPOSPaidToTotal()"><i class="fas fa-calculator"></i></button></div>
+          <div class="sale-ref-paid-input"><span>ج.م</span><input type="number" id="posPaid" placeholder="0.00" min="0" step="0.01" oninput="updatePOSSummary()"><button type="button" class="sale-paid-calculator" onclick="setPOSPaidToTotal()" title="آلة حاسبة — دفع كامل الفاتورة" aria-label="آلة حاسبة لتعبئة المبلغ المدفوع بالكامل"><i class="fas fa-calculator"></i></button></div>
           <div class="pos-quick-paid">
             <button type="button" onclick="setPOSPaidQuick(0)">صفر</button>
             <button type="button" onclick="setPOSPaidToTotal()">كامل</button>
