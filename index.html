@@ -3389,6 +3389,17 @@ html[data-theme="dark"] .invoice-detail-status.returned{background:#30271c!impor
 
 /* المشتريات */
 html[data-theme="dark"] .purchase-box-v6,
+html[data-theme="dark"] .purchase-return-row-v1,
+html[data-theme="dark"] .purchase-return-line-amount-v1,
+html[data-theme="dark"] .purchase-return-head-note-v1,
+html[data-theme="dark"] .purchase-return-summary-v1>div{background:var(--dm-surface)!important;color:var(--dm-text)!important;border-color:var(--dm-border)!important}
+html[data-theme="dark"] .purchase-return-row-v1 input{background:var(--dm-input)!important;color:var(--dm-text)!important;border-color:#735f20!important}
+html[data-theme="dark"] .purchase-return-info-v1 strong{color:var(--dm-text)!important}
+html[data-theme="dark"] .purchase-return-info-v1 small,
+html[data-theme="dark"] .purchase-return-line-amount-v1 small,
+html[data-theme="dark"] .purchase-return-head-note-v1 span,
+html[data-theme="dark"] .purchase-return-summary-v1 small{color:var(--dm-muted)!important}
+html[data-theme="dark"] .purchase-return-note-v1{background:#2c2513!important;border-color:#5f5227!important;color:#e6d9a3!important}
 html[data-theme="dark"] .purchase-invoice-card-v185{
   background:var(--bg-card)!important;
   color:var(--text)!important;
@@ -4541,7 +4552,7 @@ window.addEventListener('visibilitychange',()=>{
   }
 });
 
-function getBackupCollections(){return ['products','sales','purchases','expenses','withdrawals','debts','customers','suppliers','offers','auditLog','returns','stockMovements','stockCounts'];}
+function getBackupCollections(){return ['products','sales','purchases','purchaseReturns','expenses','withdrawals','debts','customers','suppliers','offers','auditLog','returns','stockMovements','stockCounts'];}
 
 // =====================================================
 // 📦 نظام التخزين المتقدم (محلي + سحابة)
@@ -8837,6 +8848,242 @@ function updatePurchaseInvoicePreview(){
   const count=document.getElementById('purInvoiceLineCount');if(count)count.textContent=`${rows.filter(r=>r.productId).length} أصناف`;
 }
 function updatePurchasePreview(){updatePurchaseInvoicePreview();}
+
+// ==================== مرتجعات المشتريات ====================
+// سجل مستقل للمرتجع حتى تظل الفاتورة الأصلية محفوظة، ويمكن تنفيذ أكثر من
+// مرتجع لنفس الفاتورة على دفعات مع معرفة الكمية المتبقية لكل صنف.
+function getPurchaseReturns(){
+  try{
+    const rows=Store.get('purchaseReturns');
+    return Array.isArray(rows)?rows:[];
+  }catch(e){return [];}
+}
+function getPurchaseLineReturnSummary(line){
+  const id=String(line?.id||'');
+  const rows=getPurchaseReturns().filter(r=>String(r.purchaseId||'')===id);
+  if(rows.length){
+    return {
+      qty:rows.reduce((n,r)=>n+Math.max(0,Number(r.qty)||0),0),
+      amount:rows.reduce((n,r)=>n+Math.max(0,Number(r.amount)||0),0)
+    };
+  }
+  return {
+    qty:Math.max(0,Number(line?.returnedQty)||0),
+    amount:Math.max(0,Number(line?.returnedAmount)||0)
+  };
+}
+function getPurchaseLineNet(line){
+  const original=Math.max(0,Number(line?.total??(Number(line?.qty||0)*Number(line?.price||0)))||0);
+  return Math.max(0,money(original-getPurchaseLineReturnSummary(line).amount));
+}
+function getPurchaseLineReturnableQty(line){
+  return Math.max(0,Number(line?.qty||0)-getPurchaseLineReturnSummary(line).qty);
+}
+function getPurchaseBatchReturnTotal(lines){
+  return money((lines||[]).reduce((n,p)=>n+getPurchaseLineReturnSummary(p).amount,0));
+}
+function getPurchaseBatchNetTotal(lines){
+  return money((lines||[]).reduce((n,p)=>n+getPurchaseLineNet(p),0));
+}
+function getPurchaseBatchNetQty(lines){
+  return money((lines||[]).reduce((n,p)=>n+getPurchaseLineReturnableQty(p),0));
+}
+function getPurchaseBatchFirst(id){
+  const purchases=Store.get('purchases')||[];
+  const first=purchases.find(p=>String(p.id)===String(id));
+  if(!first)return null;
+  const batchId=String(first.purchaseBatchId||first.id);
+  const lines=purchases.filter(p=>String(p.purchaseBatchId||p.id)===batchId);
+  return {first,batchId,lines};
+}
+function updatePurchaseBatchPaidState(lines,targetPaid){
+  const netTotal=getPurchaseBatchNetTotal(lines);
+  const paid=Math.max(0,Math.min(netTotal,Number(targetPaid)||0));
+  let distributed=0;
+  (lines||[]).forEach((p,idx)=>{
+    const lineNet=getPurchaseLineNet(p);
+    const share=idx===lines.length-1
+      ?Math.max(0,paid-distributed)
+      :(netTotal>0?paid*(lineNet/netTotal):0);
+    distributed+=share;
+    Store.update('purchases',p.id,{
+      paid:money(share),
+      remaining:money(Math.max(0,lineNet-share)),
+      invoiceTotal:money(netTotal),
+      invoicePaid:money(paid),
+      invoiceRemaining:money(Math.max(0,netTotal-paid)),
+      paymentMethod:paid>=netTotal-0.0001?'cash':'credit'
+    });
+  });
+  return {netTotal,paid,remaining:Math.max(0,netTotal-paid)};
+}
+function openPurchaseReturn(id){
+  const found=getPurchaseBatchFirst(id);
+  if(!found)return showToast('❌ الفاتورة غير موجودة','error');
+  const {first,lines}=found;
+  const products=Store.get('products')||[];
+  if(lines.every(p=>getPurchaseLineReturnableQty(p)<=0.000001)){
+    return showToast('✅ هذه الفاتورة تم إرجاعها بالكامل بالفعل','info');
+  }
+  const rows=lines.map((line,i)=>{
+    const product=products.find(x=>String(x.id)===String(line.productId))||{};
+    const summary=getPurchaseLineReturnSummary(line);
+    const available=getPurchaseLineReturnableQty(line);
+    const stock=Math.max(0,Number(product.qty)||0);
+    const unit=product.unit||'كجم';
+    return `<div class="purchase-return-row-v1" data-purchase-return-line="${i}">
+      <div class="purchase-return-info-v1">
+        <strong>${escapeHtml(line.productName||product.name||'صنف')}</strong>
+        <small>الأصلي: ${formatProductQty(product||{name:line.productName},Number(line.qty||0))} ${escapeHtml(unit)} • مرتجع سابق: ${formatProductQty(product||{name:line.productName},summary.qty)} ${escapeHtml(unit)} • <b>متاح للإرجاع: ${formatProductQty(product||{name:line.productName},available)} ${escapeHtml(unit)}</b></small>
+        <small class="purchase-return-stock">رصيد الصنف الحالي: ${formatProductQty(product||{name:line.productName},stock)} ${escapeHtml(unit)} • سعر الشراء: ${fmt(line.price||0)}</small>
+      </div>
+      <input type="hidden" data-field="purchaseId" value="${escapeHtml(String(line.id||''))}">
+      <input type="number" data-field="returnQty" value="0" min="0" max="${available}" step="0.001" inputmode="decimal" placeholder="كمية المرتجع" ${available<=0.000001?'disabled':''} oninput="updatePurchaseReturnPreview('${String(first.id).replace(/'/g,"\\'")}')">
+      <div class="purchase-return-line-amount-v1"><small>قيمة المرتجع</small><strong data-return-amount="${i}">${fmt(0)}</strong></div>
+    </div>`;
+  }).join('');
+  const netTotal=getPurchaseBatchNetTotal(lines);
+  const returnTotal=getPurchaseBatchReturnTotal(lines);
+  openModal(`<div class="modal-header"><h2><i class="fas fa-rotate-left" style="color:var(--accent);margin-left:8px"></i> مرتجع فاتورة الشراء #${escapeHtml(String(first.invoiceSeq||getPurchaseDisplaySequence(lines)||first.invoiceNo||''))}</h2><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="purchase-return-head-note-v1"><strong>${escapeHtml(first.supplierName||'بدون مورد')}</strong><span>${escapeHtml(first.date||'-')} • ${lines.length} أصناف • صافي الفاتورة الحالي ${fmt(netTotal)}</span></div>
+    <div class="purchase-return-actions-v1">
+      <button type="button" class="btn btn-outline btn-sm" onclick="fillPurchaseReturnFull()"><i class="fas fa-check-double"></i> إرجاع الفاتورة بالكامل</button>
+      <button type="button" class="btn btn-sm" onclick="clearPurchaseReturnInputs()"><i class="fas fa-eraser"></i> مسح الكميات</button>
+    </div>
+    <div id="purchaseReturnLines" class="purchase-return-lines-v1">${rows}</div>
+    <div class="purchase-return-summary-v1">
+      <div><small>مرتجع سابق</small><strong>${fmt(returnTotal)}</strong></div>
+      <div><small>مرتجع جديد</small><strong id="purReturnNewAmount">0 ج.م</strong></div>
+      <div><small>صافي الفاتورة بعد المرتجع</small><strong id="purReturnNetAmount">${fmt(netTotal)}</strong></div>
+    </div>
+    <div class="purchase-return-note-v1">💡 سيتم خصم قيمة المرتجع من حساب المورد أولًا. ولو قيمة المرتجع أكبر من المتبقي على الفاتورة، سيتم تسجيل الفرق كمبلغ <b>مسترد من المورد</b> داخل الخزنة.</div>
+    <button class="btn btn-accent btn-block" style="margin-top:10px" onclick="confirmPurchaseReturn('${String(first.id).replace(/'/g,"\\'")}')"><i class="fas fa-check-circle"></i> تنفيذ المرتجع</button>`);
+  updatePurchaseReturnPreview(id);
+}
+function updatePurchaseReturnPreview(id){
+  const found=getPurchaseBatchFirst(id);
+  if(!found)return;
+  let fresh=0;
+  found.lines.forEach((line,i)=>{
+    const input=document.querySelector(`[data-purchase-return-line="${i}"] [data-field="returnQty"]`);
+    const qty=Math.max(0,Math.min(getPurchaseLineReturnableQty(line),Number(input?.value)||0));
+    const amount=money(qty*Math.max(0,Number(line.price)||0));
+    fresh=money(fresh+amount);
+    const el=document.querySelector(`[data-return-amount="${i}"]`);if(el)el.textContent=fmt(amount);
+  });
+  const net=Math.max(0,getPurchaseBatchNetTotal(found.lines)-fresh);
+  const a=document.getElementById('purReturnNewAmount');if(a)a.textContent=fmt(fresh);
+  const b=document.getElementById('purReturnNetAmount');if(b)b.textContent=fmt(net);
+}
+window.fillPurchaseReturnFull=function(){
+  document.querySelectorAll('#purchaseReturnLines [data-field="returnQty"]').forEach(input=>{if(!input.disabled)input.value=input.max||0;});
+  const firstInput=document.querySelector('#purchaseReturnLines [data-purchase-return-line] [data-field="purchaseId"]');
+  const pid=firstInput?.value||'';
+  if(pid)updatePurchaseReturnPreview(pid);
+};
+window.clearPurchaseReturnInputs=function(){
+  document.querySelectorAll('#purchaseReturnLines [data-field="returnQty"]').forEach(input=>{input.value=0;});
+  const firstInput=document.querySelector('#purchaseReturnLines [data-purchase-return-line] [data-field="purchaseId"]');
+  const pid=firstInput?.value||'';
+  if(pid)updatePurchaseReturnPreview(pid);
+};
+function confirmPurchaseReturn(id){
+  const found=getPurchaseBatchFirst(id);
+  if(!found)return showToast('❌ الفاتورة غير موجودة','error');
+  const {first,batchId,lines}=found;
+  const products=Store.get('products')||[];
+  const selected=[];
+  let returnTotal=0;
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    const input=document.querySelector(`[data-purchase-return-line="${i}"] [data-field="returnQty"]`);
+    const requested=Math.max(0,Number(input?.value)||0);
+    const available=getPurchaseLineReturnableQty(line);
+    if(requested<=0)continue;
+    if(requested>available+0.000001)return showToast(`❌ كمية مرتجع ${line.productName||'الصنف'} أكبر من المتاح للإرجاع (${fmt(available)})`,'warning');
+    const product=products.find(x=>String(x.id)===String(line.productId));
+    const stock=Math.max(0,Number(product?.qty)||0);
+    if(!product)return showToast(`❌ الصنف ${line.productName||''} غير موجود في المخزون`,'error');
+    if(requested>stock+0.000001)return showToast(`❌ لا يمكن إرجاع ${fmt(requested)} من ${line.productName||'الصنف'} لأن الرصيد الحالي ${fmt(stock)} فقط`,'warning');
+    const amount=money(requested*Math.max(0,Number(line.price)||0));
+    selected.push({line,product,qty:requested,amount});
+    returnTotal=money(returnTotal+amount);
+  }
+  if(!selected.length)return showToast('حدد صنفًا واحدًا على الأقل وكمية المرتجع','warning');
+
+  const snapshot={};
+  ['products','purchases','debts','purchaseReturns','stockMovements'].forEach(k=>{try{snapshot[k]=JSON.parse(JSON.stringify(Store.get(k)||[]));}catch(e){snapshot[k]=[];}});
+  try{
+    const oldDebt=(Store.get('debts')||[]).find(d=>d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===batchId);
+    const oldPaid=oldDebt?Math.max(0,getDebtPaidAmount(oldDebt)):Math.max(0,lines.reduce((n,p)=>n+Number(p.paid||0),0));
+    const oldNetTotal=getPurchaseBatchNetTotal(lines);
+    const newNetTotal=Math.max(0,money(oldNetTotal-returnTotal));
+    const cashRefund=Math.max(0,money(oldPaid-newNetTotal));
+    const now=cairoDateTimeISO();
+    const returnBatchId='PRET-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+
+    selected.forEach(({line,product,qty,amount})=>{
+      const summary=getPurchaseLineReturnSummary(line);
+      const currentQty=Math.max(0,Number(product.qty)||0);
+      const currentAvg=Math.max(0,Number(product.purchase)||0);
+      const newQty=Math.max(0,money(currentQty-qty));
+      const currentValue=Math.max(0,money(currentQty*currentAvg));
+      const removedValue=Math.max(0,money(qty*Math.max(0,Number(line.price)||0)));
+      const newValue=Math.max(0,money(currentValue-removedValue));
+      const newAvg=newQty>0?money(newValue/newQty):0;
+      Store.update('products',product.id,{qty:newQty,purchase:newAvg});
+
+      const newReturnedQty=money(summary.qty+qty);
+      const newReturnedAmount=money(summary.amount+amount);
+      Store.update('purchases',line.id,{returnedQty:newReturnedQty,returnedAmount:newReturnedAmount});
+
+      const ratio=returnTotal>0?amount/returnTotal:0;
+      const lineCashRefund=money(cashRefund*ratio);
+      Store.add('purchaseReturns',{
+        returnBatchId,purchaseBatchId:batchId,purchaseId:line.id,invoiceNo:first.invoiceNo,invoiceSeq:first.invoiceSeq||getPurchaseDisplaySequence(lines),
+        date:now.slice(0,10),time:now.slice(11,19),productId:line.productId,productName:line.productName,qty,price:Number(line.price)||0,amount,
+        supplierId:first.supplierId||null,supplierName:first.supplierName||'بائع/مورد',cashRefund:lineCashRefund,
+        supplierCredit:Math.max(0,money(amount-lineCashRefund)),reason:'مرتجع شراء'
+      });
+      Store.add('stockMovements',{
+        date:now.slice(0,10),time:now.slice(11,19),productId:line.productId,productName:line.productName,
+        delta:-qty,label:'مرتجع شراء',reason:`مرتجع فاتورة ${first.invoiceNo||first.invoiceSeq||batchId}`,user:currentUser?.name||'مستخدم',origin:'purchase_return',purchaseBatchId:batchId,returnBatchId
+      });
+    });
+
+    const paymentState=updatePurchaseBatchPaidState(lines,oldPaid);
+    const debts=Store.get('debts')||[];
+    const related=debts.filter(d=>d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===batchId);
+    if(paymentState.remaining>0){
+      if(related.length){
+        related.forEach(d=>Store.update('debts',d.id,{
+          amount:paymentState.netTotal,paidAmount:paymentState.paid,paid:false,debtVersion:2,purchaseTotal:paymentState.netTotal,
+          note:`آجل من فاتورة الشراء ${first.invoiceNo||''} — بعد مرتجع شراء`
+        }));
+      }else{
+        Store.add('debts',{
+          purchaseBatchId:batchId,invoiceNo:first.invoiceNo,sourcePurchaseId:first.id,supplierId:first.supplierId||null,date:first.date||today(),
+          person:first.supplierName||'بائع/مورد',type:'علينا',amount:paymentState.netTotal,paidAmount:paymentState.paid,paymentHistory:[],debtVersion:2,due:'',
+          note:`آجل من فاتورة الشراء ${first.invoiceNo||''} — بعد مرتجع شراء`,paid:false,source:'purchase',purchaseTotal:paymentState.netTotal
+        });
+      }
+    }else{
+      related.forEach(d=>Store.delete('debts',d.id));
+    }
+
+    closeModal?.();
+    const refundText=cashRefund>0?` • مسترد من المورد ${fmt(cashRefund)}`:(paymentState.remaining>0?` • خُصم من حساب المورد ${fmt(returnTotal)}`:'');
+    showToast(`✅ تم تنفيذ مرتجع ${fmt(returnTotal)} من فاتورة ${first.invoiceNo||''}${refundText}`,'success');
+    renderPurchasesPage(document.getElementById('contentArea'));
+    if(typeof renderSuppliersPage==='function')renderSuppliersPage(document.getElementById('contentArea'));
+    if(typeof renderCashboxData==='function')renderCashboxData();
+  }catch(error){
+    Object.entries(snapshot).forEach(([k,v])=>{try{Store.set(k,v||[]);}catch(e){}});
+    console.error('فشل مرتجع المشتريات وتم التراجع:',error);
+    showToast('❌ تعذر تنفيذ مرتجع الشراء — تم التراجع عن العملية بالكامل','error');
+  }
+}
+
 function clearPurchaseFilters(){
   ['purchaseSearch','purchaseFrom','purchaseTo','purchaseSupplierFilter'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   renderPurchasesTable();
@@ -8845,9 +9092,11 @@ function renderPurchasesPage(container){
   const products=Store.get('products')||[];
   const suppliers=Store.get('suppliers')||[];
   const purchases=Store.get('purchases')||[];
-  const batchCount=new Set(purchases.map(p=>p.purchaseBatchId||p.id)).size;
-  const total=purchases.reduce((n,x)=>n+Number(x.total??(Number(x.qty||0)*Number(x.price||0))),0);
-  const qty=purchases.reduce((n,x)=>n+Number(x.qty||0),0);
+  const purchaseGroupsForStats=new Map();
+  purchases.forEach(p=>{const key=String(p.purchaseBatchId||p.invoiceNo||p.id);if(!purchaseGroupsForStats.has(key))purchaseGroupsForStats.set(key,[]);purchaseGroupsForStats.get(key).push(p);});
+  const batchCount=purchaseGroupsForStats.size;
+  const total=[...purchaseGroupsForStats.values()].reduce((n,lines)=>n+getPurchaseBatchNetTotal(lines),0);
+  const qty=[...purchaseGroupsForStats.values()].reduce((n,lines)=>n+getPurchaseBatchNetQty(lines),0);
   const supplierOpts=suppliers.map(s=>`<option value="${escapeHtml(String(s.id))}">${escapeHtml(s.name)}</option>`).join('');
   container.innerHTML=`<div class="fade-in purchases-v6">
     <div class="purchases-hero-v6"><div><span>إدارة المشتريات</span><h2><i class="fas fa-cart-flatbed"></i> المشتريات</h2><small>تسجيل فاتورة واحدة تحتوي على صنف أو عدة أصناف مع المورد والسداد والمخزون</small></div><div class="purchases-hero-icon-v6"><i class="fas fa-boxes-stacked"></i></div></div>
@@ -9013,18 +9262,14 @@ function getPurchaseDisplaySequence(lines){
 }
 
 function renderPurchasesTable(){
-  const target=document.getElementById('purchasesCards'); if(!target)return;
+  const target=document.getElementById('purchasesCards');if(!target)return;
   const purchases=Store.get('purchases')||[];
   const q=(document.getElementById('purchaseSearch')?.value||'').trim().toLowerCase();
   const from=document.getElementById('purchaseFrom')?.value||'';
   const to=document.getElementById('purchaseTo')?.value||'';
   const supplier=(document.getElementById('purchaseSupplierFilter')?.value||'');
   const groups=new Map();
-  purchases.forEach(p=>{
-    const key=String(p.purchaseBatchId||p.invoiceNo||p.id);
-    if(!groups.has(key))groups.set(key,[]);
-    groups.get(key).push(p);
-  });
+  purchases.forEach(p=>{const key=String(p.purchaseBatchId||p.invoiceNo||p.id);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(p);});
   const filtered=[...groups.values()].filter(lines=>{
     const text=lines.map(p=>`${p.productName||''} ${p.supplierName||''} ${p.note||''} ${p.invoiceNo||''}`).join(' ').toLowerCase();
     const date=lines[0]?.date||'';
@@ -9033,37 +9278,45 @@ function renderPurchasesTable(){
   }).sort((a,b)=>String(b[0]?.date||'').localeCompare(String(a[0]?.date||'')));
   target.innerHTML=filtered.map(lines=>{
     const first=lines[0]||{};
-    const total=lines.reduce((n,p)=>n+Number(p.total??(Number(p.qty||0)*Number(p.price||0))),0);
+    const originalTotal=lines.reduce((n,p)=>n+Number(p.total??(Number(p.qty||0)*Number(p.price||0))),0);
+    const returnedTotal=getPurchaseBatchReturnTotal(lines);
+    const total=getPurchaseBatchNetTotal(lines);
     const initialPaid=lines.reduce((n,p)=>n+Math.max(0,Number(p.paid||0)),0);
     const linkedDebt=(Store.get('debts')||[]).find(d=>d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===String(first.purchaseBatchId||''));
-    const debtRemaining=linkedDebt?getDebtRemaining(linkedDebt):Math.max(0,total-initialPaid);
+    const debtRemaining=linkedDebt?getDebtRemaining(linkedDebt):Math.max(0,total-Math.min(total,initialPaid));
     const totalPaid=Math.max(0,total-debtRemaining);
     const statusClass=debtRemaining<=0.005?'paid':(totalPaid>0?'partial':'due');
     const statusText=debtRemaining<=0.005?'مدفوع بالكامل':(totalPaid>0?'مدفوع جزئي':'آجل');
     const pid=String(first.id||'').replace(/'/g,"\\'");
-    const batch=String(first.purchaseBatchId||first.id);
     const displaySeq=getPurchaseDisplaySequence(lines);
+    const returnableTotal=lines.reduce((n,p)=>n+getPurchaseLineReturnableQty(p),0);
     const items=lines.map(p=>{
       const product=(Store.get('products')||[]).find(x=>String(x.id)===String(p.productId));
+      const summary=getPurchaseLineReturnSummary(p);
+      const available=getPurchaseLineReturnableQty(p);
       const qtyText=formatProductQty(product||{name:p.productName},Number(p.qty||0));
-      return `<div class="purchase-invoice-item-v185"><div><strong>${escapeHtml(p.productName||'صنف')}</strong><div class="item-meta">${qtyText} ${escapeHtml(product?.unit||'كجم')} × ${fmt(p.price||0)}</div></div><b>${fmt(p.total||0)}</b></div>`;
+      const returnedText=summary.qty>0?`<span style="color:#b7791f;font-size:.59rem">مرتجع ${formatProductQty(product||{name:p.productName},summary.qty)}</span>`:'';
+      const availableText=available>0?`<span style="color:#08796d;font-size:.59rem">متاح ${formatProductQty(product||{name:p.productName},available)}</span>`:`<span style="color:#b42318;font-size:.59rem">مرتجع بالكامل</span>`;
+      return `<div class="purchase-invoice-item-v185"><div><strong>${escapeHtml(p.productName||'صنف')}</strong><div class="item-meta">${qtyText} ${escapeHtml(product?.unit||'كجم')} × ${fmt(p.price||0)} ${returnedText} ${availableText}</div></div><b>${fmt(getPurchaseLineNet(p))}</b></div>`;
     }).join('');
-    const editBtn=`<button type="button" class="edit" onclick="editPurchaseInvoice('${pid}')"><i class="fas fa-pen"></i> تعديل</button>`;
+    const returnBtn=returnableTotal>0.000001
+      ?`<button type="button" class="return" onclick="openPurchaseReturn('${pid}')"><i class="fas fa-rotate-left"></i> مرتجع</button>`
+      :`<button type="button" class="return done" disabled><i class="fas fa-check-double"></i> مرتجع بالكامل</button>`;
+    const originalLabel=returnedTotal>0?`<small style="display:block;color:#8b7a55;font-size:.58rem;margin-top:3px">الأصل ${fmt(originalTotal)}</small>`:'';
     return `<article class="purchase-invoice-card-v185">
-      <div class="purchase-invoice-head-v185">
-        <div><strong>🧾 فاتورة شراء #${escapeHtml(String(displaySeq||first.invoiceNo||''))}</strong><small>${escapeHtml(first.date||'-')} • ${escapeHtml(first.supplierName||'بدون مورد')} • ${lines.length} أصناف</small></div>
-        <span class="pc-status ${statusClass}">${statusText}</span>
-      </div>
+      <div class="purchase-invoice-head-v185"><div><strong>🧾 فاتورة شراء #${escapeHtml(String(displaySeq||first.invoiceNo||''))}</strong><small>${escapeHtml(first.date||'-')} • ${escapeHtml(first.supplierName||'بدون مورد')} • ${lines.length} أصناف</small></div><span class="pc-status ${statusClass}">${statusText}</span></div>
       <div class="purchase-invoice-items-v185">${items}</div>
       <div class="purchase-invoice-totals-v185">
-        <div><small>الإجمالي</small><b>${fmt(total)}</b></div>
+        <div><small>صافي الفاتورة</small><b>${fmt(total)}</b>${originalLabel}</div>
+        <div><small>إجمالي المرتجع</small><b style="color:#b7791f">${returnedTotal>0?fmt(returnedTotal):'—'}</b></div>
         <div><small>المدفوع</small><b>${fmt(totalPaid)}</b></div>
         <div><small>المتبقي</small><b>${debtRemaining>0?fmt(debtRemaining):'مكتمل'}</b></div>
       </div>
       <div class="pc-actions">
-        ${debtRemaining>0?`<button type="button" class="pay" onclick="openPurchaseInvoicePayment('${pid}')"><i class="fas fa-money-bill-wave"></i> سداد الفاتورة</button>`:`<button type="button" class="pay" disabled><i class="fas fa-check"></i> مسدد</button>`}
-        ${editBtn}
-        <button type="button" class="delete" onclick="deletePurchase('${pid}')" aria-label="حذف الفاتورة"><i class="fas fa-trash"></i><span>حذف الفاتورة</span></button>
+        ${debtRemaining>0?`<button type="button" class="pay" onclick="openPurchaseInvoicePayment('${pid}')"><i class="fas fa-money-bill-wave"></i> سداد</button>`:`<button type="button" class="pay" disabled><i class="fas fa-check"></i> مسدد</button>`}
+        ${returnBtn}
+        <button type="button" class="edit" onclick="editPurchaseInvoice('${pid}')"><i class="fas fa-pen"></i> تعديل</button>
+        <button type="button" class="delete" onclick="deletePurchase('${pid}')" aria-label="حذف الفاتورة"><i class="fas fa-trash"></i><span>حذف</span></button>
       </div>
     </article>`;
   }).join('')||`<div class="purchase-empty-v6"><i class="fas fa-box-open"></i><strong>لا توجد مشتريات</strong><span>غيّر البحث أو الفلاتر لعرض العمليات</span></div>`;
@@ -9077,6 +9330,7 @@ function editPurchaseInvoice(id){
   const batchId=String(first.purchaseBatchId||first.id);
   const lines=purchases.filter(p=>String(p.purchaseBatchId||p.id)===batchId);
   if(!lines.length)return showToast('❌ لا توجد بنود في الفاتورة','error');
+  if(getPurchaseBatchReturnTotal(lines)>0.000001)return showToast('🔒 لا يمكن تعديل فاتورة تم تنفيذ مرتجع عليها. استخدم المرتجع للحفاظ على المخزون وحساب المورد متطابقين.','warning');
 
   const products=Store.get('products')||[];
   const suppliers=Store.get('suppliers')||[];
@@ -9429,48 +9683,45 @@ function deletePurchase(id){
   const batch=purchases.filter(p=>String(p.purchaseBatchId||p.id)===batchId);
   const debts=(Store.get('debts')||[]).filter(d=>d.source==='purchase'&&d.type==='علينا'&&String(d.purchaseBatchId||'')===batchId);
   const total=batch.reduce((n,p)=>n+Number(p.total||0),0);
+  const returned=batch.reduce((n,p)=>n+getPurchaseLineReturnSummary(p).amount,0);
+  const remainingNet=getPurchaseBatchNetTotal(batch);
   const paid=batch.reduce((n,p)=>n+Math.max(0,Number(p.paid||0)),0);
   const supplierName=purchase.supplierName||debts[0]?.person||'المورد';
-  const items=batch.map(p=>`• ${p.productName||'صنف'} — ${formatProductQty((Store.get('products')||[]).find(x=>String(x.id)===String(p.productId))||{},Number(p.qty||0))}`).join('\\n');
-  if(!confirm(`⚠️ حذف فاتورة الشراء بالكامل\\n\\n${purchase.invoiceNo||'فاتورة شراء'}\\nالمورد: ${supplierName}\\n${items}\\n\\nالإجمالي: ${fmt(total)}\\nالمدفوع: ${fmt(paid)}\\n\\nسيتم عكس كل الأصناف من المخزون وحذف الدين المرتبط بالفاتورة.\\nهل أنت متأكد؟`))return;
-  const keys=['products','purchases','debts','auditLog'];
+  const items=batch.map(p=>`• ${p.productName||'صنف'} — المتبقي بالمخزون من هذه الفاتورة: ${formatProductQty((Store.get('products')||[]).find(x=>String(x.id)===String(p.productId))||{},getPurchaseLineReturnableQty(p))}`).join('\\n');
+  if(!confirm(`⚠️ حذف فاتورة الشراء بالكامل\\n\\n${purchase.invoiceNo||'فاتورة شراء'}\\nالمورد: ${supplierName}\\n${items}\\n\\nالأصل: ${fmt(total)}\\nمرتجعات مسجلة: ${fmt(returned)}\\nصافي الفاتورة: ${fmt(remainingNet)}\\nالمدفوع: ${fmt(Math.min(remainingNet,paid))}\\n\\nسيتم عكس فقط الكميات المتبقية من الشراء في المخزون، حذف الدين المرتبط، وحذف سجل المرتجعات المرتبط بهذه الفاتورة.\\nهل أنت متأكد؟`))return;
+  const keys=['products','purchases','debts','auditLog','purchaseReturns','stockMovements'];
   const snapshot={};keys.forEach(k=>{try{snapshot[k]=JSON.parse(JSON.stringify(Store.get(k)||[]));}catch(e){snapshot[k]=[];}});
   try{
-    // عكس الكمية وقيمة التكلفة التاريخية معًا حتى لا تبقى الفاتورة المحذوفة
-    // مؤثرة في متوسط تكلفة المخزون.
     const byProduct={};
     batch.forEach(line=>{
       if(!line.productId)return;
       const k=String(line.productId);
+      const remainingQty=getPurchaseLineReturnableQty(line);
       if(!byProduct[k])byProduct[k]={qty:0,cost:0};
-      byProduct[k].qty+=Math.max(0,Number(line.qty)||0);
-      byProduct[k].cost+=Math.max(0,Number(line.qty)||0)*Math.max(0,Number(line.price)||0);
+      byProduct[k].qty+=remainingQty;
+      byProduct[k].cost+=remainingQty*Math.max(0,Number(line.price)||0);
     });
     Object.entries(byProduct).forEach(([pid,data])=>{
       const product=(Store.get('products')||[]).find(p=>String(p.id)===pid);
       if(!product)return;
       const currentQty=Math.max(0,Number(product.qty)||0);
       const newQty=currentQty-data.qty;
-      if(newQty<0 && !confirm(`⚠️ رصيد ${product.name} أقل من كمية الشراء المراد عكسها.\\nسيصبح الرصيد صفرًا. هل تريد المتابعة؟`))
-        throw new Error('DELETE_CANCELLED');
-
+      if(newQty<0 && !confirm(`⚠️ رصيد ${product.name} أقل من الكمية المتبقية من الفاتورة المراد عكسها.\\nسيصبح الرصيد صفرًا. هل تريد المتابعة؟`))throw new Error('DELETE_CANCELLED');
       const currentAvg=Math.max(0,Number(product.purchase)||0);
       const currentValue=currentQty*currentAvg;
       const remainingQty=Math.max(0,newQty);
       const remainingValue=Math.max(0,currentValue-data.cost);
-      const newAvg=remainingQty>0 ? remainingValue/remainingQty : 0;
-
-      Store.update('products',product.id,{
-        qty:remainingQty,
-        purchase:newAvg
-      });
+      const newAvg=remainingQty>0?remainingValue/remainingQty:0;
+      Store.update('products',product.id,{qty:remainingQty,purchase:newAvg});
     });
     debts.forEach(d=>Store.delete('debts',d.id));
+    (Store.get('purchaseReturns')||[]).filter(r=>String(r.purchaseBatchId||'')===batchId).forEach(r=>Store.delete('purchaseReturns',r.id));
+    (Store.get('stockMovements')||[]).filter(r=>String(r.purchaseBatchId||'')===batchId&&r.origin==='purchase_return').forEach(r=>Store.delete('stockMovements',r.id));
     batch.forEach(line=>Store.delete('purchases',line.id));
     if(typeof renderCashboxData==='function')renderCashboxData();
     if(typeof renderDebtsList==='function')renderDebtsList();
     renderPurchasesPage(document.getElementById('contentArea'));
-    showToast(`🗑️ تم حذف فاتورة ${purchase.invoiceNo||''} بالكامل وعكس ${batch.length} أصناف من المخزون`,'success');
+    showToast(`🗑️ تم حذف فاتورة ${purchase.invoiceNo||''} بالكامل وعكس الكمية المتبقية من ${batch.length} أصناف`,'success');
   }catch(error){
     keys.forEach(k=>{try{Store.set(k,snapshot[k]||[]);}catch(e){}});
     if(error?.message==='DELETE_CANCELLED')return;
@@ -9608,6 +9859,20 @@ function getCashboxData(){
         movements.push({date:dt.slice(0,10)||String(d.date||'').slice(0,10),time:cairoTimeFromStored(dt),kind:type,amount,title:type==='in'?'تحصيل من عميل':'سداد لمورد',detail:String(d.person||'حساب')+' • '+(h&&h.type==='full'?'سداد كامل':'سداد جزئي'),icon:type==='in'?'fa-hand-holding-dollar':'fa-money-bill-wave',ref:String(d.id||'')+'-'+i});
       });
     });
+    // مرتجعات المشتريات التي نتج عنها رد نقدي من المورد تدخل الخزنة كحركة واردة.
+    cashboxList('purchaseReturns').forEach(r=>{
+      if(!r||typeof r!=='object') return;
+      const amount=cashboxNum(r.cashRefund);
+      if(!amount)return;
+      const dt=String(r.date||'');
+      movements.push({
+        date:dt.slice(0,10),time:String(r.time||'').slice(0,5),kind:'in',amount,
+        title:'رد مبلغ مرتجع شراء',
+        detail:String(r.supplierName||'المورد')+' • فاتورة '+String(r.invoiceSeq||r.invoiceNo||''),
+        icon:'fa-rotate-left',ref:String(r.returnBatchId||r.id||'')
+      });
+    });
+
     // المرتجعات النقدية تُسجل كمدفوعات مستقلة مرة واحدة.
     // لا نحسب returnedAmount من سجل المبيعات حتى لا يتكرر الخصم عند إعادة الرسم.
     cashboxList('returns').forEach(r=>{
@@ -10520,7 +10785,7 @@ function getSupplierFinancials(supplier){
   rows.forEach(p=>{
     const key=p.purchaseBatchId||p.invoiceNo||p.id;
     if(!batches[key])batches[key]={total:0,paid:0,remaining:0,date:p.date,invoiceNo:p.invoiceNo||key,purchaseBatchId:p.purchaseBatchId};
-    batches[key].total+=Number(p.total||p.cost||p.amount||0);
+    batches[key].total+=getPurchaseLineNet(p);
     batches[key].paid+=Number(p.paid||0);
     batches[key].remaining+=Number(p.remaining||0);
     batches[key].date=p.date||batches[key].date;
@@ -10778,18 +11043,10 @@ function applySupplierPayment(supplierId,amount){
     // مزامنة جميع بنود الفاتورة متعددة الأصناف مع السداد.
     const purchases=Store.get('purchases')||[];
     const batchPurchases=purchases.filter(p=>String(p.purchaseBatchId||'')===String(d.purchaseBatchId||''));
-    const batchTotal=batchPurchases.reduce((n,p)=>n+Number(p.total||0),0);
-    const oldBatchPaid=batchPurchases.reduce((n,p)=>n+Math.max(0,Number(p.paid||0)),0);
+    const batchTotal=getPurchaseBatchNetTotal(batchPurchases);
+    const oldBatchPaid=Math.max(0,Number(d.paidAmount||0));
     const targetBatchPaid=Math.min(batchTotal,oldBatchPaid+pay);
-    let distributed=0;
-    batchPurchases.forEach((p,idx)=>{
-      const lineTotal=Number(p.total||0);
-      const share=idx===batchPurchases.length-1
-        ?Math.max(0,targetBatchPaid-distributed)
-        :(batchTotal>0?targetBatchPaid*(lineTotal/batchTotal):0);
-      distributed+=share;
-      Store.update('purchases',p.id,{paid:share,remaining:Math.max(0,lineTotal-share),invoicePaid:targetBatchPaid,invoiceRemaining:Math.max(0,batchTotal-targetBatchPaid),paymentMethod:targetBatchPaid>=batchTotal-0.0001?'cash':'credit'});
-    }) ;
+    updatePurchaseBatchPaidState(batchPurchases,targetBatchPaid);
     left-=pay;
   }
 
@@ -10834,26 +11091,20 @@ function confirmPurchaseInvoicePayment(purchaseId){
   const now=cairoDateTimeISO();
   const history=Array.isArray(debt.paymentHistory)?debt.paymentHistory.slice():[];
   const paidBefore=Math.max(0,Number(debt.paidAmount||0));
-  const paidAfter=Math.min(Number(debt.amount||0),paidBefore+amount);
+  const batchForDebt=(Store.get('purchases')||[]).filter(p=>String(p.purchaseBatchId||'')===String(purchase.purchaseBatchId||''));
+  const netInvoiceTotal=getPurchaseBatchNetTotal(batchForDebt);
+  const paidAfter=Math.min(netInvoiceTotal,paidBefore+amount);
   const groupId='SUPINV-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
-  history.push({amount,date:now,type:paidAfter>=Number(debt.amount||0)-0.0001?'full':'partial',groupId,source:'purchase_invoice'});
+  history.push({amount,date:now,type:paidAfter>=netInvoiceTotal-0.0001?'full':'partial',groupId,source:'purchase_invoice'});
 
-  Store.update('debts',debt.id,{amount:getDebtOriginalAmount(debt),paidAmount:paidAfter,paid:paidAfter>=getDebtOriginalAmount(debt)-0.0001,paymentHistory:history,debtVersion:2,lastPaymentAt:now,purchaseTotal:getDebtOriginalAmount(debt)});
+  Store.update('debts',debt.id,{amount:netInvoiceTotal,paidAmount:paidAfter,paid:paidAfter>=netInvoiceTotal-0.0001,paymentHistory:history,debtVersion:2,lastPaymentAt:now,purchaseTotal:netInvoiceTotal});
   const batchPurchases=(Store.get('purchases')||[]).filter(p=>String(p.purchaseBatchId||'')===String(purchase.purchaseBatchId||''));
-  const batchTotal=batchPurchases.reduce((n,p)=>n+Number(p.total||0),0);
-  const batchPaidBefore=batchPurchases.reduce((n,p)=>n+Math.max(0,Number(p.paid||0)),0);
-  const targetBatchPaid=Math.min(batchTotal,batchPaidBefore+amount);
-  let distributed=0;
-  batchPurchases.forEach((p,idx)=>{
-    const lineTotal=Number(p.total||0);
-    const share=idx===batchPurchases.length-1?Math.max(0,targetBatchPaid-distributed):(batchTotal>0?targetBatchPaid*(lineTotal/batchTotal):0);
-    distributed+=share;
-    Store.update('purchases',p.id,{paid:share,remaining:Math.max(0,lineTotal-share),invoicePaid:targetBatchPaid,invoiceRemaining:Math.max(0,batchTotal-targetBatchPaid),paymentMethod:targetBatchPaid>=batchTotal-0.0001?'cash':'credit'});
-  });
-  const newPaid=targetBatchPaid;
+  const targetBatchPaid=Math.min(netInvoiceTotal,paidAfter);
+  const paymentState=updatePurchaseBatchPaidState(batchPurchases,targetBatchPaid);
+  const newPaid=paymentState.paid;
 
   closeModal();
-  showToast(paidAfter>=Number(debt.amount||0)-0.0001?`🎉 تم سداد الفاتورة بالكامل — ${fmt(newPaid)}`:`✅ تم سداد ${fmt(amount)} من هذه الفاتورة — المتبقي ${fmt(Math.max(0,Number(debt.amount||0)-paidAfter))}`,'success');
+  showToast(paidAfter>=netInvoiceTotal-0.0001?`🎉 تم سداد الفاتورة بالكامل — ${fmt(newPaid)}`:`✅ تم سداد ${fmt(amount)} من هذه الفاتورة — المتبقي ${fmt(Math.max(0,netInvoiceTotal-paidAfter))}`,'success');
   renderPurchasesPage(document.getElementById('contentArea'));
   if(typeof renderSuppliersPage==='function')renderSuppliersPage(document.getElementById('contentArea'));
   if(typeof renderCashboxData==='function')renderCashboxData();
@@ -10894,24 +11145,10 @@ function undoSupplierLastPayment(supplierId){
       const batchId=String(d.purchaseBatchId||'');
       const batchPurchases=(Store.get('purchases')||[]).filter(p=>String(p.purchaseBatchId||'')===batchId);
       if(batchPurchases.length){
-        const batchTotal=batchPurchases.reduce((n,p)=>n+Math.max(0,Number(p.total||0)),0);
-        const currentPaid=batchPurchases.reduce((n,p)=>n+Math.max(0,Number(p.paid||0)),0);
+        const batchTotal=getPurchaseBatchNetTotal(batchPurchases);
+        const currentPaid=Math.max(0,Number(d.paidAmount||0));
         const targetPaid=Math.max(0,Math.min(batchTotal,currentPaid-amount));
-        let distributed=0;
-        batchPurchases.forEach((p,idx)=>{
-          const lineTotal=Math.max(0,Number(p.total||0));
-          const share=idx===batchPurchases.length-1
-            ?Math.max(0,targetPaid-distributed)
-            :(batchTotal>0?targetPaid*(lineTotal/batchTotal):0);
-          distributed+=share;
-          Store.update('purchases',p.id,{
-            paid:share,
-            remaining:Math.max(0,lineTotal-share),
-            invoicePaid:targetPaid,
-            invoiceRemaining:Math.max(0,batchTotal-targetPaid),
-            paymentMethod:targetPaid>=batchTotal-0.0001?'cash':'credit'
-          });
-        });
+        updatePurchaseBatchPaidState(batchPurchases,targetPaid);
       }
       changed++;
     });
@@ -13715,8 +13952,44 @@ window.addEventListener('online',()=>{try{if(typeof markCloudSyncPending==='func
 .purchase-invoice-item-v185{display:flex;justify-content:space-between;gap:8px;padding:7px 4px;border-bottom:1px dashed #dfe8e4;font-size:.72rem}
 .purchase-invoice-item-v185:last-child{border-bottom:0}
 .purchase-invoice-item-v185 .item-meta{color:var(--text-muted);font-size:.62rem;margin-top:2px}
-.purchase-invoice-totals-v185{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
+.purchase-invoice-totals-v185{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px}
 .purchase-invoice-totals-v185 div{background:#f7faf9;border-radius:9px;padding:7px;text-align:center}
+.pc-actions{grid-template-columns:repeat(4,1fr)}
+.pc-actions .return{background:#fff8e8;border-color:#ead9a8;color:#9a6700}
+.pc-actions .return:hover{background:#fff3d7;border-color:#dfc57e}
+.pc-actions .return.done{opacity:.72;cursor:default}
+.purchase-return-head-note-v1{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#f7faf9;border:1px solid var(--border);border-radius:13px;padding:10px 12px;margin-bottom:10px}
+.purchase-return-head-note-v1 strong{font-size:.82rem;color:var(--text)}
+.purchase-return-head-note-v1 span{font-size:.68rem;color:var(--text-muted);text-align:left}
+.purchase-return-actions-v1{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px}
+.purchase-return-actions-v1 .btn{min-height:40px}
+.purchase-return-lines-v1{display:flex;flex-direction:column;gap:8px}
+.purchase-return-row-v1{display:grid;grid-template-columns:minmax(0,1.6fr) .8fr .55fr;gap:8px;align-items:center;padding:10px;border:1px solid var(--border);border-radius:13px;background:#fff}
+.purchase-return-info-v1 strong{display:block;font-size:.75rem;color:var(--text)}
+.purchase-return-info-v1 small{display:block;color:var(--text-muted);font-size:.61rem;line-height:1.55;margin-top:3px}
+.purchase-return-info-v1 small b{color:#08796d}
+.purchase-return-stock{color:#82765a!important}
+.purchase-return-row-v1 input{width:100%;padding:10px;border:2px solid #ead9a8;border-radius:10px;background:#fffdf6;color:var(--text);font:inherit;font-weight:900;text-align:center}
+.purchase-return-row-v1 input:focus{outline:none;border-color:#c99a22;box-shadow:0 0 0 3px rgba(201,154,34,.12)}
+.purchase-return-line-amount-v1{background:#f7faf9;border:1px solid var(--border);border-radius:10px;padding:7px;text-align:center}
+.purchase-return-line-amount-v1 small{display:block;color:var(--text-muted);font-size:.57rem}
+.purchase-return-line-amount-v1 strong{display:block;color:#9a6700;font-size:.75rem;margin-top:2px}
+.purchase-return-summary-v1{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
+.purchase-return-summary-v1>div{background:#f7faf9;border:1px solid var(--border);border-radius:11px;padding:8px;text-align:center}
+.purchase-return-summary-v1 small{display:block;color:var(--text-muted);font-size:.6rem}
+.purchase-return-summary-v1 strong{display:block;color:var(--primary);font-size:.78rem;margin-top:3px}
+.purchase-return-note-v1{margin-top:9px;padding:9px 11px;border-radius:12px;background:#fff8e8;border:1px solid #ead9a8;color:#6d5b2a;font-size:.64rem;line-height:1.65}
+.purchase-return-note-v1 b{color:#9a6700}
+@media(max-width:600px){
+  .purchase-invoice-totals-v185{grid-template-columns:1fr 1fr}
+  .purchase-return-head-note-v1{align-items:flex-start;flex-direction:column}
+  .purchase-return-head-note-v1 span{text-align:right}
+  .purchase-return-row-v1{grid-template-columns:1fr 1fr}
+  .purchase-return-info-v1{grid-column:1/-1}
+  .purchase-return-line-amount-v1{min-height:40px;display:flex;align-items:center;justify-content:center;gap:4px}
+  .purchase-return-summary-v1{grid-template-columns:1fr}
+  .pc-actions{grid-template-columns:1fr 1fr}
+}
 .purchase-invoice-totals-v185 small{display:block;color:var(--text-muted);font-size:.6rem}
 .purchase-invoice-totals-v185 b{font-size:.72rem}
 @media(max-width:600px){
