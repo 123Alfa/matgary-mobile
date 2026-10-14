@@ -4064,9 +4064,9 @@ html[data-theme="dark"] .sales-summary-card .value{
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.59 — تطوير شامل لقسم المبيعات وتجربة الاستخدام
-const APP_VERSION='v1.8.59';
+const APP_VERSION='v1.8.60';
 const APP_NAME = "متجري";
-const APP_BUILD_DATE = "7 أكتوبر 2026 — إعادة تصميم قسم المبيعات، إضافة آلة حاسبة للمبلغ المدفوع وتحسين سجل المبيعات";
+const APP_BUILD_DATE = "15 أكتوبر 2026 — تقوية النسخ الاحتياطي، النسخ التاريخية السحابية، والتحقق من الاستعادة";
 
 // =====================================================
 // ☁️ Google Drive — مزامنة تلقائية + نسخة محلية
@@ -4077,6 +4077,11 @@ const GOOGLE_CLIENT_ID = '795977355730-q1sckt9ldq3fi8vrgtjr960q3pabqttv.apps.goo
 const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const GOOGLE_USERINFO_SCOPE = 'openid email profile';
 const GOOGLE_BACKUP_FILE = 'Matgary_Backup.json';
+const GOOGLE_ARCHIVE_PREFIX = 'Matgary_Backup_Archive_';
+const GOOGLE_ARCHIVE_INTERVAL_MS = 6 * 60 * 60 * 1000; // نقطة استعادة تاريخية كل 6 ساعات عند تغيّر البيانات
+const GOOGLE_ARCHIVE_RETENTION = 60; // الاحتفاظ بآخر 60 نقطة استعادة
+let driveActionAfterAuth = '';
+let backupRestoreInProgress = false;
 
 let googleTokenClient = null;
 let googleAccessToken = '';
@@ -4092,6 +4097,9 @@ let driveAutoSyncInterval = null;
 let driveAutoSyncRetryTimer = null;
 let driveAutoSyncRetryCount = 0;
 const DRIVE_SYNC_PENDING_KEY = 'bm_cloud_sync_pending';
+const pendingStoreWrites = new Set();
+const idbWriteQueues = new Map();
+let lastStoreWriteError = null;
 
 function isGoogleDriveReady(){
   return !!(window.google && window.google.accounts?.oauth2);
@@ -4109,6 +4117,7 @@ function initGoogleDriveClient(){
     include_granted_scopes: true,
     callback: async (response) => {
       if(!response || response.error){
+        driveActionAfterAuth='';
         console.error('Google OAuth error:', response);
         localStorage.removeItem('bm_google_connected');
         showToast('❌ تعذر ربط حساب Google. راجع إعدادات OAuth في Google Cloud.','error');
@@ -4123,28 +4132,41 @@ function initGoogleDriveClient(){
       localStorage.setItem('bm_google_connected','1');
 
       const silentAuth=!!window.__silentGoogleAuthRequest;
+      const afterAuthAction=driveActionAfterAuth;
+      driveActionAfterAuth='';
       window.__silentGoogleAuthRequest=false;
       driveAuthRefreshInProgress=false;
       try{
         await loadGoogleUserInfo();
         if(typeof navigateTo==='function' && !silentAuth) navigateTo('settings');
 
+        let cloudBackupCheckSucceeded=false;
+        let foundAnyCloudBackup=false;
         try{
-          await findGoogleBackupFile();
+          const primary=await findGoogleBackupFile();
+          cloudBackupCheckSucceeded=true;
+          foundAnyCloudBackup=!!primary;
+          if(!primary){
+            const historical=await findUsableGoogleBackupFile();
+            foundAnyCloudBackup=!!historical;
+            if(historical) localStorage.setItem('bm_google_archive_available','1');
+          }
         }catch(driveError){
+          cloudBackupCheckSucceeded=false;
           console.error('Google Drive file check failed:', driveError);
-          if(!silentAuth) showToast('⚠️ تم ربط الحساب، لكن تعذر الوصول إلى Google Drive','warning');
+          if(!silentAuth) showToast('⚠️ تم ربط الحساب، لكن تعذر فحص النسخة السحابية','warning');
         }
 
-        // بعد تجديد التوكن: نفّذ المزامنة المعلقة تلقائيًا.
-        // عند أول ربط فقط لا نرفع فوق نسخة سحابية موجودة تلقائيًا؛
-        // ذلك يمنع جهازًا جديدًا من الكتابة فوق بياناتك القديمة قبل الاستعادة.
-        if(localStorage.getItem(DRIVE_SYNC_PENDING_KEY)==='1' || (googleDriveFileId && localStorage.getItem('bm_google_backup_at')) || (!googleDriveFileId && !localStorage.getItem('bm_google_backup_at'))){
-          setTimeout(()=>backupToGoogle({silent:true}),250);
-        }
+        // لا ترفع بيانات الجهاز تلقائيًا لمجرد إعادة ربط Google، خصوصًا بعد مسح بيانات Chrome.
+        // لا ننشئ نسخة رئيسية جديدة إلا إذا تأكدنا أنه لا توجد نسخة رئيسية ولا نسخة تاريخية سليمة.
+        if(afterAuthAction==='upload') setTimeout(()=>backupToGoogle({silent:false}),250);
+        else if(afterAuthAction==='restore') setTimeout(()=>restoreFromGoogle(),250);
+        else if(afterAuthAction==='verify') setTimeout(()=>verifyGoogleBackup(),250);
+        else if(localStorage.getItem(DRIVE_SYNC_PENDING_KEY)==='1') setTimeout(()=>backupToGoogle({silent:true}),250);
+        else if(cloudBackupCheckSucceeded&&!foundAnyCloudBackup&&!localStorage.getItem('bm_google_backup_at')) setTimeout(()=>backupToGoogle({silent:true}),250);
         refreshGoogleBackupStatusUI();
         updateSyncStatus();
-        if(!silentAuth) showToast('✅ تم ربط حساب Google وتفعيل المزامنة التلقائية','success');
+        if(!silentAuth) showToast('✅ تم ربط حساب Google','success');
       }catch(e){
         console.error('Google account initialization error:',e);
         if(typeof navigateTo==='function' && !silentAuth) navigateTo('settings');
@@ -4152,6 +4174,7 @@ function initGoogleDriveClient(){
       }
     },
     error_callback: (error) => {
+      driveActionAfterAuth='';
       console.error('Google OAuth popup error:', error);
       if(!window.__silentGoogleAuthRequest) showToast('❌ لم يكتمل تسجيل Google. اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى.','error');
       window.__silentGoogleAuthRequest=false;
@@ -4162,6 +4185,7 @@ function initGoogleDriveClient(){
 
 function requestGoogleDriveAccess(options={}){
   const silent=!!options.silent;
+  if(options.afterAuth) driveActionAfterAuth=options.afterAuth;
   if(!isGoogleDriveReady()){
     if(!silent){
       showToast('⏳ جاري تحميل خدمة Google، حاول مرة أخرى بعد لحظات','info');
@@ -4181,6 +4205,7 @@ function requestGoogleDriveAccess(options={}){
     });
   }catch(e){
     console.error(e);
+    driveActionAfterAuth='';
     driveAuthRefreshInProgress=false;
     window.__silentGoogleAuthRequest=false;
     if(!silent) showToast('❌ تعذر فتح تسجيل Google','error');
@@ -4241,13 +4266,14 @@ async function downloadGoogleBackupFile(fileId){
   return data;
 }
 
-// لو عندنا أكثر من ملف بنفس الاسم، لا نختار نسخة فارغة. نبحث عن أحدث نسخة سليمة.
+// يبحث في النسخة الرئيسية ونقاط الاستعادة التاريخية، ويتجاهل أي ملف لا يجتاز فحص السلامة.
+// إذا كانت النسخة المختارة تاريخية فلا نغيّر معرّف الملف الرئيسي حتى لا نكتب فوق الأرشيف لاحقًا.
 async function findUsableGoogleBackupFile(){
   if(!driveAccessTokenValid()) return null;
-  const q=`name='${GOOGLE_BACKUP_FILE.replace(/'/g,"\\'")}' and trashed=false`;
+  const q=`trashed=false and (name='${GOOGLE_BACKUP_FILE.replace(/'/g,"\\'")}' or name contains '${GOOGLE_ARCHIVE_PREFIX}')`;
   const url='https://www.googleapis.com/drive/v3/files?'+new URLSearchParams({
     q, spaces:'drive', fields:'files(id,name,modifiedTime,size)',
-    orderBy:'modifiedTime desc', pageSize:'20'
+    orderBy:'modifiedTime desc', pageSize:'100'
   });
   const r=await driveFetch(url);
   if(!r.ok) throw new Error('Drive list '+r.status+' '+await r.text());
@@ -4257,8 +4283,13 @@ async function findUsableGoogleBackupFile(){
     try{
       const backup=await downloadGoogleBackupFile(file.id);
       if(isUsableBackup(backup)){
-        googleDriveFileId=file.id;
-        localStorage.setItem('bm_google_drive_file_id',file.id);
+        if(file.name===GOOGLE_BACKUP_FILE){
+          googleDriveFileId=file.id;
+          localStorage.setItem('bm_google_drive_file_id',file.id);
+          localStorage.removeItem('bm_google_archive_available');
+        }else if(String(file.name||'').startsWith(GOOGLE_ARCHIVE_PREFIX)){
+          localStorage.setItem('bm_google_archive_available','1');
+        }
         return {file,data:backup};
       }
     }catch(e){ console.warn('تجاهل ملف Google غير صالح:',file.id,e); }
@@ -4266,21 +4297,27 @@ async function findUsableGoogleBackupFile(){
   return null;
 }
 
+function readBackupLocalJSON(key,fallback){
+  try{const raw=localStorage.getItem(key);return raw===null?fallback:JSON.parse(raw);}catch(e){return fallback;}
+}
+
 function buildBackupPayload(){
   const payload={
     backupType:'matgary-data',
-    backupVersion:3,
+    backupVersion:4,
     appName:getAppName(),
     version:APP_VERSION,
     exportedAt:new Date().toISOString(),
-    userData:currentUser
+    userData:currentUser || Store.getUser() || null,
+    appSettings:readBackupLocalJSON('bm_settings',{}),
+    posCartTemp:readBackupLocalJSON('bm_posCart_temp',[]),
+    posHeldCarts:readBackupLocalJSON('bm_posHeldCarts',[]),
+    lastPOSInvoice:readBackupLocalJSON('bm_lastPOSInvoice',null)
   };
-  // حافظ على تطابق ملف النسخة الاحتياطية مع قائمة المجموعات الفعلية،
-  // حتى لا تسقط المرتجعات أو أي مجموعة جديدة مستقبلًا بالخطأ.
+  // يشمل كل مجموعات البيانات الحالية، بما فيها المرتجعات والجرد وحركات المخزون.
   getBackupCollections().forEach(key=>{ payload[key]=Store.get(key); });
   return payload;
 }
-
 
 function backupRecordCounts(data){
   const keys=getBackupCollections();
@@ -4294,140 +4331,324 @@ function backupSummary(data){
   return `الأصناف ${counts.products} • المبيعات ${counts.sales} • المشتريات ${counts.purchases} • العملاء ${counts.customers} • إجمالي السجلات ${total}`;
 }
 function isUsableBackup(data){
-  if(!data || typeof data!=='object') return false;
+  if(!data || typeof data!=='object' || Array.isArray(data)) return false;
   const core=['products','sales','purchases','expenses','withdrawals','debts','customers','suppliers','offers'];
   const validShape=core.every(k=>Array.isArray(data[k]));
   return validShape && backupRecordCounts(data).total>0;
 }
 
-async function createDriveBackupFile(payload){
-  const meta={name:GOOGLE_BACKUP_FILE,mimeType:'application/json'};
-  const r=await driveFetch('https://www.googleapis.com/drive/v3/files?fields=id,name,modifiedTime',{method:'POST',body:JSON.stringify(meta)});
+// بصمة المحتوى لا تعتمد على وقت إنشاء الملف؛ تكشف اختلاف البيانات حتى لو تساوى عدد السجلات.
+async function backupContentFingerprint(data){
+  const content={backupType:data?.backupType||'matgary-data',collections:{}};
+  getBackupCollections().forEach(k=>{content.collections[k]=Array.isArray(data?.[k])?data[k]:[];});
+  if(Object.prototype.hasOwnProperty.call(data||{},'userData')) content.userData=data.userData;
+  ['appSettings','posCartTemp','posHeldCarts','lastPOSInvoice'].forEach(k=>{
+    if(Object.prototype.hasOwnProperty.call(data||{},k)) content[k]=data[k];
+  });
+  const raw=JSON.stringify(content);
+  try{
+    if(window.crypto?.subtle && window.TextEncoder){
+      const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw));
+      return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+    }
+  }catch(e){console.warn('تعذر حساب بصمة SHA-256، سيتم استخدام فحص بديل:',e);}
+  let hash=2166136261;
+  for(let i=0;i<raw.length;i++){hash^=raw.charCodeAt(i);hash=Math.imul(hash,16777619);}
+  return 'fallback-'+(hash>>>0).toString(16)+'-'+raw.length;
+}
+
+function backupPayloadEquivalent(expected,actual){
+  if(!expected||!actual) return false;
+  for(const key of getBackupCollections()){
+    const a=Array.isArray(expected[key])?expected[key]:[];
+    const b=Array.isArray(actual[key])?actual[key]:[];
+    if(JSON.stringify(a)!==JSON.stringify(b)) return false;
+  }
+  if(Object.prototype.hasOwnProperty.call(expected,'userData') && JSON.stringify(expected.userData??null)!==JSON.stringify(actual.userData??null)) return false;
+  for(const key of ['appSettings','posCartTemp','posHeldCarts','lastPOSInvoice']){
+    if(!Object.prototype.hasOwnProperty.call(expected,key)) continue;
+    let a=expected[key]??null, b=actual[key]??null;
+    // اسم الهوية القديم يُرحّل تلقائيًا إلى «متجري» عند فتح البرنامج.
+    if(key==='appSettings'){
+      const legacy='\u0643\u0646\u0648\u0632\u0020\u0627\u0644\u0637\u0628\u064a\u0639\u0629';
+      if(a&&typeof a==='object'&&a.appName===legacy) a={...a,appName:APP_NAME};
+      if(b&&typeof b==='object'&&b.appName===legacy) b={...b,appName:APP_NAME};
+    }
+    if(JSON.stringify(a)!==JSON.stringify(b)) return false;
+  }
+  return true;
+}
+
+function backupReductionWarnings(previous,next){
+  const old=backupRecordCounts(previous), now=backupRecordCounts(next), labels={
+    products:'الأصناف',sales:'المبيعات',purchases:'المشتريات',purchaseReturns:'مرتجعات المشتريات',
+    expenses:'المصروفات',withdrawals:'المسحوبات',debts:'الديون',customers:'العملاء',
+    suppliers:'الموردون',offers:'العروض',auditLog:'سجل المراجعة',returns:'المرتجعات',
+    stockMovements:'حركات المخزون',stockCounts:'الجرد'
+  };
+  const warnings=[];
+  for(const key of getBackupCollections()){
+    const before=old.counts[key]||0, after=now.counts[key]||0;
+    // أي نقص في مجموعة محفوظة يستلزم تأكيدًا يدويًا قبل استبدال السحابة؛ الحذف المقصود يظل ممكنًا.
+    if(before>after) warnings.push(`${labels[key]||key}: ${before} ← ${after}`);
+  }
+  if(old.total>now.total && !warnings.length) warnings.push(`إجمالي السجلات انخفض من ${old.total} إلى ${now.total}`);
+  return warnings;
+}
+
+// كتابة ملف واحد ببياناته وبياناته الوصفية في طلب واحد، لتجنب ترك ملف سحابي فارغ عند فشل الرفع.
+async function createDriveBackupFile(payload,name=GOOGLE_BACKUP_FILE,setAsPrimary=true){
+  const meta={name,mimeType:'application/json'};
+  const boundary='matgary_backup_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  const body='--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(meta)+'\r\n'+
+    '--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(payload)+'\r\n'+
+    '--'+boundary+'--';
+  const r=await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,modifiedTime,size',{
+    method:'POST',headers:{'Content-Type':'multipart/related; boundary='+boundary},body
+  });
   if(!r.ok) throw new Error('Drive create '+r.status+' '+await r.text());
   const file=await r.json();
-  googleDriveFileId=file.id;
-  localStorage.setItem('bm_google_drive_file_id',googleDriveFileId);
-  await uploadDriveBackupData(payload);
+  if(!file?.id) throw new Error('DRIVE_CREATE_NO_FILE_ID');
+  if(setAsPrimary){
+    googleDriveFileId=file.id;
+    localStorage.setItem('bm_google_drive_file_id',googleDriveFileId);
+    localStorage.removeItem('bm_google_archive_available');
+  }
   return file;
 }
 
 async function uploadDriveBackupData(payload){
-  if(!googleDriveFileId) return createDriveBackupFile(payload);
+  if(!googleDriveFileId) return createDriveBackupFile(payload,GOOGLE_BACKUP_FILE,true);
   const body=JSON.stringify(payload);
-  const url='https://www.googleapis.com/upload/drive/v3/files/'+encodeURIComponent(googleDriveFileId)+'?uploadType=media&fields=id,name,modifiedTime';
+  const url='https://www.googleapis.com/upload/drive/v3/files/'+encodeURIComponent(googleDriveFileId)+'?uploadType=media&fields=id,name,modifiedTime,size';
   const r=await driveFetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body});
   if(r.status===404){
     googleDriveFileId='';
     localStorage.removeItem('bm_google_drive_file_id');
-    return createDriveBackupFile(payload);
+    return createDriveBackupFile(payload,GOOGLE_BACKUP_FILE,true);
   }
   if(!r.ok) throw new Error('Drive upload '+r.status+' '+await r.text());
   return r.json();
 }
 
+async function pruneGoogleBackupArchives(){
+  try{
+    const q=`name contains '${GOOGLE_ARCHIVE_PREFIX}' and trashed=false`;
+    const url='https://www.googleapis.com/drive/v3/files?'+new URLSearchParams({q,spaces:'drive',fields:'files(id,name,modifiedTime)',orderBy:'modifiedTime desc',pageSize:'100'});
+    const r=await driveFetch(url);
+    if(!r.ok) throw new Error('Drive archive list '+r.status);
+    const result=await r.json();
+    const files=(result.files||[]).slice().sort((a,b)=>new Date(b.modifiedTime||0)-new Date(a.modifiedTime||0));
+    const excess=files.slice(GOOGLE_ARCHIVE_RETENTION);
+    await Promise.allSettled(excess.map(file=>driveFetch('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(file.id),{method:'DELETE'})));
+  }catch(e){console.warn('تعذر تنظيف النسخ التاريخية القديمة، لم يتأثر النسخ الحالي:',e);}
+}
+
+async function createVerifiedGoogleArchive(previous){
+  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+  const name=GOOGLE_ARCHIVE_PREFIX+stamp+'.json';
+  const file=await createDriveBackupFile(previous,name,false);
+  const remote=await downloadGoogleBackupFile(file.id);
+  const expected=await backupContentFingerprint(previous);
+  const actual=await backupContentFingerprint(remote);
+  if(!isUsableBackup(remote)||expected!==actual) throw new Error('GOOGLE_ARCHIVE_VERIFY_FAILED');
+  localStorage.setItem('bm_google_archive_at',new Date().toISOString());
+  await pruneGoogleBackupArchives();
+  return file;
+}
+
 async function backupToGoogle(options={}){
   const silent=!!options.silent;
-  const retrying=!!options.retrying;
   if(!driveAccessTokenValid()){
-    // لا نفقد التغيير: نضعه دائمًا في قائمة الانتظار، ثم نحاول تجديد جلسة Google
-    // ونكرر الرفع تلقائيًا. هذا مهم خصوصًا بعد إغلاق Chrome أو انتهاء Access Token.
-    markCloudSyncPending();
-    if(!silent) showToast('☁️ يلزم ربط Google يدويًا لإتمام النسخ السحابي','info');
+    if(silent){markCloudSyncPending();return false;}
+    showToast('☁️ اربط حساب Google أولًا؛ سيتم فحص البيانات قبل تحديث النسخة السحابية','info');
+    requestGoogleDriveAccess({prompt:localStorage.getItem('bm_google_connected')?'':'consent',afterAuth:'upload'});
     return false;
   }
-  if(driveBackupInProgress){
-    driveBackupPending=true;
-    return false;
-  }
+  if(driveBackupInProgress){driveBackupPending=true;return false;}
   driveBackupInProgress=true;
   try{
-    // أهم حماية: لا نرفع أبدًا نسخة محلية فارغة أو ناقصة.
+    await flushPendingStoreWrites();
     const payload=buildBackupPayload();
     if(!isUsableBackup(payload)){
-      if(!silent) showToast('🛡️ تم منع رفع نسخة فارغة إلى Google Drive','warning');
+      if(!silent) showToast('🛡️ تم منع رفع نسخة فارغة أو ناقصة إلى Google Drive','warning');
       return false;
     }
 
     if(!googleDriveFileId) await findGoogleBackupFile();
-    await uploadDriveBackupData(payload);
+    let previous=null;
+    let previousIsPrimary=!!googleDriveFileId;
+    if(googleDriveFileId){
+      try{previous=await downloadGoogleBackupFile(googleDriveFileId);}
+      catch(e){if(e.message==='GOOGLE_TOKEN_EXPIRED') throw e;console.warn('تعذر قراءة النسخة الرئيسية قبل التحديث:',e);}
+    }else{
+      // عند غياب الملف الرئيسي، استخدم الأرشيف للمقارنة ومنع رفع بيانات جهاز ناقصة فوقه.
+      const historical=await findUsableGoogleBackupFile();
+      if(historical){previous=historical.data;previousIsPrimary=historical.file?.name===GOOGLE_BACKUP_FILE;}
+    }
 
-    // تحقق حقيقي من الملف بعد الرفع. لو كان المحتوى غير صالح، نحاول إنشاء ملف سليم جديد.
-    let verified=false;
-    for(let attempt=0; attempt<2 && !verified; attempt++){
-      try{
-        const remote=await downloadGoogleBackupFile(googleDriveFileId);
-        verified=isUsableBackup(remote) && backupRecordCounts(remote).total===backupRecordCounts(payload).total;
-      }catch(e){
-        if(e.message==='GOOGLE_TOKEN_EXPIRED') throw e;
+    if(isUsableBackup(previous)){
+      const warnings=backupReductionWarnings(previous,payload);
+      if(warnings.length){
+        const message='⚠️ حماية من فقدان البيانات: بيانات الجهاز أقل بوضوح من النسخة الموجودة على Google Drive.\n\n'+
+          warnings.join('\n')+'\n\nلو كنت مسحت بيانات Chrome أو فقدت سجلات، اختَر «استعادة النسخة من Google Drive» بدل الرفع.\n\nهل أنت متأكد أنك تريد استبدال النسخة السحابية بالبيانات الحالية؟';
+        if(silent || !confirm(message)){
+          localStorage.setItem('bm_google_backup_blocked_at',new Date().toISOString());
+          markCloudSyncPending();
+          if(!silent) showToast('🛡️ لم يتم استبدال النسخة السحابية؛ بياناتها أقدم وأكمل. استخدم الاستعادة أو أكد الرفع يدويًا.','warning');
+          return false;
+        }
       }
-      if(!verified) await new Promise(resolve=>setTimeout(resolve,900));
+
+      // احتفظ بنقطة استعادة تاريخية قبل استبدال نسخة مختلفة، وبحد أقصى نسخة كل 6 ساعات.
+      const [oldFingerprint,newFingerprint]=await Promise.all([
+        backupContentFingerprint(previous),backupContentFingerprint(payload)
+      ]);
+      const archiveAt=Date.parse(localStorage.getItem('bm_google_archive_at')||'');
+      if(previousIsPrimary && oldFingerprint!==newFingerprint && (!Number.isFinite(archiveAt)||Date.now()-archiveAt>=GOOGLE_ARCHIVE_INTERVAL_MS)){
+        try{await createVerifiedGoogleArchive(previous);}
+        catch(archiveError){
+          if(archiveError.message==='GOOGLE_TOKEN_EXPIRED') throw archiveError;
+          console.error('Google archive creation failed:',archiveError);
+          throw new Error('GOOGLE_ARCHIVE_CREATION_FAILED');
+        }
+      }
     }
-    if(!verified){
-      googleDriveFileId='';
-      localStorage.removeItem('bm_google_drive_file_id');
-      await uploadDriveBackupData(payload);
-      const remote=await downloadGoogleBackupFile(googleDriveFileId);
-      verified=isUsableBackup(remote) && backupRecordCounts(remote).total===backupRecordCounts(payload).total;
-    }
-    if(!verified) throw new Error('GOOGLE_BACKUP_VERIFY_FAILED');
+
+    await uploadDriveBackupData(payload);
+    const remote=await downloadGoogleBackupFile(googleDriveFileId);
+    const [expectedFingerprint,actualFingerprint]=await Promise.all([
+      backupContentFingerprint(payload),backupContentFingerprint(remote)
+    ]);
+    if(!isUsableBackup(remote)||expectedFingerprint!==actualFingerprint) throw new Error('GOOGLE_BACKUP_VERIFY_FAILED');
 
     const stamp=new Date().toLocaleString('ar-EG');
-    localStorage.setItem('bm_google_backup_at',stamp); refreshLocalBackupStamp(stamp);
-    localStorage.setItem('bm_last_backup',stamp); refreshLocalBackupStamp(stamp);
+    localStorage.setItem('bm_google_backup_at',stamp);
+    localStorage.setItem('bm_last_backup',stamp);
     localStorage.setItem('bm_google_backup_counts',JSON.stringify(backupRecordCounts(payload).counts));
     localStorage.removeItem(DRIVE_SYNC_PENDING_KEY);
+    localStorage.removeItem('bm_google_backup_blocked_at');
     refreshGoogleBackupStatusUI();
-    if(!silent) showToast('☁️ تم رفع النسخة السليمة والتحقق منها على Google بنجاح','success');
+    if(!silent) showToast('☁️ تم رفع النسخة والتحقق من محتواها، مع حفظ نقطة استعادة تاريخية عند الحاجة','success');
     return true;
   }catch(e){
     console.error('Google Drive backup failed:',e);
     refreshGoogleBackupStatusUI();
     if(e.message==='GOOGLE_TOKEN_EXPIRED'){
       markCloudSyncPending();
-      if(!silent) showToast('⚠️ انتهت جلسة Google. اضغط ربط Google لإعادة المصادقة.','warning');
-    }else if(!silent){
-      if(e.message==='GOOGLE_TOKEN_EXPIRED') showToast('⚠️ انتهت جلسة Google، سيتم تجديدها تلقائيًا عند الإمكان','warning');
-      else if(e.message==='GOOGLE_BACKUP_VERIFY_FAILED') showToast('❌ تم الرفع لكن تعذر التحقق من سلامة النسخة. لم نعتبرها نسخة ناجحة.','error');
-      else showToast('❌ فشل رفع النسخة إلى Google','error');
-    }
+      if(!silent) showToast('⚠️ انتهت جلسة Google. اضغط رفع النسخة لإعادة المصادقة.','warning');
+    }else if(e.message==='GOOGLE_ARCHIVE_CREATION_FAILED'){
+      if(!silent) showToast('🛡️ لم نحدّث النسخة الرئيسية لأن نقطة الاستعادة التاريخية لم تُحفظ بنجاح. حاول مرة أخرى.','error');
+    }else if(e.message==='GOOGLE_ARCHIVE_VERIFY_FAILED'){
+      if(!silent) showToast('🛡️ لم نحدّث النسخة الرئيسية لأن التحقق من النسخة التاريخية فشل.','error');
+    }else if(e.message==='GOOGLE_BACKUP_VERIFY_FAILED'){
+      if(!silent) showToast('❌ تم الرفع لكن محتوى النسخة لا يطابق بيانات الجهاز؛ لم نعتبرها نسخة ناجحة.','error');
+    }else if(!silent) showToast('❌ فشل رفع النسخة إلى Google Drive','error');
     return false;
   }finally{
     driveBackupInProgress=false;
-    if(driveBackupPending){
-      driveBackupPending=false;
-      setTimeout(()=>backupToGoogle({silent:true}),500);
-    }
+    if(driveBackupPending){driveBackupPending=false;setTimeout(()=>backupToGoogle({silent:true}),500);}
   }
 }
 
 async function restoreFromGoogle(){
   if(!driveAccessTokenValid()){
-    requestGoogleDriveAccess({prompt:localStorage.getItem('bm_google_connected')?'':'consent'});
+    requestGoogleDriveAccess({prompt:localStorage.getItem('bm_google_connected')?'':'consent',afterAuth:'restore'});
     return;
   }
-  if(!confirm('⚠️ سيتم استبدال البيانات المحلية بالنسخة الموجودة على Google Drive. هل تريد المتابعة؟')) return;
+  if(!confirm('⚠️ سيتم استبدال بيانات الجهاز بالنسخة التي تختارها من Google Drive. سيُفحص محتواها قبل الاستعادة. هل تريد المتابعة؟')) return;
   try{
-    showToast('⏳ جاري استعادة البيانات من Google Drive...','info');
+    showToast('⏳ جاري البحث عن نسخة سليمة على Google Drive...','info');
     const found=await findUsableGoogleBackupFile();
-    if(!found) return showToast('🛡️ لم نجد نسخة سليمة على Google Drive. تم إيقاف الاستعادة لحماية بياناتك.','error');
+    if(!found) return showToast('🛡️ لم نجد نسخة سليمة على Google Drive أو في النسخ التاريخية. لم تتغير البيانات.','error');
     const data=found.data;
-    const collections=getBackupCollections();
-    if(!isUsableBackup(data)){
-      showToast('🛡️ النسخة الموجودة على Google فارغة، وتم إيقاف الاستعادة لحماية بياناتك','error');
-      return;
-    }
-    if(!confirm('تم العثور على نسخة صالحة على Google Drive.\n'+backupSummary(data)+'\n\nهل تريد استعادتها واستبدال البيانات الحالية؟')) return;
-    for(const col of collections) Store.set(col,Array.isArray(data[col])?data[col]:[]);
-    if(data.userData){ currentUser=data.userData; Store.setUser(currentUser); }
-    const stamp=data.exportedAt ? new Date(data.exportedAt).toLocaleString('ar-EG') : new Date().toLocaleString('ar-EG');
-    localStorage.setItem('bm_google_backup_at',stamp); refreshLocalBackupStamp(stamp);
-    localStorage.setItem('bm_last_backup',stamp); refreshLocalBackupStamp(stamp);
-    showToast('✅ تمت استعادة بياناتك من Google Drive','success');
-    setTimeout(()=>location.reload(),700);
+    if(!isUsableBackup(data)) return showToast('🛡️ النسخة غير صالحة، وتم إيقاف الاستعادة لحماية بياناتك.','error');
+    const source=found.file?.name===GOOGLE_BACKUP_FILE?'النسخة السحابية الرئيسية':'نسخة تاريخية محفوظة';
+    const date=data.exportedAt?new Date(data.exportedAt).toLocaleString('ar-EG'):'تاريخ غير معروف';
+    if(!confirm('تم العثور على '+source+' بتاريخ '+date+'.\n'+backupSummary(data)+'\n\nسيتم فحص محتوى النسخة والتحقق من حفظ البيانات بعد الاستعادة؛ وإذا فشل التحقق سيحاول البرنامج إعادة البيانات التي كانت على الجهاز. هل تريد الاستعادة؟')) return;
+    showToast('⏳ جاري الاستعادة والتحقق من حفظ كل البيانات...','info');
+    await restoreBackupSafely(data);
+    const stamp=new Date().toLocaleString('ar-EG');
+    localStorage.setItem('bm_last_backup',stamp);refreshLocalBackupStamp(stamp);
+    localStorage.removeItem(DRIVE_SYNC_PENDING_KEY);
+    localStorage.removeItem('bm_google_backup_blocked_at');
+    refreshGoogleBackupStatusUI();
+    showToast('✅ تمت الاستعادة والتحقق من حفظ البيانات والإعدادات بنجاح','success');
+    setTimeout(()=>location.reload(),900);
   }catch(e){
     console.error('Google Drive restore failed:',e);
-    if(e.message==='GOOGLE_TOKEN_EXPIRED') showToast('⚠️ انتهت جلسة Google، اضغط ربط حساب Google مرة أخرى','warning');
-    else showToast('❌ فشلت استعادة النسخة من Google Drive','error');
+    if(e.message==='GOOGLE_TOKEN_EXPIRED') showToast('⚠️ انتهت جلسة Google، اضغط استعادة النسخة مرة أخرى','warning');
+    else if(e.message==='BACKUP_RESTORE_VERIFY_FAILED') showToast('❌ لم تتطابق البيانات بعد الكتابة؛ جرت محاولة إعادة البيانات السابقة. راجع النسخة الاحتياطية.','error');
+    else showToast('❌ فشلت استعادة النسخة من Google Drive. لم يتم اعتبار العملية ناجحة.','error');
+  }
+}
+
+async function applyBackupPayload(data,options={}){
+  if(!options.allowEmpty && !isUsableBackup(data)) throw new Error('INVALID_BACKUP');
+  const collections=getBackupCollections();
+  for(const key of collections){
+    const value=Array.isArray(data[key])?data[key]:[];
+    if(!Store.set(key,value)) throw new Error('BACKUP_WRITE_FAILED:'+key);
+  }
+
+  if(Object.prototype.hasOwnProperty.call(data,'appSettings')){
+    const settings=data.appSettings&&typeof data.appSettings==='object'&&!Array.isArray(data.appSettings)?data.appSettings:{};
+    localStorage.setItem('bm_settings',JSON.stringify(settings));
+  }
+  if(Object.prototype.hasOwnProperty.call(data,'posCartTemp')) localStorage.setItem('bm_posCart_temp',JSON.stringify(Array.isArray(data.posCartTemp)?data.posCartTemp:[]));
+  if(Object.prototype.hasOwnProperty.call(data,'posHeldCarts')) localStorage.setItem('bm_posHeldCarts',JSON.stringify(Array.isArray(data.posHeldCarts)?data.posHeldCarts:[]));
+  if(Object.prototype.hasOwnProperty.call(data,'lastPOSInvoice')) localStorage.setItem('bm_lastPOSInvoice',JSON.stringify(data.lastPOSInvoice??null));
+  if(Object.prototype.hasOwnProperty.call(data,'userData')){
+    currentUser=data.userData||null;
+    if(currentUser) Store.setUser(currentUser); else localStorage.removeItem('bm_user');
+  }
+
+  await flushPendingStoreWrites();
+  if(options.verify!==false){
+    const actual=buildBackupPayload();
+    if(!backupPayloadEquivalent(data,actual)) throw new Error('BACKUP_RESTORE_VERIFY_FAILED');
+  }
+  return true;
+}
+
+async function restoreBackupSafely(data){
+  if(!isUsableBackup(data)) throw new Error('INVALID_BACKUP');
+  await flushPendingStoreWrites();
+  const before=buildBackupPayload();
+  backupRestoreInProgress=true;
+  try{
+    await applyBackupPayload(data,{verify:true});
+  }catch(error){
+    console.error('فشل التحقق بعد الاستعادة، ستتم محاولة الرجوع للبيانات السابقة:',error);
+    try{await applyBackupPayload(before,{allowEmpty:true,verify:false});}
+    catch(rollbackError){console.error('تعذر إكمال الرجوع للبيانات السابقة:',rollbackError);}
+    throw error;
+  }finally{
+    backupRestoreInProgress=false;
+  }
+  return true;
+}
+
+async function verifyGoogleBackup(){
+  if(!driveAccessTokenValid()){
+    requestGoogleDriveAccess({prompt:localStorage.getItem('bm_google_connected')?'':'consent',afterAuth:'verify'});
+    return;
+  }
+  try{
+    showToast('⏳ جاري فحص النسخ السحابية...', 'info');
+    const found=await findUsableGoogleBackupFile();
+    if(!found) return showToast('❌ لم يتم العثور على نسخة سليمة في Google Drive أو الأرشيف','error');
+    const remoteFP=await backupContentFingerprint(found.data);
+    const local=buildBackupPayload();
+    const localFP=isUsableBackup(local)?await backupContentFingerprint(local):'';
+    const source=found.file?.name===GOOGLE_BACKUP_FILE?'النسخة الرئيسية':'نسخة تاريخية';
+    const date=found.data.exportedAt?new Date(found.data.exportedAt).toLocaleString('ar-EG'):'تاريخ غير معروف';
+    if(localFP && localFP===remoteFP) showToast('✅ فحص سليم: بيانات الجهاز مطابقة لنسخة Google ('+source+' — '+date+'). '+backupSummary(found.data),'success');
+    else showToast('✅ نسخة Google سليمة وقابلة للاستعادة ('+source+' — '+date+'). '+backupSummary(found.data)+' — بيانات الجهاز مختلفة؛ لا ترفع الجهاز قبل مراجعة النسخة.','warning');
+    refreshGoogleBackupStatusUI();
+  }catch(e){
+    console.error('Google backup verification failed:',e);
+    showToast('❌ تعذر إتمام فحص النسخة السحابية. راجع الاتصال بحساب Google.','error');
   }
 }
 
@@ -4452,8 +4673,13 @@ function cloudBackupStatus(){
 function getGoogleBackupDisplay(){
   const stamp=localStorage.getItem('bm_google_backup_at')||'';
   const fileId=localStorage.getItem('bm_google_drive_file_id')||'';
+  const pending=localStorage.getItem(DRIVE_SYNC_PENDING_KEY)==='1';
+  const blocked=!!localStorage.getItem('bm_google_backup_blocked_at');
+  if(pending&&blocked) return {title:'حماية من فقدان البيانات',value:'تم إيقاف الرفع التلقائي لأن بيانات الجهاز أقل من النسخة السحابية. استعد النسخة أو أكد الرفع يدويًا.',ok:false};
+  if(pending) return {title:'توجد تغييرات تنتظر الرفع',value:(stamp?'آخر رفع ناجح: '+stamp+' — ':'')+'توجد تغييرات محلية لم يتم التحقق من رفعها بعد',ok:false};
   if(stamp) return {title:'آخر رفع ناجح ومتحقق',value:stamp,ok:true};
-  if(fileId) return {title:'حالة النسخة على Google',value:'يوجد ملف محفوظ — اضغط رفع للتأكد من سلامته',ok:false};
+  if(fileId) return {title:'حالة النسخة على Google',value:'يوجد ملف محفوظ — اضغط فحص سلامة النسخة للتأكد من محتواه',ok:false};
+  if(localStorage.getItem('bm_google_archive_available')==='1') return {title:'نسخة تاريخية متاحة',value:'توجد نسخة تاريخية على Google Drive؛ استعدها قبل رفع بيانات الجهاز الحالية',ok:false};
   if(localStorage.getItem('bm_google_connected')==='1') return {title:'حالة النسخة على Google',value:'لا توجد نسخة مرفوعة على Google حتى الآن',ok:false};
   return {title:'حالة النسخة على Google',value:'لم يتم ربط حساب Google بعد',ok:false};
 }
@@ -4488,8 +4714,9 @@ function refreshGoogleBackupStatusUI(){
 }
 
 function markCloudSyncPending(){
-  localStorage.setItem(DRIVE_SYNC_PENDING_KEY,'1');
+  try{localStorage.setItem(DRIVE_SYNC_PENDING_KEY,'1');}catch(e){console.warn('تعذر حفظ حالة المزامنة:',e);}
   updateSyncStatus();
+  if(typeof refreshGoogleBackupStatusUI==='function') refreshGoogleBackupStatusUI();
 }
 
 function scheduleDriveAutoSyncRetry(delay=5000){
@@ -4497,6 +4724,7 @@ function scheduleDriveAutoSyncRetry(delay=5000){
   if(!navigator.onLine || localStorage.getItem('bm_google_connected')!=='1') return;
   driveAutoSyncRetryTimer=setTimeout(()=>{
     if(localStorage.getItem(DRIVE_SYNC_PENDING_KEY)!=='1') return;
+    if(localStorage.getItem('bm_google_backup_blocked_at')) return;
     if(driveBackupInProgress){
       scheduleDriveAutoSyncRetry(5000);
       return;
@@ -4513,6 +4741,7 @@ function scheduleDriveAutoSyncRetry(delay=5000){
 }
 
 function scheduleDriveBackup(){
+  if(backupRestoreInProgress) return;
   markCloudSyncPending();
   clearTimeout(driveBackupTimer);
   // الحفظ المحلي فوري. بعد كل تعديل مهم ننتظر قليلًا لتجميع عدة تغييرات،
@@ -4536,6 +4765,7 @@ function startDriveAutoSyncMonitor(){
   driveAutoSyncInterval=setInterval(()=>{
     if(!navigator.onLine || localStorage.getItem('bm_google_connected')!=='1') return;
     if(localStorage.getItem(DRIVE_SYNC_PENDING_KEY)!=='1') return;
+    if(localStorage.getItem('bm_google_backup_blocked_at')) return;
     if(driveBackupInProgress) return;
     if(!driveAccessTokenValid()) return;
     driveAutoSyncRetryCount=0;
@@ -4635,6 +4865,36 @@ function idbPut(key,value){
     }catch(e){reject(e);}
   });
 }
+function trackStoreWrite(promise){
+  const tracked=Promise.resolve(promise);
+  pendingStoreWrites.add(tracked);
+  tracked.then(()=>pendingStoreWrites.delete(tracked),error=>{lastStoreWriteError=error||new Error('INDEXEDDB_WRITE_FAILED');pendingStoreWrites.delete(tracked);});
+  return tracked;
+}
+function queueIDBPut(key,value){
+  const previous=idbWriteQueues.get(key)||Promise.resolve();
+  const next=previous.catch(()=>{}).then(()=>idbPut(key,value));
+  idbWriteQueues.set(key,next);
+  const clean=()=>{if(idbWriteQueues.get(key)===next)idbWriteQueues.delete(key);};
+  next.then(clean,clean);
+  return trackStoreWrite(next);
+}
+async function flushPendingStoreWrites(){
+  let firstError=lastStoreWriteError;
+  lastStoreWriteError=null;
+  while(pendingStoreWrites.size){
+    const batch=Array.from(pendingStoreWrites);
+    const results=await Promise.allSettled(batch);
+    const failed=results.find(x=>x.status==='rejected');
+    if(failed&&!firstError) firstError=failed.reason||new Error('INDEXEDDB_WRITE_FAILED');
+    if(lastStoreWriteError&&!firstError) firstError=lastStoreWriteError;
+    lastStoreWriteError=null;
+  }
+  if(lastStoreWriteError&&!firstError) firstError=lastStoreWriteError;
+  lastStoreWriteError=null;
+  if(firstError) throw firstError;
+}
+
 async function initIndexedDBStore(){
   try{
     matgaryDB=await openMatgaryDB();
@@ -4693,7 +4953,7 @@ const Store={
       if(IDB_COLLECTIONS.includes(key)){
         storeMemory[key]=val;
         if(idbReady){
-          idbPut(key,val).catch(e=>console.warn('تعذر حفظ البيانات في IndexedDB:',key,e));
+          queueIDBPut(key,val).catch(e=>console.warn('تعذر حفظ البيانات في IndexedDB:',key,e));
         }else{
           localStorage.setItem('bm_'+key,JSON.stringify(val));
         }
@@ -4739,7 +4999,7 @@ const Store={
     if(typeof scheduleDriveBackup==='function') scheduleDriveBackup();
   },
   getUser(){return JSON.parse(localStorage.getItem('bm_user')||'null')},
-  setUser(u){localStorage.setItem('bm_user',JSON.stringify(u))},
+  setUser(u){localStorage.setItem('bm_user',JSON.stringify(u));if(typeof scheduleDriveBackup==='function'&&!backupRestoreInProgress)scheduleDriveBackup();},
   logAudit(action,entity,entityId,description){
     const logs=this.get('auditLog');
     logs.unshift({
@@ -12162,6 +12422,7 @@ function getAppSettings(){
 }
 function saveAppSettings(data){
   localStorage.setItem('bm_settings',JSON.stringify(data||{}));
+  if(typeof scheduleDriveBackup==='function'&&!backupRestoreInProgress) scheduleDriveBackup();
 }
 
 function getDataCounts(){
@@ -12402,6 +12663,7 @@ function renderSettingsPage(container){
           <button class="backup-action cloud" onclick="backupToGoogle()"><i class="fas fa-cloud-arrow-up"></i><span>رفع النسخة إلى Google</span></button>
           <button class="backup-action google" onclick="signInWithGoogleBackup()"><i class="fab fa-google"></i><span>ربط أو تغيير حساب Google</span></button>
           <button class="backup-action outline" onclick="document.getElementById('settingsImportFile').click()"><i class="fas fa-file-import"></i><span>استعادة نسخة من الجهاز</span></button>
+          <button class="backup-action outline" onclick="verifyGoogleBackup()"><i class="fas fa-shield-check"></i><span>فحص سلامة نسخة Google</span></button>
         </div>
         <input type="file" id="settingsImportFile" style="display:none" accept=".json" onchange="importData(this)">
 
@@ -12410,7 +12672,7 @@ function renderSettingsPage(container){
         <button class="backup-action outline" style="width:100%;min-height:58px;flex-direction:row" onclick="restoreFromGoogle()"><i class="fas fa-cloud-arrow-down"></i><span>استعادة النسخة من Google Drive</span></button>
         <div class="backup-restore-note"><i class="fas fa-triangle-exclamation"></i><span>الاستعادة من Google Drive تستبدل البيانات المحلية الحالية بالنسخة الموجودة على السحابة. تأكد من أن النسخة السحابية هي النسخة المطلوبة قبل المتابعة.</span></div>
 
-        <div class="backup-note"><i class="fas fa-circle-info"></i><span>بياناتك الأساسية تُحفظ محليًا وتعمل بدون إنترنت. وعند ربط Google، يحدّث البرنامج النسخة السحابية تلقائيًا بعد التعديلات المهمة، مع التحقق من النسخة قبل اعتبارها ناجحة.</span></div>
+        <div class="backup-note"><i class="fas fa-circle-info"></i><span>مهم جدًا: مسح بيانات المواقع من Chrome قد يحذف قاعدة البيانات المحلية كلها. لذلك احتفظ دائمًا بملف النسخة في «التنزيلات» أو على Google Drive، واربط Google وانتظر تأكيد نجاح الرفع قبل مسح بيانات المتصفح. النسخة السحابية تحتفظ أيضًا بنقاط استعادة تاريخية عند تغيّر البيانات. لو فتحت البرنامج بعد فقدان البيانات، افحص Google ثم اختر «استعادة النسخة» ولا ترفع بيانات الجهاز الناقصة.</span></div>
       </div>
     </div>
 
@@ -12472,12 +12734,19 @@ function renderSettingsPage(container){
   if(driveAccessTokenValid()) findGoogleBackupFile().then(()=>refreshGoogleBackupStatusUI()).catch(()=>{});
 }
 async function createSettingsBackup(){
-  exportData();
-  const stamp=new Date().toLocaleString('ar-EG');
-  localStorage.setItem('bm_last_backup',stamp); refreshLocalBackupStamp(stamp);
-  refreshGoogleBackupStatusUI();
-  if(driveAccessTokenValid()) await backupToGoogle({silent:false});
-  else showToast('✅ تم إنشاء النسخة على الجهاز. يمكنك ربط Google ورفعها للسحابة عند الحاجة.','success');
+  try{
+    await flushPendingStoreWrites();
+    const saved=exportData();
+    if(!saved) return;
+    const stamp=new Date().toLocaleString('ar-EG');
+    localStorage.setItem('bm_last_backup',stamp); refreshLocalBackupStamp(stamp);
+    refreshGoogleBackupStatusUI();
+    if(driveAccessTokenValid()) await backupToGoogle({silent:false});
+    else showToast('✅ تم تجهيز ملف النسخة على الجهاز. احتفظ به في مجلد التنزيلات أو Google Drive؛ ويمكنك رفع نسخة سحابية من هنا أيضًا.','success');
+  }catch(e){
+    console.error('Local backup creation failed:',e);
+    showToast('❌ تعذر إنشاء النسخة الاحتياطية على الجهاز','error');
+  }
   setTimeout(()=>navigateTo('settings'),350);
 }
 
@@ -12528,25 +12797,36 @@ function showAboutApp(){
 
 // ==================== التصدير والاستيراد ====================
 function exportData(){
-  const data=buildBackupPayload();
-  const json=JSON.stringify(data,null,2);
-  const blob=new Blob([json],{type:'application/json;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download='متجري_نسخة_احتياطية_'+today()+'_'+APP_VERSION+'.json';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-  const size=Math.max(1,Math.round(blob.size/1024));
-  showToast('✅ تم حفظ نسخة احتياطية آمنة — '+size+' كيلوبايت','success');
-  return true;
+  try{
+    const data=buildBackupPayload();
+    if(!isUsableBackup(data)){
+      showToast('🛡️ لم يتم تنزيل نسخة فارغة أو ناقصة','error');
+      return false;
+    }
+    const json=JSON.stringify(data,null,2);
+    const blob=new Blob([json],{type:'application/json;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='متجري_نسخة_احتياطية_'+today()+'_'+APP_VERSION+'.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    const size=Math.max(1,Math.round(blob.size/1024));
+    showToast('✅ تم تجهيز ملف نسخة احتياطية ('+size+' كيلوبايت). تأكد من وجوده في التنزيلات.','success');
+    return true;
+  }catch(error){
+    console.error('Backup export failed:',error);
+    showToast('❌ تعذر تجهيز ملف النسخة الاحتياطية','error');
+    return false;
+  }
 }
 function importData(input){
-  const file=input.files[0];if(!file)return;
+  const file=input?.files?.[0];if(!file)return;
+  if(file.size>250*1024*1024){showToast('❌ حجم ملف النسخة أكبر من الحد الآمن للاستيراد','error');input.value='';return;}
   const reader=new FileReader();
-  reader.onload=e=>{
+  reader.onload=async e=>{
     try{
       const data=JSON.parse(e.target.result);
       if(!isUsableBackup(data)){
@@ -12555,19 +12835,19 @@ function importData(input){
         return;
       }
       const sourceVersion=data.version||'غير معروف';
-      if(!confirm('تم العثور على نسخة صالحة من «'+(data.appName||'متجري')+'».\nالإصدار: '+sourceVersion+'\n'+backupSummary(data)+'\n\nسيتم استبدال البيانات الحالية. هل تريد المتابعة؟'))return;
-      const collections=getBackupCollections();
-      for(const k of collections) Store.set(k,Array.isArray(data[k])?data[k]:[]);
-      if(data.userData)Store.setUser(data.userData);
-      currentUser=data.userData||currentUser;
+      const when=data.exportedAt?new Date(data.exportedAt).toLocaleString('ar-EG'):'تاريخ غير معروف';
+      if(!confirm('تم العثور على نسخة صالحة من «'+(data.appName||'متجري')+'».\nالإصدار: '+sourceVersion+'\nالتاريخ: '+when+'\n'+backupSummary(data)+'\n\nسيتم استبدال البيانات الحالية، ثم التحقق من نجاح الكتابة؛ وإذا فشل التحقق سيحاول البرنامج إعادة البيانات السابقة. هل تريد المتابعة؟'))return;
+      showToast('⏳ جاري استعادة النسخة والتحقق من كل المجموعات...', 'info');
+      await restoreBackupSafely(data);
       const stamp=new Date().toLocaleString('ar-EG');
-      localStorage.setItem('bm_last_backup',stamp); refreshLocalBackupStamp(stamp);
+      localStorage.setItem('bm_last_backup',stamp);refreshLocalBackupStamp(stamp);
       refreshGoogleBackupStatusUI();
-      showToast('✅ تمت استعادة النسخة من الجهاز بنجاح','success');
-      setTimeout(()=>navigateTo('dashboard'),350);
+      showToast('✅ تمت استعادة النسخة والتحقق من حفظ البيانات والإعدادات بنجاح','success');
+      setTimeout(()=>{applyAppTheme();applyAppIdentity();navigateTo('dashboard');},500);
     }catch(err){
       console.error('Local backup import failed:',err);
-      showToast('❌ ملف النسخة الاحتياطية غير صالح أو تالف','error');
+      if(err.message==='BACKUP_RESTORE_VERIFY_FAILED') showToast('❌ فشل فحص البيانات بعد الاستعادة؛ جرت محاولة الرجوع للبيانات السابقة.','error');
+      else showToast('❌ ملف النسخة غير صالح أو تعذرت كتابته بالكامل','error');
     }finally{
       input.value='';
     }
@@ -12681,7 +12961,7 @@ async function replaceCloudDataWithLocal() {
 
 </script>
 <script>
-/* Matgary Service Worker lifecycle — v1.8.59
+/* Matgary Service Worker lifecycle — v1.8.60
    التحديث يعتمد على waiting SW + SKIP_WAITING + controllerchange،
    مع updateViaCache:none لمنع الاحتفاظ بنسخة قديمة من sw.js. */
 (function(){
