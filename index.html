@@ -13760,7 +13760,8 @@ th,td{padding:9px 7px;border-bottom:1px solid #e6eeeb;text-align:right}
 window.editInvoicePro=function(key){
     const inv=findInvoice(key);if(!inv)return;
     const rows=inv.lines.map((s,i)=>{ const p=productForSaleLine(s), ws=isWeightSaleLine(s,p); const wv=ws?rawSaleWeight(s):1; const qv=ws?(s.packages!=null?Number(s.packages):Math.max(0,Number(s.qty||0)/(wv||1))):money(s.qty); const up=ws?(Number(s.unitPrice)>0?Number(s.unitPrice):(Number(s.qty)>0?Number(s.total||0)/Number(s.qty):0)):money(s.price); const soldLabel=ws?`${qv} × ${weightLabel(wv)}`:formatProductQty(p,s.qty); return `<div class="edit-invoice-line"><div class="edit-invoice-name"><strong>${esc(s.productName||'صنف')}</strong><small>المباع: ${soldLabel}</small></div><input data-edit-line="${i}" data-field="qty" type="number" min="0" step="1" value="${qv}" placeholder="الكمية"><input data-edit-line="${i}" data-field="price" type="number" min="0" step="0.01" value="${money(up)}" placeholder="${ws?'سعر الكيلو':'السعر'}"><input data-edit-line="${i}" data-field="discount" type="number" min="0" max="100" step="0.1" value="${money(s.discount)}" placeholder="خصم %"></div>`; }).join('');
-    openModal(`<div class="modal-header"><h2><i class="fas fa-pen" style="color:var(--primary);margin-left:8px"></i> تعديل الفاتورة رقم ${esc(invoiceDisplayNumber(inv))}</h2><button class="modal-close" onclick="closeModal()">&times;</button></div><div class="form-group" style="margin-bottom:12px"><label><i class="fas fa-calendar-day" style="color:var(--primary);margin-left:6px"></i> تاريخ الفاتورة</label><input id="editInvoiceDate" type="date" value="${esc(inv.date||'')}" class="sales-date-filter"></div><div class="edit-invoice-head"><span>الصنف</span><span>الكمية</span><span>السعر</span><span>الخصم %</span></div><div id="editInvoiceLines">${rows}</div><div class="form-group" style="margin-top:10px"><label>ملاحظات</label><input id="editInvoiceNote" value="${esc(inv.note)}"></div><button class="btn btn-primary btn-block" onclick="saveInvoiceEditPro('${esc(inv.key)}')"><i class="fas fa-save"></i> حفظ تعديل الفاتورة</button>`);
+    const invoiceCustomers=(Store.get('customers')||[]).map(c=>`<option value="${esc(c.id)}" ${String(c.id)===String(inv.customerId||'')?'selected':''}>${c.type==='wholesale'?'📦':'🛍️'} ${esc(c.name||'عميل')}</option>`).join('');
+    openModal(`<div class="modal-header"><h2><i class="fas fa-pen" style="color:var(--primary);margin-left:8px"></i> تعديل الفاتورة رقم ${esc(invoiceDisplayNumber(inv))}</h2><button class="modal-close" onclick="closeModal()">&times;</button></div><div class="form-grid"><div class="form-group"><label><i class="fas fa-calendar-day" style="color:var(--primary);margin-left:6px"></i> تاريخ الفاتورة</label><input id="editInvoiceDate" type="date" value="${esc(inv.date||'')}" class="sales-date-filter"></div><div class="form-group"><label><i class="fas fa-user" style="color:var(--primary);margin-left:6px"></i> اسم العميل</label><select id="editInvoiceCustomer"><option value="">عميل عادي</option>${invoiceCustomers}</select></div></div><div class="edit-invoice-head"><span>الصنف</span><span>الكمية</span><span>السعر</span><span>الخصم %</span></div><div id="editInvoiceLines">${rows}</div><div class="form-group" style="margin-top:10px"><label>ملاحظات</label><input id="editInvoiceNote" value="${esc(inv.note)}"></div><button class="btn btn-primary btn-block" onclick="saveInvoiceEditPro('${esc(inv.key)}')"><i class="fas fa-save"></i> حفظ تعديل الفاتورة</button>`);
   };
 
   window.saveInvoiceEditPro=function(key){
@@ -13836,6 +13837,9 @@ window.editInvoicePro=function(key){
       });
 
       const oldCustomer=inv.customerId,oldCustomerName=inv.customerName;
+      const newCustomerId=document.getElementById('editInvoiceCustomer')?.value||'';
+      const selectedCustomer=(Store.get('customers')||[]).find(c=>String(c.id)===String(newCustomerId));
+      const newCustomerName=selectedCustomer?.name||'عميل عادي';
       const note=document.getElementById('editInvoiceNote')?.value||'';
       const newDate=document.getElementById('editInvoiceDate')?.value||inv.date||'';
       const delta=money(newTotal-originalTotal);
@@ -13854,6 +13858,8 @@ window.editInvoicePro=function(key){
         discount:v.d,
         total:v.total,
         profit:v.profit,
+        customerId:newCustomerId||null,
+        customerName:newCustomerName,
         note,
         date:newDate,
         paid:newPaid,
@@ -13874,8 +13880,8 @@ window.editInvoicePro=function(key){
             debtVersion:2,
             source:'sale',
             type:'لنا',
-            person:oldCustomerName||debt.person||'عميل عادي',
-            customerId:oldCustomer||debt.customerId||null,
+            person:newCustomerName,
+            customerId:newCustomerId||null,
             date:newDate,
             invoiceNo:inv.invoiceNo
           });
@@ -13884,9 +13890,9 @@ window.editInvoicePro=function(key){
             saleBatchId:inv.saleBatchId,
             invoiceNo:inv.invoiceNo,
             sourceSaleId:null,
-            customerId:oldCustomer||null,
+            customerId:newCustomerId||null,
             date:newDate,
-            person:oldCustomerName||'عميل عادي',
+            person:newCustomerName,
             type:'لنا',
             amount:newTotal,
             paidAmount:newPaid,
@@ -13901,10 +13907,10 @@ window.editInvoicePro=function(key){
         }
       }
 
-      if(oldCustomer){
-        // أعد بناء إجمالي مشتريات العميل والنقاط من المبيعات الفعلية.
-        // التعديل السابق كان يغيّر totalSpent فقط ويترك points قديمة.
-        if(typeof recalculateCustomerStats==='function') recalculateCustomerStats(oldCustomer);
+      // أعد حساب مشتريات ونقاط العميل السابق والجديد بعد نقل الفاتورة.
+      if(typeof recalculateCustomerStats==='function'){
+        if(oldCustomer)recalculateCustomerStats(oldCustomer);
+        if(newCustomerId && String(newCustomerId)!==String(oldCustomer||''))recalculateCustomerStats(newCustomerId);
       }
       closeIfOpen();
       showToast('✅ تم تعديل الفاتورة مع الحفاظ على كل المدفوعات والتحصيلات','success');
