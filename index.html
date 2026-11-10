@@ -720,6 +720,13 @@ tr:hover td{background:rgba(15,118,110,.045)}
   .mpa-kpis strong{font-size:.82rem}
 }
 @media print{.mpa-controls,.mpa-kpis{break-inside:avoid}.matgary-product-analysis .rep-panel{break-inside:avoid}}
+
+/* أدوات إظهار الأصناف النافدة في شاشة البيع */
+.pos-stock-visibility{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:8px 0 10px;padding:9px 11px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px}
+.pos-stock-visibility .stock-hint{font-size:.7rem;color:var(--text-light);font-weight:800}
+.pos-stock-toggle{border:1px solid var(--border);background:var(--bg-card);color:var(--primary);border-radius:10px;padding:8px 11px;font:inherit;font-size:.68rem;font-weight:900;cursor:pointer}
+.pos-stock-toggle.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.pos-stock-toggle:active{transform:scale(.98)}
 </style>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -5854,6 +5861,7 @@ function renderSalesPage(container){
         <div class="pos-search-row"><div class="pos-search-main"><i class="fas fa-search"></i><input type="text" id="saleProductSearch" placeholder="ابحث باسم المنتج أو الباركود..." oninput="debouncedRenderSaleProductGrid()"></div><button class="pos-scan-btn" type="button" onclick="openPOSBarcodeScanner()"><i class="fas fa-barcode"></i><span>باركود</span></button></div>
         <div class="pos-category-row pos-category-modern"><button class="active" data-cat="all" onclick="setPOSCategory('all',this)"><i class="fas fa-border-all"></i> الكل</button><button data-cat="cheese" onclick="setPOSCategory('cheese',this)"><i class="fas fa-cheese"></i> الجبن</button><button data-cat="frozen" onclick="setPOSCategory('frozen',this)"><i class="fas fa-snowflake"></i> المجمدات</button><button data-cat="pickles" onclick="setPOSCategory('pickles',this)"><i class="fas fa-lemon"></i> المخللات</button><button data-cat="other" onclick="setPOSCategory('other',this)"><i class="fas fa-box"></i> أخرى</button><button data-cat="best" onclick="setPOSCategory('best',this)"><i class="fas fa-star"></i> الأكثر مبيعًا</button></div>
         <div class="pos-products-tools"><span id="posProductsResult">0 منتج</span><select id="saleProductSort" onchange="setPOSSort(this.value)"><option value="default">الترتيب: الافتراضي</option><option value="best">الأكثر مبيعًا</option><option value="priceLow">السعر: الأقل</option><option value="priceHigh">السعر: الأعلى</option><option value="stockLow">الأقل مخزونًا</option></select></div>
+        <div class="pos-stock-visibility"><span class="stock-hint" id="posStockVisibilityHint">الأصناف النافدة مخفية من شاشة البيع</span><button type="button" class="pos-stock-toggle" id="posStockVisibilityBtn" onclick="togglePOSOutOfStock()"><i class="fas fa-eye"></i> عرض الأصناف النافدة <b id="posOutOfStockCount">0</b></button></div>
         <div id="saleProductGrid" class="sale-product-grid pos-product-grid-modern"></div>
       </div>
     </section>
@@ -7892,12 +7900,35 @@ function checkoutPOS(){
     showToast('❌ تعذر حفظ الفاتورة — تم التراجع عن العملية بالكامل','error');
   }
 }
+function togglePOSOutOfStock(){
+  window.posShowOutOfStock=!window.posShowOutOfStock;
+  renderSaleProductGrid();
+}
+
 function renderSaleProductGrid(){
   const grid=document.getElementById('saleProductGrid');
   if(!grid)return;
+  // تحديث بيانات المخزون قبل رسم المنتجات حتى يظهر الصنف تلقائيًا بعد إعادة توفيره.
+  try{
+    const latestProducts=Store.get('products');
+    if(Array.isArray(latestProducts)) window.saleProducts=latestProducts;
+  }catch(e){console.warn('تعذر تحديث قائمة منتجات البيع:',e);}
   const search=(document.getElementById('saleProductSearch')?.value||'').toLowerCase().trim();
   const cat=window.posCategory||'all';
-  let products=(window.saleProducts||[]).filter(p=>{const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();return hay.includes(search)&&(cat==='all'||p.type===cat);});
+  const matchingProducts=(window.saleProducts||[]).filter(p=>{const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();return hay.includes(search)&&(cat==='all'||p.type===cat);});
+  const outOfStockCount=matchingProducts.filter(p=>!Number.isFinite(Number(p.qty))||Number(p.qty)<=0).length;
+  const showOut=window.posShowOutOfStock===true;
+  let products=showOut?matchingProducts:matchingProducts.filter(p=>Number.isFinite(Number(p.qty))&&Number(p.qty)>0);
+  const toggle=document.getElementById('posStockVisibilityBtn');
+  const count=document.getElementById('posOutOfStockCount');
+  const hint=document.getElementById('posStockVisibilityHint');
+  if(count)count.textContent=String(outOfStockCount);
+  if(toggle){
+    toggle.classList.toggle('active',showOut);
+    toggle.innerHTML=showOut?`<i class="fas fa-eye-slash"></i> إخفاء الأصناف النافدة <b>${outOfStockCount}</b>`:`<i class="fas fa-eye"></i> عرض الأصناف النافدة <b>${outOfStockCount}</b>`;
+    toggle.setAttribute('aria-pressed',showOut?'true':'false');
+  }
+  if(hint)hint.textContent=showOut?'الأصناف النافدة للعرض فقط — لا يمكن إضافتها للسلة':'الأصناف النافدة مخفية من شاشة البيع';
   const sales=Store.get('sales')||[];
   if(!window.__matgaryPOSSoldCache || window.__matgaryPOSSoldCache.version!==__matgarySalesDataVersion || window.__matgaryPOSSoldCache.source!==sales){
     const soldMap={};
@@ -7939,7 +7970,7 @@ function renderSaleProductGrid(){
       <div class="sp-pack-price">${kg?(()=>{const saleType=document.getElementById('posSaleType')?.value||'retail';const basePrice=Number(saleType==='wholesale'?(p.wholesale||0):(p.retail||0));return `500 جم ${fmt(basePrice*.5)} · 250 جم ${fmt(basePrice*.25)}`;})():'اضغط للإضافة'}</div>
       ${sizeButtons}
     </div>`;
-  }).join('')||'<div class="empty-state" style="grid-column:1/-1;padding:30px"><i class="fas fa-box-open"></i><p>لا توجد منتجات مطابقة</p></div>';
+  }).join('')||(matchingProducts.length&&!showOut?'<div class="empty-state" style="grid-column:1/-1;padding:30px"><i class="fas fa-box-open"></i><p>كل الأصناف المطابقة نافدة حاليًا</p><small>اضغط «عرض الأصناف النافدة» لمراجعتها</small></div>':'<div class="empty-state" style="grid-column:1/-1;padding:30px"><i class="fas fa-box-open"></i><p>لا توجد منتجات مطابقة</p></div>');
   updateSaleSelectedPreview();
 }
 
