@@ -4025,6 +4025,16 @@ html{background:#f1f5f4!important}body{background:#f1f5f4!important;color:#18332
 @media(max-width:600px){.content-area{padding:13px 10px calc(108px + env(safe-area-inset-bottom))!important}.app-header{border-radius:0 0 20px 20px!important}.dash-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}.dash-grid-2{grid-template-columns:1fr!important}.dash-kpi{padding:13px 10px!important}.dash-welcome{padding:18px!important}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
+
+<style id="matgary-sales-stock-enhancements">
+/* Sales stock visibility: UI-only control */
+.pos-out-stock-toggle{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border:1px solid #d8e6e2;border-radius:12px;background:#f5faf8;color:#285b50;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.pos-out-stock-toggle input{width:16px;height:16px;accent-color:#087f6e;cursor:pointer}
+.pos-out-stock-toggle b{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:20px;background:#e9a52b;color:#35250a;font-size:11px}
+.pos-products-tools{flex-wrap:wrap;gap:9px}
+@media(max-width:600px){.pos-out-stock-toggle{font-size:11px;padding:6px 8px}.pos-products-tools select{max-width:100%}}
+</style>
+
 </head>
 <body>
 <div id="loading-screen">
@@ -5884,7 +5894,7 @@ function renderSalesPage(container){
       <div class="pos-products-body">
         <div class="pos-search-row"><div class="pos-search-main"><i class="fas fa-search"></i><input type="text" id="saleProductSearch" placeholder="ابحث باسم المنتج أو الباركود..." oninput="debouncedRenderSaleProductGrid()"></div><button class="pos-scan-btn" type="button" onclick="openPOSBarcodeScanner()"><i class="fas fa-barcode"></i><span>باركود</span></button></div>
         <div class="pos-category-row pos-category-modern"><button class="active" data-cat="all" onclick="setPOSCategory('all',this)"><i class="fas fa-border-all"></i> الكل</button><button data-cat="cheese" onclick="setPOSCategory('cheese',this)"><i class="fas fa-cheese"></i> الجبن</button><button data-cat="frozen" onclick="setPOSCategory('frozen',this)"><i class="fas fa-snowflake"></i> المجمدات</button><button data-cat="pickles" onclick="setPOSCategory('pickles',this)"><i class="fas fa-lemon"></i> المخللات</button><button data-cat="other" onclick="setPOSCategory('other',this)"><i class="fas fa-box"></i> أخرى</button><button data-cat="best" onclick="setPOSCategory('best',this)"><i class="fas fa-star"></i> الأكثر مبيعًا</button></div>
-        <div class="pos-products-tools"><span id="posProductsResult">0 منتج</span><select id="saleProductSort" onchange="setPOSSort(this.value)"><option value="default">الترتيب: الافتراضي</option><option value="best">الأكثر مبيعًا</option><option value="priceLow">السعر: الأقل</option><option value="priceHigh">السعر: الأعلى</option><option value="stockLow">الأقل مخزونًا</option></select></div>
+        <div class="pos-products-tools"><span id="posProductsResult">0 منتج متاح</span><label class="pos-out-stock-toggle" for="posShowOutOfStock"><input type="checkbox" id="posShowOutOfStock" onchange="togglePOSOutOfStock(this.checked)"><span>إظهار المنتجات النافدة</span><b id="posOutOfStockCount">0</b></label><select id="saleProductSort" onchange="setPOSSort(this.value)"><option value="default">الترتيب: الافتراضي</option><option value="best">الأكثر مبيعًا</option><option value="priceLow">السعر: الأقل</option><option value="priceHigh">السعر: الأعلى</option><option value="stockLow">الأقل مخزونًا</option></select></div>
         <div id="saleProductGrid" class="sale-product-grid pos-product-grid-modern"></div>
       </div>
     </section>
@@ -7923,12 +7933,23 @@ function checkoutPOS(){
     showToast('❌ تعذر حفظ الفاتورة — تم التراجع عن العملية بالكامل','error');
   }
 }
+function togglePOSOutOfStock(show){
+  window.showOutOfStockSales=!!show;
+  renderSaleProductGrid();
+}
+
 function renderSaleProductGrid(){
   const grid=document.getElementById('saleProductGrid');
   if(!grid)return;
   const search=(document.getElementById('saleProductSearch')?.value||'').toLowerCase().trim();
   const cat=window.posCategory||'all';
-  let products=(window.saleProducts||[]).filter(p=>{const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();return hay.includes(search)&&(cat==='all'||p.type===cat);});
+  const matchedProducts=(window.saleProducts||[]).filter(p=>{const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();return hay.includes(search)&&(cat==='all'||p.type===cat);});
+  const outCount=matchedProducts.filter(p=>!(Number(p.qty)>0)).length;
+  const outCountEl=document.getElementById('posOutOfStockCount');
+  if(outCountEl)outCountEl.textContent=String(outCount);
+  const outToggle=document.getElementById('posShowOutOfStock');
+  if(outToggle)outToggle.checked=!!window.showOutOfStockSales;
+  let products=matchedProducts.filter(p=>window.showOutOfStockSales || Number(p.qty)>0);
   const sales=Store.get('sales')||[];
   if(!window.__matgaryPOSSoldCache || window.__matgaryPOSSoldCache.version!==__matgarySalesDataVersion || window.__matgaryPOSSoldCache.source!==sales){
     const soldMap={};
@@ -7941,7 +7962,7 @@ function renderSaleProductGrid(){
   else if(sort==='priceLow')products.sort((a,b)=>(Number(a.retail)||0)-(Number(b.retail)||0));
   else if(sort==='priceHigh')products.sort((a,b)=>(Number(b.retail)||0)-(Number(a.retail)||0));
   else if(sort==='stockLow')products.sort((a,b)=>(Number(a.qty)||0)-(Number(b.qty)||0));
-  const result=document.getElementById('posProductsResult');if(result)result.textContent=`${products.length} منتج`;
+  const result=document.getElementById('posProductsResult');if(result)result.textContent=`${products.length} منتج ${window.showOutOfStockSales?'معروض':'متاح'}`;
   grid.innerHTML=products.map(p=>{
     const icon=getProductTypeIcon(p.type);
     const img=p.image?`<img src="${p.image}" alt="${p.name}">`:icon;
