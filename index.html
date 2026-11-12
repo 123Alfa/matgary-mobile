@@ -720,13 +720,6 @@ tr:hover td{background:rgba(15,118,110,.045)}
   .mpa-kpis strong{font-size:.82rem}
 }
 @media print{.mpa-controls,.mpa-kpis{break-inside:avoid}.matgary-product-analysis .rep-panel{break-inside:avoid}}
-
-/* أدوات إظهار الأصناف النافدة في شاشة البيع */
-.pos-stock-visibility{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:8px 0 10px;padding:9px 11px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px}
-.pos-stock-visibility .stock-hint{font-size:.7rem;color:var(--text-light);font-weight:800}
-.pos-stock-toggle{border:1px solid var(--border);background:var(--bg-card);color:var(--primary);border-radius:10px;padding:8px 11px;font:inherit;font-size:.68rem;font-weight:900;cursor:pointer}
-.pos-stock-toggle.active{background:var(--primary);border-color:var(--primary);color:#fff}
-.pos-stock-toggle:active{transform:scale(.98)}
 </style>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -4001,6 +3994,164 @@ html[data-theme="dark"] .sales-summary-card .value{
   .sales-v2 .sales-cv2-actions .sales-cv2-btn i{font-size:.68rem!important}
 }
 </style>
+
+<style id="matgary-visual-refresh-2026">
+/* متجري — تحديث بصري فقط | لا يغيّر الحسابات أو البيانات أو وظائف الأزرار */
+:root{
+  --bg:#f3f6f5;
+  --bg-card:#ffffff;
+  --bg-elevated:#edf3f1;
+  --bg-input:#fbfdfc;
+  --text:#1b302d;
+  --text-light:#637572;
+  --text-muted:#8b9a96;
+  --border:#dfe9e5;
+  --border-light:#cbdad4;
+  --shadow:0 5px 20px rgba(25,65,54,.065);
+  --shadow-lg:0 14px 38px rgba(25,65,54,.12);
+  --shadow-glow:0 8px 26px rgba(15,118,110,.12);
+  --radius:18px;
+  --radius-sm:12px;
+  --radius-lg:25px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);letter-spacing:0}
+#app{background:
+  radial-gradient(ellipse at 100% 0%,rgba(20,184,166,.055),transparent 32%),
+  radial-gradient(ellipse at 0% 35%,rgba(212,175,55,.045),transparent 28%),
+  var(--bg)}
+.app-header{
+  min-height:76px;padding:11px 17px 12px;
+  background:rgba(255,255,255,.94)!important;
+  border-bottom:1px solid rgba(210,226,219,.9);
+  box-shadow:0 5px 22px rgba(24,57,48,.065);
+  backdrop-filter:blur(18px);
+}
+.app-header h1{gap:11px}
+.app-header .logo-icon{
+  width:46px;height:46px;border-radius:15px;
+  box-shadow:0 5px 14px rgba(15,118,110,.2);
+}
+.app-header .logo-text span{font-weight:950;letter-spacing:.1px}
+.app-header .logo-text small{font-size:.66rem;color:#84938f}
+.user-info{gap:8px}
+.user-avatar{width:36px;height:36px;box-shadow:none}
+.logout-btn{width:36px;height:36px;padding:0;border-radius:12px}
+.theme-quick-btn{
+  width:36px;height:36px;border-radius:12px;border:1px solid var(--border);
+  background:#f5faf8;color:var(--primary);font-size:1rem;
+}
+.content-area{max-width:980px;padding:18px 14px calc(112px + env(safe-area-inset-bottom))}
+.card,.stat-card,.quick-action,.product-item,.menu-item,.customer-card,
+.supplier-card,.offer-card,.debt-card{
+  border:1px solid var(--border);
+  box-shadow:0 4px 17px rgba(24,57,48,.055);
+}
+.card{padding:19px;border-radius:19px;margin-bottom:14px}
+.card:hover{box-shadow:0 8px 24px rgba(24,57,48,.085);border-color:#cbded6}
+.card-title{
+  font-size:1rem;margin-bottom:15px;padding-bottom:11px;
+  border-bottom:1px solid var(--border);gap:9px;
+}
+.card-title i{width:30px;height:30px;display:inline-flex;align-items:center;
+  justify-content:center;background:rgba(15,118,110,.09);border-radius:10px}
+.section-header{margin:4px 2px 14px}
+.section-header h2{font-size:1.08rem;font-weight:950}
+.stats-grid{gap:10px}
+.stat-card{padding:16px 10px;border-radius:18px}
+.stat-card .stat-icon{width:42px;height:42px;border-radius:14px}
+.stat-value{font-size:1.28rem;font-variant-numeric:tabular-nums}
+.stat-label{font-size:.73rem}
+.quick-actions{gap:10px}
+.quick-action{padding:17px 11px;border-radius:18px}
+.quick-action i{font-size:1.65rem;margin-bottom:8px}
+.quick-action span{font-size:.82rem}
+.menu-grid{gap:10px}
+.menu-item{padding:19px 12px;border-radius:18px}
+.menu-item i{font-size:1.8rem}
+.form-group label{font-size:.8rem;color:#647773}
+.form-group input,.form-group select,.search-box input,
+.auth-form input{
+  border:1.5px solid var(--border);border-radius:13px;
+  background:#fbfdfc;min-height:46px;
+}
+.form-group input:focus,.form-group select:focus,.search-box input:focus,
+.auth-form input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(15,118,110,.10)}
+.btn{border-radius:13px;font-weight:850;min-height:43px}
+.btn-primary,.btn-success,.btn-danger,.btn-accent{box-shadow:0 4px 12px rgba(20,60,50,.12)}
+.table-wrap{border-radius:14px;border-color:var(--border);background:#fff}
+table{font-size:.84rem}
+th{background:#edf4f1!important;color:var(--primary)!important;font-weight:900}
+th,td{padding:11px 9px;border-bottom-color:#e8efec}
+tr:nth-child(even) td{background:#fbfdfc}
+tr:hover td{background:rgba(15,118,110,.045)}
+.badge{padding:5px 10px;border-radius:9px}
+.product-grid{gap:10px}
+.product-item{border-radius:17px;padding:10px}
+.product-item .p-image{height:120px;border-radius:13px}
+.product-item .p-name{font-size:.86rem}
+.sale-product-picker{border-radius:18px;background:linear-gradient(135deg,#f1f8f5,#fffdf5)}
+.sale-product-card{border-radius:16px;border-width:1.5px}
+.sale-product-card .sp-image{border-radius:12px}
+.sale-product-card.active,.sale-product-card.sale-selected{
+  box-shadow:0 0 0 3px rgba(15,118,110,.10),0 7px 18px rgba(15,118,110,.10)!important
+}
+.bottom-nav{
+  padding:7px 7px calc(8px + env(safe-area-inset-bottom));
+  background:rgba(255,255,255,.96);
+  border-top:1px solid #dce8e3;
+  box-shadow:0 -7px 25px rgba(24,57,48,.09);
+  backdrop-filter:blur(20px);
+}
+.bottom-nav-item{
+  border-radius:13px;gap:3px;padding:7px 3px;
+  font-size:.68rem;font-weight:700;
+}
+.bottom-nav-item i{font-size:1.2rem}
+.bottom-nav-item.active{
+  color:var(--primary);background:rgba(15,118,110,.105);
+}
+.modal-overlay{background:rgba(15,35,30,.48);backdrop-filter:blur(7px)}
+.modal{
+  border-radius:24px 24px 0 0;
+  box-shadow:0 -12px 45px rgba(10,35,28,.18);
+}
+.modal-header{padding-bottom:9px;border-bottom:1px solid var(--border)}
+.toast{border-radius:14px}
+.settings-hero{border-radius:20px;box-shadow:0 10px 25px rgba(15,118,110,.16)}
+.settings-row{padding:14px 5px}
+.settings-icon{border-radius:14px}
+.summary-box{border-radius:22px}
+.summary-item{border-radius:15px}
+.auth-card{border-radius:25px;box-shadow:0 18px 50px rgba(15,70,55,.12)}
+.loading-logo{border-radius:25px}
+button,.btn,.quick-action,.menu-item,.product-item,.sale-product-card{
+  -webkit-tap-highlight-color:transparent;
+}
+button:focus-visible,.btn:focus-visible{
+  outline:3px solid rgba(15,118,110,.28);outline-offset:2px;
+}
+@media(max-width:520px){
+  .app-header{padding:9px 11px;min-height:68px}
+  .app-header .logo-icon{width:40px;height:40px;border-radius:13px}
+  .app-header .logo-text small{font-size:.59rem}
+  .user-info{gap:5px}
+  .user-info #userName{display:none}
+  .user-avatar{width:32px;height:32px}
+  .logout-btn,.theme-quick-btn{width:33px;height:33px;min-width:33px}
+  .content-area{padding:13px 10px calc(105px + env(safe-area-inset-bottom))}
+  .card{padding:15px;border-radius:17px}
+  .stat-card{padding:13px 7px}
+  .stat-value{font-size:1.12rem}
+  .bottom-nav-item{font-size:.64rem}
+  .bottom-nav-item i{font-size:1.12rem}
+  .form-group input,.form-group select{padding:12px 13px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+
 </head>
 <body>
 <div id="loading-screen">
@@ -5861,7 +6012,6 @@ function renderSalesPage(container){
         <div class="pos-search-row"><div class="pos-search-main"><i class="fas fa-search"></i><input type="text" id="saleProductSearch" placeholder="ابحث باسم المنتج أو الباركود..." oninput="debouncedRenderSaleProductGrid()"></div><button class="pos-scan-btn" type="button" onclick="openPOSBarcodeScanner()"><i class="fas fa-barcode"></i><span>باركود</span></button></div>
         <div class="pos-category-row pos-category-modern"><button class="active" data-cat="all" onclick="setPOSCategory('all',this)"><i class="fas fa-border-all"></i> الكل</button><button data-cat="cheese" onclick="setPOSCategory('cheese',this)"><i class="fas fa-cheese"></i> الجبن</button><button data-cat="frozen" onclick="setPOSCategory('frozen',this)"><i class="fas fa-snowflake"></i> المجمدات</button><button data-cat="pickles" onclick="setPOSCategory('pickles',this)"><i class="fas fa-lemon"></i> المخللات</button><button data-cat="other" onclick="setPOSCategory('other',this)"><i class="fas fa-box"></i> أخرى</button><button data-cat="best" onclick="setPOSCategory('best',this)"><i class="fas fa-star"></i> الأكثر مبيعًا</button></div>
         <div class="pos-products-tools"><span id="posProductsResult">0 منتج</span><select id="saleProductSort" onchange="setPOSSort(this.value)"><option value="default">الترتيب: الافتراضي</option><option value="best">الأكثر مبيعًا</option><option value="priceLow">السعر: الأقل</option><option value="priceHigh">السعر: الأعلى</option><option value="stockLow">الأقل مخزونًا</option></select></div>
-        <div class="pos-stock-visibility"><span class="stock-hint" id="posStockVisibilityHint">الأصناف النافدة مخفية من شاشة البيع</span><button type="button" class="pos-stock-toggle" id="posStockVisibilityBtn" onclick="togglePOSOutOfStock()"><i class="fas fa-eye"></i> عرض الأصناف النافدة <b id="posOutOfStockCount">0</b></button></div>
         <div id="saleProductGrid" class="sale-product-grid pos-product-grid-modern"></div>
       </div>
     </section>
@@ -7900,35 +8050,12 @@ function checkoutPOS(){
     showToast('❌ تعذر حفظ الفاتورة — تم التراجع عن العملية بالكامل','error');
   }
 }
-function togglePOSOutOfStock(){
-  window.posShowOutOfStock=!window.posShowOutOfStock;
-  renderSaleProductGrid();
-}
-
 function renderSaleProductGrid(){
   const grid=document.getElementById('saleProductGrid');
   if(!grid)return;
-  // تحديث بيانات المخزون قبل رسم المنتجات حتى يظهر الصنف تلقائيًا بعد إعادة توفيره.
-  try{
-    const latestProducts=Store.get('products');
-    if(Array.isArray(latestProducts)) window.saleProducts=latestProducts;
-  }catch(e){console.warn('تعذر تحديث قائمة منتجات البيع:',e);}
   const search=(document.getElementById('saleProductSearch')?.value||'').toLowerCase().trim();
   const cat=window.posCategory||'all';
-  const matchingProducts=(window.saleProducts||[]).filter(p=>{const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();return hay.includes(search)&&(cat==='all'||p.type===cat);});
-  const outOfStockCount=matchingProducts.filter(p=>!Number.isFinite(Number(p.qty))||Number(p.qty)<=0).length;
-  const showOut=window.posShowOutOfStock===true;
-  let products=showOut?matchingProducts:matchingProducts.filter(p=>Number.isFinite(Number(p.qty))&&Number(p.qty)>0);
-  const toggle=document.getElementById('posStockVisibilityBtn');
-  const count=document.getElementById('posOutOfStockCount');
-  const hint=document.getElementById('posStockVisibilityHint');
-  if(count)count.textContent=String(outOfStockCount);
-  if(toggle){
-    toggle.classList.toggle('active',showOut);
-    toggle.innerHTML=showOut?`<i class="fas fa-eye-slash"></i> إخفاء الأصناف النافدة <b>${outOfStockCount}</b>`:`<i class="fas fa-eye"></i> عرض الأصناف النافدة <b>${outOfStockCount}</b>`;
-    toggle.setAttribute('aria-pressed',showOut?'true':'false');
-  }
-  if(hint)hint.textContent=showOut?'الأصناف النافدة للعرض فقط — لا يمكن إضافتها للسلة':'الأصناف النافدة مخفية من شاشة البيع';
+  let products=(window.saleProducts||[]).filter(p=>{const hay=[p.name,p.barcode,p.code].filter(Boolean).join(' ').toLowerCase();return hay.includes(search)&&(cat==='all'||p.type===cat);});
   const sales=Store.get('sales')||[];
   if(!window.__matgaryPOSSoldCache || window.__matgaryPOSSoldCache.version!==__matgarySalesDataVersion || window.__matgaryPOSSoldCache.source!==sales){
     const soldMap={};
@@ -7970,7 +8097,7 @@ function renderSaleProductGrid(){
       <div class="sp-pack-price">${kg?(()=>{const saleType=document.getElementById('posSaleType')?.value||'retail';const basePrice=Number(saleType==='wholesale'?(p.wholesale||0):(p.retail||0));return `500 جم ${fmt(basePrice*.5)} · 250 جم ${fmt(basePrice*.25)}`;})():'اضغط للإضافة'}</div>
       ${sizeButtons}
     </div>`;
-  }).join('')||(matchingProducts.length&&!showOut?'<div class="empty-state" style="grid-column:1/-1;padding:30px"><i class="fas fa-box-open"></i><p>كل الأصناف المطابقة نافدة حاليًا</p><small>اضغط «عرض الأصناف النافدة» لمراجعتها</small></div>':'<div class="empty-state" style="grid-column:1/-1;padding:30px"><i class="fas fa-box-open"></i><p>لا توجد منتجات مطابقة</p></div>');
+  }).join('')||'<div class="empty-state" style="grid-column:1/-1;padding:30px"><i class="fas fa-box-open"></i><p>لا توجد منتجات مطابقة</p></div>';
   updateSaleSelectedPreview();
 }
 
