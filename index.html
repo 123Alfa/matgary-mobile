@@ -19375,3 +19375,73 @@ setTimeout(()=>{
 })();
 </script>
 
+
+<!-- متجري: طحينة شهد صنف واحد مع اختيار حجم العبوة v1.8.63 -->
+<script id="matgary-tahina-single-product-sizes-v1-8-63">
+(function(){
+  'use strict';
+  const isTahina = p => /طحينة|طحينه|tahini/i.test(String(typeof p==='string'?p:(p&&p.name)||''));
+  const prevSized = window.isTahinaJarSizedProduct;
+  window.isTahinaJarSizedProduct = function(p){ return isTahina(p); };
+  const prevKg = window.isKgProduct;
+  window.isKgProduct = function(p){
+    if(isTahina(p)) return true;
+    return typeof prevKg==='function' ? !!prevKg(p) : false;
+  };
+  const prevWeightLine = window.isWeightSaleLine;
+  window.isWeightSaleLine = function(s,p){
+    if(isTahina(s?.productName||s?.name||p)) return true;
+    return typeof prevWeightLine==='function' ? !!prevWeightLine(s,p) : false;
+  };
+  window.matgaryInvoiceUnit = function(p,s){
+    if(isTahina(s?.productName||p)) return 'برطمان';
+    return String(s?.sellUnit||p?.sellUnit||p?.unit||'وحدة');
+  };
+  window.productSaleUnitLabel = window.matgaryInvoiceUnit;
+  window.matgaryUnitLabel = window.matgaryInvoiceUnit;
+  window.invoiceSaleQuantityLabel = function(s,p){
+    if(isTahina(s?.productName||s?.name||p)) return `${Math.max(0,Number(s?.packages||s?.qty||1))} برطمان`;
+    return `${Math.max(0,Number(s?.packages||s?.qty||1))} ${window.matgaryInvoiceUnit(p,s)}`;
+  };
+  window.invoiceSaleDetailLabel = window.invoiceSaleQuantityLabel;
+
+  function migrateTahina(){
+    try{
+      if(!window.Store || typeof Store.get!=='function' || typeof Store.set!=='function') return;
+      const all=Store.get('products')||[];
+      const tahinas=all.filter(isTahina);
+      if(!tahinas.length) return;
+      // Prefer the existing generic item, then the kilo item, so historical references remain attached.
+      const main=tahinas.find(p=>/^\s*طحينة\s+شهد\s*$/i.test(String(p.name||''))) ||
+        tahinas.find(p=>/كيلو|1000\s*(جم|جرام)?|1000g/i.test(String(p.name||''))) || tahinas[0];
+      let totalKg=0;
+      tahinas.forEach(p=>{
+        const q=Math.max(0,Number(p.qty)||0);
+        const n=String(p.name||'');
+        let factor=1;
+        if(/ربع|250\s*(جم|جرام)?|250g/i.test(n)) factor=.25;
+        else if(/نصف|نص|500\s*(جم|جرام)?|500g/i.test(n)) factor=.5;
+        else if(/كيلو|1000\s*(جم|جرام)?|1000g/i.test(n)) factor=1;
+        else if(/برطمان/i.test(String(p.unit||''))) factor=1;
+        totalKg += q*factor;
+      });
+      // One catalog item: the available stock is held as total kilograms.
+      main.name='طحينة شهد';
+      main.unit='كجم';
+      main.qty=Number(totalKg.toFixed(3));
+      main.retail=160;
+      // Keep wholesale/purchase values already present; do not invent them.
+      tahinas.forEach(p=>{ if(p!==main) p.qty=0; });
+      Store.set('products',all);
+      if(Array.isArray(window.saleProducts)){
+        const refreshed=all.filter(p=>p && p.active!==false);
+        window.saleProducts=refreshed;
+      }
+      window.__MATGARY_TAHINA_SINGLE_PRODUCT_MIGRATED__='v1.8.63';
+    }catch(e){ console.warn('تعذر دمج أصناف الطحينة تلقائياً:',e); }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',migrateTahina,{once:true});
+  else migrateTahina();
+  window.__MATGARY_TAHINA_SINGLE_PRODUCT_SIZES__='v1.8.63';
+})();
+</script>
