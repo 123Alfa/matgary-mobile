@@ -4105,7 +4105,7 @@ html{background:#f1f5f4!important}body{background:#f1f5f4!important;color:#18332
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.59 — تطوير شامل لقسم المبيعات وتجربة الاستخدام
-const APP_VERSION='v1.8.60';
+const APP_VERSION='v1.8.61';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "15 أكتوبر 2026 — تقوية النسخ الاحتياطي، النسخ التاريخية السحابية، والتحقق من الاستعادة";
 
@@ -19288,3 +19288,35 @@ setTimeout(()=>{
   window.__MATGARY_TAHINA_INDEPENDENT_JARS__='v1.8.60';
 })();
 </script>
+\n<script id="matgary-tahina-retail-prices-v1-8-61">
+(function(){
+  'use strict';
+  const isTahina = n => /طحينة|طحينه|tahini/i.test(String(n||''));
+  function tahinaJarPrice(name){
+    const n=String(name||'').toLowerCase().replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+    if(!isTahina(n)) return null;
+    if(/ربع|250\\s*(جم|جرام)?|250g|0[.,]25/.test(n)) return 40;
+    if(/نصف|نص|500\\s*(جم|جرام)?|500g|0[.,]5/.test(n)) return 80;
+    if(/(^|[\\s\\-_/])(?:1\\s*)?كيلو|1000\\s*(جم|جرام)?|1000g/.test(n)) return 160;
+    return null;
+  }
+  const previousRender=window.renderProductsPage;
+  if(typeof previousRender!=='function') return;
+  window.renderProductsPage=function(container){
+    try{
+      const products=Store.get('products')||[];
+      let changed=false;
+      products.forEach(p=>{
+        const price=tahinaJarPrice(p?.name);
+        if(price===null) return;
+        if(Number(p.retail)!==price){p.retail=price;changed=true;}
+        if(p.unit!=='برطمان'){p.unit='برطمان';changed=true;}
+      });
+      if(changed) Store.set('products',products);
+    }catch(e){console.warn('تعذر تحديث أسعار عبوات الطحينة تلقائياً:',e);}
+    return previousRender.apply(this,arguments);
+  };
+  window.__MATGARY_TAHINA_RETAIL_PRICES__='v1.8.61';
+})();
+</script>
+
