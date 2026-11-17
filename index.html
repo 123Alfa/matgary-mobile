@@ -19251,3 +19251,40 @@ setTimeout(()=>{
 
 </body>
   </html>
+
+<!-- متجري: الطحينة بأحجام مستقلة ومخزون مستقل لكل برطمان -->
+<script id="matgary-tahina-independent-jars-v1">
+(function(){
+  'use strict';
+  function isTahinaName(value){
+    return /طحينة|طحينه|tahini/i.test(String(value||''));
+  }
+  // كل حجم طحينة يُسجَّل كصنف عبوة مستقل، وليس كوزن يُخصم من برطمان واحد.
+  window.isTahinaJarSizedProduct=function(){ return false; };
+  const previousIsKg=window.isKgProduct;
+  window.isKgProduct=function(p){
+    if(p && isTahinaName(p.name)) return false;
+    return typeof previousIsKg==='function' ? !!previousIsKg(p) : false;
+  };
+  const previousWeightLine=window.isWeightSaleLine;
+  window.isWeightSaleLine=function(s,p){
+    if(isTahinaName(s?.productName||s?.name||p?.name)) return false;
+    return typeof previousWeightLine==='function' ? !!previousWeightLine(s,p) : false;
+  };
+  window.matgaryInvoiceUnit=function(p,s){
+    if(isTahinaName(s?.productName||p?.name)) return 'برطمان';
+    return String(s?.sellUnit||p?.sellUnit||p?.unit||'').trim() || 'وحدة';
+  };
+  window.productSaleUnitLabel=function(p,s){ return window.matgaryInvoiceUnit(p,s); };
+  window.matgaryUnitLabel=function(p,s){ return window.matgaryInvoiceUnit(p,s); };
+  window.invoiceSaleQuantityLabel=function(s,p){
+    if(isTahinaName(s?.productName||s?.name||p?.name)){
+      const count=Math.max(0,Number(s?.packages||s?.qty||1));
+      return `${count} برطمان`;
+    }
+    return `${Math.max(0,Number(s?.packages||s?.qty||1))} ${window.matgaryInvoiceUnit(p,s)}`;
+  };
+  window.invoiceSaleDetailLabel=function(s,p){ return window.invoiceSaleQuantityLabel(s,p); };
+  window.__MATGARY_TAHINA_INDEPENDENT_JARS__='v1.8.60';
+})();
+</script>
