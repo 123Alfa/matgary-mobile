@@ -4105,7 +4105,7 @@ html{background:#f1f5f4!important}body{background:#f1f5f4!important;color:#18332
 <script>
 // ==================== معلومات الإصدار ====================
 // متجري v1.8.59 — تطوير شامل لقسم المبيعات وتجربة الاستخدام
-const APP_VERSION='v1.8.61';
+const APP_VERSION='v1.8.62';
 const APP_NAME = "متجري";
 const APP_BUILD_DATE = "15 أكتوبر 2026 — تقوية النسخ الاحتياطي، النسخ التاريخية السحابية، والتحقق من الاستعادة";
 
@@ -12984,12 +12984,67 @@ async function applyBundledOriginalDataOnce(){
   }catch(e){ console.error('تعذر تطبيق البيانات الأصلية المدمجة:',e); return false; }
 }
 
+async function migrateTahinaJarProducts(){
+  const FLAG='bm_tahina_independent_jars_v1862';
+  if(localStorage.getItem(FLAG)==='1') return;
+  const products=Store.get('products')||[];
+  const isTahina=p=>/طحينة|طحينه|tahini/i.test(String(p?.name||''));
+  const sizeOf=p=>{
+    const n=String(p?.name||'').toLowerCase();
+    if(/ربع|250\s*(?:جم|جرام)?|250g|0[.,]25/.test(n)) return 'quarter';
+    if(/نصف|نص|500\s*(?:جم|جرام)?|500g|0[.,]5/.test(n)) return 'half';
+    if(/كيلو|1000\s*(?:جم|جرام)?|1000g|(?:^|\s)1\s*كجم/.test(n)) return 'kilo';
+    return 'generic';
+  };
+  const tahina=products.filter(isTahina);
+  if(!tahina.length) return;
+  const bySize={kilo:null,half:null,quarter:null};
+  let generic=null;
+  tahina.forEach(p=>{const z=sizeOf(p); if(z==='generic'){if(!generic)generic=p;} else if(!bySize[z])bySize[z]=p;});
+  const base=generic||bySize.kilo||bySize.half||bySize.quarter;
+  const makeClone=(size,name,qty,price,factor)=>({
+    ...base,id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),
+    name,barcode:'',qty,unit:'برطمان',retail:price,
+    purchase:Math.round((Number(base.purchase)||0)*factor*100)/100,
+    wholesale:Math.round((Number(base.wholesale)||0)*factor*100)/100,
+    minStock:1,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()
+  });
+  const specs=[
+    ['kilo','طحينة شهد كيلو',1,160,1],
+    ['half','طحينة شهد نصف كيلو',1,80,.5],
+    ['quarter','طحينة شهد ربع كيلو',2,40,.25]
+  ];
+  // Keep the original product ID for the kilo whenever it is a generic record,
+  // so historical sales continue to point to the same product.
+  if(generic && !bySize.kilo){
+    generic.name='طحينة شهد كيلو'; generic.qty=1; generic.unit='برطمان'; generic.retail=160; generic.minStock=1;
+    bySize.kilo=generic;
+  }
+  for(const [key,name,qty,price,factor] of specs){
+    let p=bySize[key];
+    if(!p){
+      if(!base) continue;
+      p=makeClone(key,name,qty,price,factor); products.push(p); bySize[key]=p;
+    }else{
+      p.name=name; p.qty=qty; p.unit='برطمان'; p.retail=price; p.minStock=1;
+    }
+  }
+  // Remove only a redundant generic record when a separate kilo SKU already existed.
+  if(generic && bySize.kilo!==generic){
+    generic.name='طحينة شهد (سجل قديم - راجع الفواتير السابقة)';
+    generic.qty=0;
+  }
+  const saved=Store.set('products',products);
+  if(saved) localStorage.setItem(FLAG,'1');
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
   applyAppTheme();
   applyAppIdentity();
   try { await initIndexedDBStore(); } catch (e) { console.warn('IndexedDB init:', e); }
   await applyBundledOriginalDataOnce();
   await migrateExistingProductImages();
+  await migrateTahinaJarProducts();
   const user = Store.getUser();
   if (user && !isLockEnabled()) {
     currentUser = user;
