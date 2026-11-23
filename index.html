@@ -6510,14 +6510,15 @@ function renderPOSCart(){
     const offerHtml=offerInfo.offer && offerInfo.discount>0 ? `<div class="pos-cart-offer">🏷️ ${offerInfo.offer.name}: خصم ${fmt(offerInfo.discount)} ج (${offerInfo.percent.toFixed(2)}%)</div>` : '';
     const lastHtml=(lastPrice!=null && lastPrice!==price)?`<div class="pos-cart-last"><i class="fas fa-history"></i> آخر سعر: ${fmt(lastPrice)}</div>`:'';
     const tahinaJar=typeof isTahinaJarSizedProduct==='function' ? isTahinaJarSizedProduct(p) : false;
+    const oliveOilSized=window.isOliveOilSizedProduct ? window.isOliveOilSizedProduct(p) : false;
     const mozzarella=isMozzarellaProduct(p);
-    const fixedSizeProduct=mozzarella||tahinaJar;
+    const fixedSizeProduct=mozzarella||tahinaJar||oliveOilSized;
     const weightControl=isWeight?(fixedSizeProduct?`
       <div class="pos-sale-mode"><button type="button" class="active" disabled>⚖️ أحجام ثابتة</button></div>
       <div class="sp-sizes-modern" style="margin-top:6px">
-        <button type="button" class="sp-size" ${Number(p.qty||0)<1?'disabled':''} onclick="changePOSWeight(${index},1)">${tahinaJar?'1 برطمان • 1 كجم':'1 كجم'} — ${fmt(price)}</button>
-        <button type="button" class="sp-size" ${Number(p.qty||0)<.5?'disabled':''} onclick="changePOSWeight(${index},0.5)">${tahinaJar?'نصف برطمان • 500 جم':'500 جم'} — ${fmt(price*.5)}</button>
-        <button type="button" class="sp-size" ${Number(p.qty||0)<.25?'disabled':''} onclick="changePOSWeight(${index},0.25)">${tahinaJar?'ربع برطمان • 250 جم':'250 جم'} — ${fmt(price*.25)}</button>
+        <button type="button" class="sp-size" ${Number(p.qty||0)<1?'disabled':''} onclick="changePOSWeight(${index},1)">${tahinaJar?'1 برطمان • 1 كجم':oliveOilSized?'1 زجاجة • 1 كجم':'1 كجم'} — ${fmt(price)}</button>
+        <button type="button" class="sp-size" ${Number(p.qty||0)<.5?'disabled':''} onclick="changePOSWeight(${index},0.5)">${tahinaJar?'نصف برطمان • 500 جم':oliveOilSized?'نصف زجاجة • 500 جم':'500 جم'} — ${fmt(price*.5)}</button>
+        <button type="button" class="sp-size" ${Number(p.qty||0)<.25?'disabled':''} onclick="changePOSWeight(${index},0.25)">${tahinaJar?'ربع برطمان • 250 جم':oliveOilSized?'ربع زجاجة • 250 جم':'250 جم'} — ${fmt(price*.25)}</button>
       </div>
     `:`
       <div class="pos-sale-mode">
@@ -19443,5 +19444,27 @@ setTimeout(()=>{
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',migrateTahina,{once:true});
   else migrateTahina();
   window.__MATGARY_TAHINA_SINGLE_PRODUCT_SIZES__='v1.8.63';
+})();
+</script>
+
+<!-- متجري: زيت الزيتون البكر عبوة واحدة بأحجام 1/2/1/4 كجم v1.8.64 -->
+<script id="matgary-olive-oil-sizes-v1-8-64">
+(function(){
+ 'use strict';
+ const isOlive=p=>/زيت\s*الزيتون\s*(البكر|بكر)?|زيت\s*زيتون\s*(البكر|بكر)?|olive\s*oil/i.test(String(typeof p==='string'?p:(p&&p.name)||''));
+ window.isOliveOilSizedProduct=isOlive;
+ const prevKg=window.isKgProduct;
+ window.isKgProduct=function(p){if(isOlive(p))return true;return typeof prevKg==='function'?!!prevKg(p):false;};
+ const prevWeight=window.isWeightSaleLine;
+ window.isWeightSaleLine=function(s,p){if(isOlive(s?.productName||s?.name||p))return true;return typeof prevWeight==='function'?!!prevWeight(s,p):false;};
+ const prevUnit=window.matgaryInvoiceUnit;
+ window.matgaryInvoiceUnit=function(p,s){if(isOlive(s?.productName||p))return 'زجاجة';return typeof prevUnit==='function'?prevUnit(p,s):String(s?.sellUnit||p?.unit||'وحدة');};
+ window.productSaleUnitLabel=window.matgaryInvoiceUnit; window.matgaryUnitLabel=window.matgaryInvoiceUnit;
+ const prevQty=window.saleQuantityLabel;
+ window.saleQuantityLabel=function(p,q,w){if(isOlive(p)){const n=Number(w||1);const size=Math.abs(n-1)<1e-6?'1 كجم':Math.abs(n-.5)<1e-6?'500 جم':Math.abs(n-.25)<1e-6?'250 جم':n+' كجم';return `${Math.max(1,Number(q||1))} زجاجة • ${size}`;}return typeof prevQty==='function'?prevQty(p,q,w):`${q||1} ${window.matgaryInvoiceUnit(p,{})}`;};
+ const prevInv=window.invoiceSaleQuantityLabel;
+ window.invoiceSaleQuantityLabel=function(s,p){if(isOlive(s?.productName||s?.name||p)){const q=Math.max(1,Number(s?.packages||1));const w=Number(typeof rawSaleWeight==='function'?rawSaleWeight(s):s?.weight||1);const size=Math.abs(w-1)<1e-6?'1 كجم':Math.abs(w-.5)<1e-6?'500 جم':Math.abs(w-.25)<1e-6?'250 جم':w+' كجم';return `${q} زجاجة • ${size}`;}return typeof prevInv==='function'?prevInv(s,p):`${Math.max(1,Number(s?.packages||1))} ${window.matgaryInvoiceUnit(p,s)}`;};
+ window.invoiceSaleDetailLabel=window.invoiceSaleQuantityLabel;
+ window.__MATGARY_OLIVE_OIL_SIZES__='v1.8.64';
 })();
 </script>
